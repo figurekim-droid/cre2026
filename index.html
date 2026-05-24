@@ -437,10 +437,15 @@ function h2t(h){
 function cleanT(t){return t.replace(/\[2026\s*공인중개사\]\s*/i,'').replace(/\s*\d+\s*차시\.\s*/,'').trim();}
 function dday(){return Math.ceil((EXAM-new Date())/86400000);}
 function subStats(){
+  // 과목별 완료 차시 수 계산 (STATS의 각 key = 차시 URL)
   const o={};
   SUBS.forEach(s=>{
     const ks=Object.keys(STATS).filter(k=>STATS[k].sid===s.id);
-    o[s.id]={total:ks.reduce((a,k)=>a+(STATS[k].total||0),0),correct:ks.reduce((a,k)=>a+(STATS[k].correct||0),0)};
+    o[s.id]={
+      done:   ks.length,                                                      // 완료 차시 수
+      total:  ks.reduce((a,k)=>a+(STATS[k].total||0),0),                     // 전체 문제 수
+      correct:ks.reduce((a,k)=>a+(STATS[k].correct||0),0)                    // 정답 수
+    };
   });
   return o;
 }
@@ -767,26 +772,67 @@ function renderHome(){
   const dd=dday();
   const ddEl=document.getElementById('dday');
   ddEl.textContent='D-'+dd;ddEl.className='hero-dday-num'+(dd<90?' urgent':'');
+
   const ss=subStats();
-  const tq=Object.values(ss).reduce((a,s)=>a+(s.total||0),0);
-  const tc=Object.values(ss).reduce((a,s)=>a+(s.correct||0),0);
-  const op=tq?Math.round(tc/tq*100):0;
-  document.getElementById('ov-score').innerHTML=tc+'<span style="font-size:12px;opacity:.65">/'+tq+' 문제</span>';
-  ring(document.getElementById('ring-ov'),op,'rgba(183,228,199,1)',66,6);
+
+  // 전체 완료 차시 / 전체 문제 수 (hero)
+  const totalDone = Object.values(ss).reduce((a,s)=>a+(s.done||0),0);
+  const totalQ    = Object.values(ss).reduce((a,s)=>a+(s.total||0),0);
+  const totalC    = Object.values(ss).reduce((a,s)=>a+(s.correct||0),0);
+  const ovPct     = totalQ?Math.round(totalC/totalQ*100):0;
+  document.getElementById('ov-score').innerHTML=
+    totalDone+'<span style="font-size:12px;opacity:.65">차시 완료 · 정답률 '+ovPct+'%</span>';
+  ring(document.getElementById('ring-ov'),ovPct,'rgba(183,228,199,1)',66,6);
+
   const wb=document.getElementById('wbanner');
   if(WRONGS.length>0){wb.classList.add('show');document.getElementById('wbanner-t').textContent='오답노트 '+WRONGS.length+'문제';}
   else wb.classList.remove('show');
+
   const grid=document.getElementById('sgrid');grid.innerHTML='';
   SUBS.forEach(sub=>{
     const s=ss[sub.id]||{};
-    const pct=s.total?Math.round((s.correct||0)/s.total*100):0;
+    const done=s.done||0;
+    // 전체 차시 수는 해당 과목 포스트 목록이 로드된 경우 사용, 아니면 done만 표시
+    const subPosts=ST._subPostCount&&ST._subPostCount[sub.id];
+    const total=subPosts||0;
+    // 링: 전체 차시 중 완료 차시 퍼센트 (전체 수 모르면 0)
+    const pct=total?Math.round(done/total*100):0;
+    // 메타 텍스트: "N차시 완료" 또는 "N / M차시 완료"
+    let metaTxt;
+    if(done===0){
+      metaTxt='아직 학습 전';
+    } else if(total){
+      metaTxt=done+' / '+total+' 차시 완료';
+    } else {
+      metaTxt=done+'차시 완료';
+    }
+    // 링 안 텍스트: 퍼센트 대신 "N강" 표시
     const card=document.createElement('button');card.className='scard';
-    card.style.borderColor=s.total?sub.light:'var(--bdr)';
-    card.innerHTML=`<div class="scard-top"><span style="font-size:24px">${sub.icon}</span><svg width="40" height="40"></svg></div>
-      <div><div class="scard-name">${sub.name}</div>
-      <div class="scard-meta">${s.total?s.total+'문제 · 정답 '+(s.correct||0):'아직 학습 전'}</div></div>`;
-    ring(card.querySelector('svg'),pct,sub.color,40,4);
-    card.onclick=()=>openSub(sub);grid.appendChild(card);
+    card.style.borderColor=done?sub.light:'var(--bdr)';
+    card.innerHTML=`
+      <div class="scard-top">
+        <span style="font-size:24px">${sub.icon}</span>
+        <div style="text-align:center">
+          <svg width="40" height="40" class="ring-svg"></svg>
+          <div style="font-size:10px;color:${sub.color};font-weight:800;margin-top:2px">${done?done+'강':'-'}</div>
+        </div>
+      </div>
+      <div>
+        <div class="scard-name">${sub.name}</div>
+        <div class="scard-meta">${metaTxt}</div>
+      </div>`;
+    // 링은 완료율 표시 (완료 차시 기준)
+    const ringEl=card.querySelector('.ring-svg');
+    if(done>0 && total){
+      ring(ringEl,pct,sub.color,40,4);
+    } else if(done>0){
+      // 전체 수 모르면 링만 색으로 채움 (100%처럼)
+      ring(ringEl,100,sub.light,40,4);
+    } else {
+      ring(ringEl,0,'#E5E7EB',40,4);
+    }
+    card.onclick=()=>openSub(sub);
+    grid.appendChild(card);
   });
   updateNavWrong();
 }
@@ -826,6 +872,10 @@ function renderLessonList(data,sub){
     return{title,link,content,pub,ch,isMock};
   }).sort((a,b)=>{if(a.ch&&b.ch)return a.ch-b.ch;if(a.ch)return-1;if(b.ch)return 1;return a.pub.localeCompare(b.pub);});
   ST.posts=entries;
+  // ★ 전체 차시 수 저장 → 홈 화면 퍼센트 계산에 사용
+  if(!ST._subPostCount) ST._subPostCount={};
+  ST._subPostCount[sub.id]=entries.length;
+
   const done=entries.filter(p=>STATS[p.link]).length;
   const dp=entries.length?Math.round(done/entries.length*100):0;
   document.getElementById('sub-meta').textContent=`전체 ${entries.length}강 · 완료 ${done}강`;
