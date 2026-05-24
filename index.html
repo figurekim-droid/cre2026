@@ -360,12 +360,15 @@ let STATS=lsGet(SK,{}), WRONGS=lsGet(WK,[]);
 let _cbId=0;
 
 function lsGet(k,d){try{return JSON.parse(localStorage.getItem(k))||d;}catch{return d;}}
+
+// ★ _syncing 먼저 선언 (lsSave보다 앞에)
+var _syncing=false;
+
 function lsSave(k,v){
   try{localStorage.setItem(k,JSON.stringify(v));}catch{}
-  // 다운로드 중이면 업로드 안 함 (덮어쓰기 방지)
-  if(typeof _syncing!=='undefined' && _syncing) return;
+  if(_syncing)return; // 다운로드 중에는 업로드 안 함
   clearTimeout(lsSave._t);
-  lsSave._t = setTimeout(function(){ if(typeof _syncUp==='function') _syncUp(); }, 2000);
+  lsSave._t=setTimeout(function(){if(typeof _syncUp==='function')_syncUp();},2000);
 }
 
 // ══════════════════════════════════════════
@@ -1430,61 +1433,84 @@ function showUserMenu() {
   }
 }
 
-// 클라우드 저장
-// ── 클라우드 저장 (업로드)
-var _syncing = false; // syncDown 중에는 syncUp 차단
-function _syncUp() {
-  if (!_cloud || !_user || !_db) return;
-  if (_syncing) return; // 다운로드 중이면 업로드 안 함
-  _db.ref('u/' + _user.uid).set({
+// ══════════════════════════════════════════
+//  클라우드 동기화
+// ══════════════════════════════════════════
+
+// 업로드: 현재 STATS+WRONGS를 클라우드에 저장
+function _syncUp(){
+  if(!_cloud||!_user||!_db||_syncing)return;
+  _db.ref('u/'+_user.uid).set({
     s: JSON.stringify(STATS),
     w: JSON.stringify(WRONGS),
     t: Date.now()
-  }).catch(function(e) { console.warn('저장 실패:', e.message); });
+  }).then(function(){
+    console.log('☁️ 업로드 완료');
+  }).catch(function(e){
+    console.warn('업로드 실패:',e.message);
+  });
 }
 
-// ── 클라우드에서 불러오기 (다운로드)
-function _syncDown() {
-  if (!_user || !_db) return;
-  _syncing = true; // 다운로드 시작 → syncUp 차단
-  _db.ref('u/' + _user.uid).once('value')
-    .then(function(snap) {
-      var d = snap.val();
-      if (d && d.t) {
-        // 클라우드 데이터가 있을 때만 병합
-        var cloudStats  = {};
-        var cloudWrongs = [];
-        try { if (d.s) cloudStats  = JSON.parse(d.s); } catch(e){}
-        try { if (d.w) cloudWrongs = JSON.parse(d.w); } catch(e){}
+// 다운로드: 로그인 직후 클라우드 → 로컬로 완전 동기화
+// ★ 클라우드 데이터를 기준으로 로컬을 업데이트 (다른 기기 데이터 반영)
+function _syncDown(){
+  if(!_user||!_db)return;
+  _syncing=true;
+  _db.ref('u/'+_user.uid).once('value')
+    .then(function(snap){
+      var d=snap.val();
+      if(d&&d.t){
+        var cloudStats={}, cloudWrongs=[];
+        try{if(d.s)cloudStats=JSON.parse(d.s);}catch(e){}
+        try{if(d.w)cloudWrongs=JSON.parse(d.w);}catch(e){}
 
-        // ── STATS 병합: 클라우드와 로컬 중 더 최신 데이터 유지
-        Object.keys(cloudStats).forEach(function(k) {
-          if (!STATS[k]) {
-            STATS[k] = cloudStats[k];
+        // ★ 클라우드 STATS를 기준으로, 로컬에만 있는 것도 병합
+        var merged=Object.assign({},cloudStats);
+        Object.keys(STATS).forEach(function(k){
+          if(!merged[k]){
+            // 로컬에만 있는 차시 → 추가
+            merged[k]=STATS[k];
           }
+          // 둘 다 있으면 클라우드 우선 (다른 기기에서 푼 것 보존)
         });
+        STATS=merged;
 
-        // ── WRONGS 병합: 중복 제거하며 합치기
-        var existing = new Set(WRONGS.map(function(w){ return w.lesson+'_'+w.num; }));
-        cloudWrongs.forEach(function(w) {
-          if (!existing.has(w.lesson+'_'+w.num)) {
-            WRONGS.push(w);
-            existing.add(w.lesson+'_'+w.num);
-          }
+        // ★ WRONGS: 클라우드+로컬 완전 병합 (중복 제거)
+        var wMap={};
+        // 클라우드 먼저
+        cloudWrongs.forEach(function(w){
+          var key=w.lesson+'_'+w.num;
+          wMap[key]=w;
         });
+        // 로컬 추가 (클라우드에 없는 것만)
+        WRONGS.forEach(function(w){
+          var key=w.lesson+'_'+w.num;
+          if(!wMap[key])wMap[key]=w;
+        });
+        WRONGS=Object.values(wMap);
 
-        // lsSave 대신 localStorage 직접 저장 (syncUp 재트리거 방지)
-        try { localStorage.setItem(SK, JSON.stringify(STATS)); } catch(e){}
-        try { localStorage.setItem(WK, JSON.stringify(WRONGS)); } catch(e){}
+        // localStorage에 직접 저장 (lsSave 통하면 syncUp 재트리거됨)
+        try{localStorage.setItem(SK,JSON.stringify(STATS));}catch(e){}
+        try{localStorage.setItem(WK,JSON.stringify(WRONGS));}catch(e){}
 
         renderHome();
         updateNavWrong();
-        showToast('☁️ 동기화 완료!');
+        showToast('☁️ 동기화 완료! ('+Object.keys(STATS).length+'차시, 오답'+WRONGS.length+'개)');
+      } else {
+        // 클라우드에 데이터 없음 → 로컬 데이터를 클라우드에 업로드
+        if(Object.keys(STATS).length>0||WRONGS.length>0){
+          _syncing=false;
+          _syncUp();
+          return;
+        }
       }
     })
-    .catch(function(e) { console.warn('동기화 실패:', e.message); })
-    .finally(function() {
-      _syncing = false; // 다운로드 완료 → syncUp 재허용
+    .catch(function(e){
+      console.warn('동기화 실패:',e.message);
+      showToast('⚠️ 동기화 실패: '+e.message);
+    })
+    .finally(function(){
+      _syncing=false;
     });
 }
 
