@@ -1188,55 +1188,50 @@ window.addEventListener('load', function() {
     // 로그인 지속성 LOCAL 설정
     _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
 
-    // onAuthStateChanged 단 하나만 등록
-    _auth.onAuthStateChanged(function(user) {
-      if (user) {
-        // ── 로그인 상태
-        _user  = user;
-        _cloud = true;
-        _setNavBtn(user);
-        _hideModal();
-        localStorage.setItem(LOG_KEY, '1');
-        localStorage.removeItem(SKIP_KEY);
-        if (!_syncDone) { _syncDone = true; _syncDown(); }
-      } else {
-        // ── 로그아웃 / 미로그인 상태
-        _user  = null;
-        _cloud = false;
-        _setNavBtn(null);
-
-        var skipped = localStorage.getItem(SKIP_KEY);
-        var logged  = localStorage.getItem(LOG_KEY);
-
-        if (skipped) {
-          // "로그인 없이 계속" 선택한 경우 → 모달 안 띄움
-          return;
-        }
-        if (logged) {
-          // 이전에 로그인했던 경우 → Firebase 세션 복원 대기
-          // redirect 결과나 토큰 갱신으로 곧 user가 들어올 것
-          // 모달 절대 안 띄움
-          return;
-        }
-        // 완전히 처음인 경우만 모달 표시
-        setTimeout(function() {
-          if (!_user) _showModal();
-        }, 1500);
-      }
-    });
-
-    // Google redirect 결과 처리 (로그인 후 돌아왔을 때)
+    // ★ 핵심: getRedirectResult를 먼저 처리한 뒤 onAuthStateChanged 등록
+    //   Google redirect로 돌아왔을 때 user를 확보한 다음 감시 시작
     _auth.getRedirectResult().then(function(r) {
       if (r && r.user) {
+        // Google redirect 성공 → 즉시 LOG_KEY 저장
+        localStorage.setItem(LOG_KEY, '1');
+        localStorage.removeItem(SKIP_KEY);
         showToast('✅ Google 로그인 완료!');
       }
     }).catch(function(e) {
-      console.warn('redirect:', e.code);
+      console.warn('redirect 결과:', e.code);
+    }).finally(function() {
+      // getRedirectResult 완료 후 onAuthStateChanged 등록
+      _auth.onAuthStateChanged(function(user) {
+        if (user) {
+          _user  = user;
+          _cloud = true;
+          _setNavBtn(user);
+          _hideModal();
+          localStorage.setItem(LOG_KEY, '1');
+          localStorage.removeItem(SKIP_KEY);
+          if (!_syncDone) { _syncDone = true; _syncDown(); }
+        } else {
+          _user  = null;
+          _cloud = false;
+          _setNavBtn(null);
+
+          var skipped = localStorage.getItem(SKIP_KEY);
+          var logged  = localStorage.getItem(LOG_KEY);
+
+          // skip 선택 or 이전 로그인 이력 있으면 → 모달 절대 안 띄움
+          if (skipped || logged) return;
+
+          // 완전 처음인 경우만 모달 표시
+          setTimeout(function() {
+            if (!_user) _showModal();
+          }, 1000);
+        }
+      });
     });
 
   } catch(e) {
     console.error('Firebase 초기화 실패:', e.message);
-    if (!localStorage.getItem(SKIP_KEY)) {
+    if (!localStorage.getItem(SKIP_KEY) && !localStorage.getItem(LOG_KEY)) {
       setTimeout(function(){ _showModal(); }, 1000);
     }
   }
@@ -1288,10 +1283,15 @@ function doGoogleLogin() {
   if (!_auth) { _showErr('초기화 중입니다. 잠시 후 다시 눌러주세요.'); return; }
   var p = new firebase.auth.GoogleAuthProvider();
   p.setCustomParameters({ prompt: 'select_account' });
+  // ★ redirect 전에 미리 표시 저장 → 돌아왔을 때 모달 안 뜸
+  localStorage.setItem(LOG_KEY, '1');
+  localStorage.removeItem(SKIP_KEY);
   _auth.signInWithRedirect(p).catch(function() {
+    // redirect 실패시 popup 시도
     _auth.signInWithPopup(p).then(function(r) {
       if (r.user) _loginOK(r.user, 'Google');
     }).catch(function(e2) {
+      localStorage.removeItem(LOG_KEY); // 실패했으니 다시 제거
       _showErr('Google 오류: ' + e2.message);
     });
   });
