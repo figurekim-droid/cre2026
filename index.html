@@ -358,16 +358,23 @@ const FB_CFG = {
 let db=null, fbAuth=null, fbUser=null, useCloud=false;
 
 function initFirebase(){
+  // Firebase SDK가 로드됐는지 확인
+  if(typeof firebase === 'undefined'){
+    console.warn('Firebase SDK 미로드 - 오프라인 모드');
+    return;
+  }
   try{
-    firebase.initializeApp(FB_CFG);
+    // 이미 초기화된 앱이 있으면 재사용
+    let app;
+    try{ app=firebase.app(); }
+    catch(e){ app=firebase.initializeApp(FB_CFG); }
+
     db     = firebase.firestore();
     fbAuth = firebase.auth();
 
     // ★ redirect 결과를 먼저 처리한 뒤 auth 상태 감시
-    // getRedirectResult()가 완료될 때까지 모달 표시 보류
     fbAuth.getRedirectResult().then(result=>{
       if(result && result.user){
-        // Google redirect 로그인 성공
         fbUser=result.user;
         useCloud=true;
         setUserNav(fbUser);
@@ -379,11 +386,10 @@ function initFirebase(){
       }
     }).catch(e=>{
       if(e.code==='auth/unauthorized-domain'){
-        showErr('도메인 미승인: Firebase Console → Authentication → Settings → 승인된 도메인에 내 GitHub Pages 주소 추가 필요');
+        showErr('도메인 미승인: Firebase Console → Authentication → Settings → 승인된 도메인에 GitHub Pages 주소 추가 필요');
       }
-      console.warn('Redirect result:', e.code);
+      console.warn('Redirect result:', e.code, e.message);
     }).finally(()=>{
-      // redirect 처리 완료 후 auth 상태 감시 시작
       fbAuth.onAuthStateChanged(user=>{
         fbUser=user;
         if(user){
@@ -391,14 +397,13 @@ function initFirebase(){
           setUserNav(user);
           localStorage.setItem('cre26_logged','1');
           localStorage.removeItem('cre26_skip');
-          closeModal(); // 혹시 모달 열려있으면 닫기
+          closeModal();
           if(!syncFromCloud._done){
             syncFromCloud._done=true;
             syncFromCloud();
           }
         } else {
           setUserNav(null);
-          // 로그인 이력이 없고 skip도 안 했을 때만 모달 표시
           const wasLogged = localStorage.getItem('cre26_logged');
           const skipped   = localStorage.getItem('cre26_skip');
           if(!wasLogged && !skipped){
@@ -407,7 +412,10 @@ function initFirebase(){
         }
       });
     });
-  }catch(e){ console.warn('Firebase init:',e.message); }
+  }catch(e){
+    console.warn('Firebase init error:',e.message);
+    fbAuth=null; db=null;
+  }
 }
 
 function setUserNav(user){
@@ -424,20 +432,37 @@ function setUserNav(user){
 }
 
 async function doGoogleLogin(){
+  // fbAuth null 체크
+  if(!fbAuth){
+    showErr('Firebase 초기화 중입니다. 잠시 후 다시 시도하세요.');
+    return;
+  }
   try{
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
-    // redirect 방식 사용 (로컬 파일/모바일에서 팝업 차단 문제 없음)
+    // signInWithRedirect 사용
     await fbAuth.signInWithRedirect(provider);
-    // redirect 후 페이지가 새로고침됨 → getRedirectResult에서 처리
   }catch(e){
-    showErr('Google 로그인 오류: ' + e.message);
-    console.error('Google login error:', e);
+    // redirect 실패 시 popup 으로 재시도
+    try{
+      const provider2 = new firebase.auth.GoogleAuthProvider();
+      const result = await fbAuth.signInWithPopup(provider2);
+      if(result.user){
+        localStorage.setItem('cre26_logged','1');
+        localStorage.removeItem('cre26_skip');
+        closeModal();
+        showToast('✅ Google 로그인 성공!');
+      }
+    }catch(e2){
+      showErr('Google 로그인 오류: ' + e2.message);
+      console.error('Google login error:', e2);
+    }
   }
 }
 
 async function doEmailLogin(){
+  if(!fbAuth){ showErr('Firebase 초기화 중입니다. 잠시 후 다시 시도하세요.'); return; }
   const email=document.getElementById('inp-email').value.trim();
   const pw   =document.getElementById('inp-pw').value;
   if(!email||pw.length<6){ showErr('이메일과 비밀번호(6자 이상)를 입력하세요.'); return; }
