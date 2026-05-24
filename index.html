@@ -205,8 +205,8 @@ button:active{opacity:.75;transform:scale(.97);}
 </style>
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -342,7 +342,7 @@ const BLOG='https://life-thru-kr.blogspot.com';
 const SK='cre26_stats_v6', WK='cre26_wrongs_v6';
 
 // ══════════════════════════════════════════
-//  Firebase 초기화 및 클라우드 동기화
+//  Firebase — SDK onload 후 초기화
 // ══════════════════════════════════════════
 const FB_CFG = {
   apiKey: "AIzaSyBSmnAKzscPBC52OCvGuKytCpGlnJjE4qs",
@@ -355,75 +355,77 @@ const FB_CFG = {
   measurementId: "G-316E7Q116Z"
 };
 
-let db=null, fbAuth=null, fbUser=null, useCloud=false;
+// 전역 상태
+let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, useCloud=false;
 
+// ── Firebase 초기화 (SDK 완전 로드 확인 후 실행)
 function initFirebase(){
-  // Firebase SDK가 로드됐는지 확인
-  if(typeof firebase === 'undefined'){
-    console.warn('Firebase SDK 미로드 - 오프라인 모드');
+  // SDK 로드 확인
+  if(typeof firebase==='undefined'||typeof firebase.auth==='undefined'){
+    console.warn('Firebase SDK 아직 로드 안됨, 500ms 후 재시도');
+    setTimeout(initFirebase, 500);
     return;
   }
   try{
-    // 이미 초기화된 앱이 있으면 재사용
-    let app;
-    try{ app=firebase.app(); }
-    catch(e){ app=firebase.initializeApp(FB_CFG); }
+    // 이미 초기화된 경우 재사용
+    try{ fbApp=firebase.app(); }
+    catch(e){ fbApp=firebase.initializeApp(FB_CFG); }
 
-    db     = firebase.firestore();
     fbAuth = firebase.auth();
+    fbDb   = firebase.database();
 
-    // ★ redirect 결과를 먼저 처리한 뒤 auth 상태 감시
-    fbAuth.getRedirectResult().then(result=>{
-      if(result && result.user){
-        fbUser=result.user;
-        useCloud=true;
-        setUserNav(fbUser);
-        closeModal();
-        localStorage.setItem('cre26_logged','1');
-        localStorage.removeItem('cre26_skip');
-        syncFromCloud();
-        showToast('✅ Google 로그인 성공! 동기화 중...');
-      }
-    }).catch(e=>{
-      if(e.code==='auth/unauthorized-domain'){
-        showErr('도메인 미승인: Firebase Console → Authentication → Settings → 승인된 도메인에 GitHub Pages 주소 추가 필요');
-      }
-      console.warn('Redirect result:', e.code, e.message);
-    }).finally(()=>{
-      fbAuth.onAuthStateChanged(user=>{
-        fbUser=user;
-        if(user){
-          useCloud=true;
-          setUserNav(user);
-          localStorage.setItem('cre26_logged','1');
-          localStorage.removeItem('cre26_skip');
-          closeModal();
-          if(!syncFromCloud._done){
-            syncFromCloud._done=true;
-            syncFromCloud();
-          }
-        } else {
-          setUserNav(null);
-          const wasLogged = localStorage.getItem('cre26_logged');
-          const skipped   = localStorage.getItem('cre26_skip');
-          if(!wasLogged && !skipped){
-            setTimeout(showLoginModal, 800);
-          }
+    // Google redirect 결과 처리
+    fbAuth.getRedirectResult()
+      .then(result=>{
+        if(result&&result.user){
+          onLoginSuccess(result.user,'Google');
         }
+      })
+      .catch(e=>{
+        console.warn('getRedirectResult:', e.code);
+      })
+      .finally(()=>{
+        // Auth 상태 감시
+        fbAuth.onAuthStateChanged(user=>{
+          if(user){
+            if(!fbUser){          // 새로 로그인된 경우만 처리
+              onLoginSuccess(user,'');
+            }
+          } else {
+            fbUser=null; useCloud=false;
+            setUserNav(null);
+            const logged  = localStorage.getItem('cre26_logged');
+            const skipped = localStorage.getItem('cre26_skip');
+            if(!logged&&!skipped) setTimeout(showLoginModal,800);
+          }
+        });
       });
-    });
+
   }catch(e){
-    console.warn('Firebase init error:',e.message);
-    fbAuth=null; db=null;
+    console.error('Firebase 초기화 실패:', e);
+    fbAuth=null; fbDb=null;
   }
 }
 
+// 로그인 성공 공통 처리
+function onLoginSuccess(user, method){
+  fbUser  = user;
+  useCloud= true;
+  setUserNav(user);
+  closeModal();
+  localStorage.setItem('cre26_logged','1');
+  localStorage.removeItem('cre26_skip');
+  syncFromCloud();
+  if(method) showToast('✅ '+method+' 로그인 성공! 동기화 중...');
+}
+
+// ── 사용자 버튼 상태
 function setUserNav(user){
   const btn=document.getElementById('nav-user');
   if(!btn)return;
   if(user){
-    const name=(user.displayName||user.email||'유저').slice(0,8);
-    btn.textContent='👤 '+name;
+    const nm=(user.displayName||user.email||'유저').slice(0,8);
+    btn.textContent='👤 '+nm;
     btn.style.cssText='padding:7px 13px;border-radius:10px;font-size:14px;font-weight:700;background:#E8F5E9;color:#1B5E20;border:none;cursor:pointer';
   }else{
     btn.textContent='👤 로그인';
@@ -431,66 +433,55 @@ function setUserNav(user){
   }
 }
 
+// ── Google 로그인
 async function doGoogleLogin(){
-  // fbAuth null 체크
   if(!fbAuth){
-    showErr('Firebase 초기화 중입니다. 잠시 후 다시 시도하세요.');
+    showErr('Firebase 로딩 중... 잠시 후 다시 눌러주세요.');
     return;
   }
   try{
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('email');
-    provider.addScope('profile');
-    // signInWithRedirect 사용
+    const provider=new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt:'select_account'});
+    // redirect 방식 (모바일/GitHub Pages 환경에 적합)
     await fbAuth.signInWithRedirect(provider);
   }catch(e){
-    // redirect 실패 시 popup 으로 재시도
+    // redirect 실패 시 popup 재시도
     try{
-      const provider2 = new firebase.auth.GoogleAuthProvider();
-      const result = await fbAuth.signInWithPopup(provider2);
-      if(result.user){
-        localStorage.setItem('cre26_logged','1');
-        localStorage.removeItem('cre26_skip');
-        closeModal();
-        showToast('✅ Google 로그인 성공!');
-      }
+      const provider2=new firebase.auth.GoogleAuthProvider();
+      provider2.setCustomParameters({prompt:'select_account'});
+      const result=await fbAuth.signInWithPopup(provider2);
+      if(result.user) onLoginSuccess(result.user,'Google');
     }catch(e2){
-      showErr('Google 로그인 오류: ' + e2.message);
-      console.error('Google login error:', e2);
+      showErr('Google 로그인 실패: '+e2.message);
+      console.error(e2);
     }
   }
 }
 
+// ── 이메일 로그인
 async function doEmailLogin(){
-  if(!fbAuth){ showErr('Firebase 초기화 중입니다. 잠시 후 다시 시도하세요.'); return; }
+  if(!fbAuth){ showErr('Firebase 로딩 중... 잠시 후 다시 눌러주세요.'); return; }
   const email=document.getElementById('inp-email').value.trim();
   const pw   =document.getElementById('inp-pw').value;
   if(!email||pw.length<6){ showErr('이메일과 비밀번호(6자 이상)를 입력하세요.'); return; }
   try{
-    await fbAuth.signInWithEmailAndPassword(email,pw);
-    localStorage.setItem('cre26_logged','1');
-    localStorage.removeItem('cre26_skip');
-    closeModal();
-    showToast('✅ 로그인 완료!');
+    const result=await fbAuth.signInWithEmailAndPassword(email,pw);
+    onLoginSuccess(result.user,'이메일');
   }catch(e){
-    const newUserCodes=['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials'];
-    if(newUserCodes.some(c=>e.code===c)){
+    const isNew=['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials'];
+    if(isNew.some(c=>e.code===c)){
       try{
-        await fbAuth.createUserWithEmailAndPassword(email,pw);
-        localStorage.setItem('cre26_logged','1');
-        localStorage.removeItem('cre26_skip');
-        closeModal();
-        showToast('✅ 회원가입 및 로그인 완료!');
-      }catch(e2){
-        showErr('회원가입 실패: '+e2.message);
-      }
+        const r2=await fbAuth.createUserWithEmailAndPassword(email,pw);
+        onLoginSuccess(r2.user,'이메일');
+        showToast('✅ 회원가입 완료!');
+      }catch(e2){ showErr('회원가입 실패: '+e2.message); }
     }else if(e.code==='auth/wrong-password'){
       showErr('비밀번호가 틀렸습니다.');
     }else if(e.code==='auth/too-many-requests'){
-      showErr('로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요.');
+      showErr('잠시 후 다시 시도하세요.');
     }else{
       showErr('오류: '+e.message);
-      console.error('Email login error:', e);
+      console.error(e);
     }
   }
 }
@@ -501,11 +492,11 @@ function showErr(msg){
 }
 function closeModal(){
   const m=document.getElementById('modal-login');
-  if(m)m.style.display='none';
+  if(m) m.style.display='none';
 }
 function showLoginModal(){
   const m=document.getElementById('modal-login');
-  if(m)m.style.display='flex';
+  if(m) m.style.display='flex';
 }
 function skipLogin(){
   useCloud=false;
@@ -516,10 +507,11 @@ function skipLogin(){
 }
 function showUserMenu(){
   if(fbUser){
-    if(confirm('👤 '+fbUser.email+'\n\n로그아웃 하시겠습니까?')){
+    if(confirm('👤 '+(fbUser.email||fbUser.displayName)+'
+
+로그아웃 하시겠습니까?')){
       fbAuth.signOut();
-      useCloud=false;
-      fbUser=null;
+      fbUser=null; useCloud=false;
       localStorage.removeItem('cre26_logged');
       setUserNav(null);
       showToast('로그아웃 되었습니다');
@@ -527,41 +519,42 @@ function showUserMenu(){
   }else{ showLoginModal(); }
 }
 
-// 클라우드 저장 (Firestore)
+// ── Realtime Database로 저장 (Firestore 대신 — 더 단순하고 REST 친화적)
 async function saveToCloud(){
-  if(!useCloud||!fbUser||!db)return;
+  if(!useCloud||!fbUser||!fbDb) return;
   try{
-    await db.collection('users').doc(fbUser.uid).set({
+    await fbDb.ref('users/'+fbUser.uid).set({
       stats : JSON.stringify(STATS),
       wrongs: JSON.stringify(WRONGS),
-      updated: new Date().toISOString()
-    },{merge:true});
-  }catch(e){ console.warn('Save fail:',e); }
+      at    : Date.now()
+    });
+  }catch(e){ console.warn('저장 실패:', e.message); }
 }
 
-// 클라우드에서 불러오기
 async function syncFromCloud(){
-  if(!fbUser||!db)return;
+  if(!fbUser||!fbDb) return;
   try{
-    const doc=await db.collection('users').doc(fbUser.uid).get();
-    if(doc.exists){
-      const d=doc.data();
+    const snap=await fbDb.ref('users/'+fbUser.uid).once('value');
+    const d=snap.val();
+    if(d){
       if(d.stats)  STATS =JSON.parse(d.stats);
       if(d.wrongs) WRONGS=JSON.parse(d.wrongs);
       lsSave(SK,STATS); lsSave(WK,WRONGS);
       renderHome(); updateNavWrong();
       showToast('☁️ 동기화 완료!');
     }
-  }catch(e){ console.warn('Sync fail:',e); }
+  }catch(e){ console.warn('동기화 실패:', e.message); }
 }
 
+// 토스트 메시지
 function showToast(msg){
   const t=document.getElementById('toast');
-  if(!t)return;
+  if(!t) return;
   t.textContent=msg; t.style.display='block'; t.style.opacity='1';
   clearTimeout(t._t);
-  t._t=setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.style.display='none',400); },2500);
+  t._t=setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.style.display='none',300); },2500);
 }
+
 const EXAM=new Date('2026-10-31');
 const SUBS=[
   {id:'공법',       name:'부동산공법',      icon:'🏗️',color:'#1B5E20',light:'#E8F5E9'},
@@ -1377,8 +1370,10 @@ function updateNavWrong(){
 
 // INIT
 document.addEventListener('DOMContentLoaded',()=>{
-  updateNavWrong();renderHome();buildTabs();
-  initFirebase(); // 로그인 모달 표시는 initFirebase 내부에서 처리
+  updateNavWrong();
+  renderHome();
+  buildTabs();
+  initFirebase();
 });
 </script>
 
