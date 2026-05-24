@@ -362,13 +362,50 @@ function initFirebase(){
     firebase.initializeApp(FB_CFG);
     db     = firebase.firestore();
     fbAuth = firebase.auth();
-    // redirect 결과 먼저 처리
-    handleRedirectResult();
 
-    fbAuth.onAuthStateChanged(user=>{
-      fbUser=user;
-      if(user){ useCloud=true; setUserNav(user); syncFromCloud(); }
-      else    { setUserNav(null); }
+    // ★ redirect 결과를 먼저 처리한 뒤 auth 상태 감시
+    // getRedirectResult()가 완료될 때까지 모달 표시 보류
+    fbAuth.getRedirectResult().then(result=>{
+      if(result && result.user){
+        // Google redirect 로그인 성공
+        fbUser=result.user;
+        useCloud=true;
+        setUserNav(fbUser);
+        closeModal();
+        localStorage.setItem('cre26_logged','1');
+        localStorage.removeItem('cre26_skip');
+        syncFromCloud();
+        showToast('✅ Google 로그인 성공! 동기화 중...');
+      }
+    }).catch(e=>{
+      if(e.code==='auth/unauthorized-domain'){
+        showErr('도메인 미승인: Firebase Console → Authentication → Settings → 승인된 도메인에 내 GitHub Pages 주소 추가 필요');
+      }
+      console.warn('Redirect result:', e.code);
+    }).finally(()=>{
+      // redirect 처리 완료 후 auth 상태 감시 시작
+      fbAuth.onAuthStateChanged(user=>{
+        fbUser=user;
+        if(user){
+          useCloud=true;
+          setUserNav(user);
+          localStorage.setItem('cre26_logged','1');
+          localStorage.removeItem('cre26_skip');
+          closeModal(); // 혹시 모달 열려있으면 닫기
+          if(!syncFromCloud._done){
+            syncFromCloud._done=true;
+            syncFromCloud();
+          }
+        } else {
+          setUserNav(null);
+          // 로그인 이력이 없고 skip도 안 했을 때만 모달 표시
+          const wasLogged = localStorage.getItem('cre26_logged');
+          const skipped   = localStorage.getItem('cre26_skip');
+          if(!wasLogged && !skipped){
+            setTimeout(showLoginModal, 800);
+          }
+        }
+      });
     });
   }catch(e){ console.warn('Firebase init:',e.message); }
 }
@@ -400,39 +437,23 @@ async function doGoogleLogin(){
   }
 }
 
-// redirect 후 결과 처리
-async function handleRedirectResult(){
-  if(!fbAuth) return;
-  try{
-    const result = await fbAuth.getRedirectResult();
-    if(result && result.user){
-      closeModal();
-      showToast('✅ Google 로그인 성공!');
-    }
-  }catch(e){
-    if(e.code !== 'auth/no-auth-event'){
-      console.error('Redirect result error:', e);
-      // unauthorized-domain 오류 처리
-      if(e.code === 'auth/unauthorized-domain'){
-        showErr('이 도메인이 Firebase에 승인되지 않았습니다.\nFirebase Console → Authentication → Settings → 승인된 도메인에 추가 필요');
-        showLoginModal();
-      }
-    }
-  }
-}
-
 async function doEmailLogin(){
   const email=document.getElementById('inp-email').value.trim();
   const pw   =document.getElementById('inp-pw').value;
   if(!email||pw.length<6){ showErr('이메일과 비밀번호(6자 이상)를 입력하세요.'); return; }
   try{
     await fbAuth.signInWithEmailAndPassword(email,pw);
+    localStorage.setItem('cre26_logged','1');
+    localStorage.removeItem('cre26_skip');
     closeModal();
+    showToast('✅ 로그인 완료!');
   }catch(e){
     const newUserCodes=['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials'];
     if(newUserCodes.some(c=>e.code===c)){
       try{
         await fbAuth.createUserWithEmailAndPassword(email,pw);
+        localStorage.setItem('cre26_logged','1');
+        localStorage.removeItem('cre26_skip');
         closeModal();
         showToast('✅ 회원가입 및 로그인 완료!');
       }catch(e2){
@@ -464,12 +485,19 @@ function showLoginModal(){
 function skipLogin(){
   useCloud=false;
   localStorage.setItem('cre26_skip','1');
+  localStorage.removeItem('cre26_logged');
   closeModal();
+  showToast('이 기기에만 저장됩니다');
 }
 function showUserMenu(){
   if(fbUser){
-    if(confirm(fbUser.email+'\n\n로그아웃 하시겠습니까?')){
-      fbAuth.signOut(); useCloud=false; setUserNav(null);
+    if(confirm('👤 '+fbUser.email+'\n\n로그아웃 하시겠습니까?')){
+      fbAuth.signOut();
+      useCloud=false;
+      fbUser=null;
+      localStorage.removeItem('cre26_logged');
+      setUserNav(null);
+      showToast('로그아웃 되었습니다');
     }
   }else{ showLoginModal(); }
 }
@@ -1324,8 +1352,9 @@ function updateNavWrong(){
 
 // INIT
 document.addEventListener('DOMContentLoaded',()=>{
-  initFirebase();
-  if(!localStorage.getItem('cre26_skip')) setTimeout(showLoginModal,1200);updateNavWrong();renderHome();buildTabs();});
+  updateNavWrong();renderHome();buildTabs();
+  initFirebase(); // 로그인 모달 표시는 initFirebase 내부에서 처리
+});
 </script>
 
 <!-- ══ 로그인 모달 ══ -->
