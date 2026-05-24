@@ -362,6 +362,8 @@ let _cbId=0;
 function lsGet(k,d){try{return JSON.parse(localStorage.getItem(k))||d;}catch{return d;}}
 function lsSave(k,v){
   try{localStorage.setItem(k,JSON.stringify(v));}catch{}
+  // 다운로드 중이면 업로드 안 함 (덮어쓰기 방지)
+  if(typeof _syncing!=='undefined' && _syncing) return;
   clearTimeout(lsSave._t);
   lsSave._t = setTimeout(function(){ if(typeof _syncUp==='function') _syncUp(); }, 2000);
 }
@@ -1429,8 +1431,11 @@ function showUserMenu() {
 }
 
 // 클라우드 저장
+// ── 클라우드 저장 (업로드)
+var _syncing = false; // syncDown 중에는 syncUp 차단
 function _syncUp() {
   if (!_cloud || !_user || !_db) return;
+  if (_syncing) return; // 다운로드 중이면 업로드 안 함
   _db.ref('u/' + _user.uid).set({
     s: JSON.stringify(STATS),
     w: JSON.stringify(WRONGS),
@@ -1438,23 +1443,49 @@ function _syncUp() {
   }).catch(function(e) { console.warn('저장 실패:', e.message); });
 }
 
-// 클라우드에서 불러오기
+// ── 클라우드에서 불러오기 (다운로드)
 function _syncDown() {
   if (!_user || !_db) return;
+  _syncing = true; // 다운로드 시작 → syncUp 차단
   _db.ref('u/' + _user.uid).once('value')
     .then(function(snap) {
       var d = snap.val();
-      if (d) {
-        try { if (d.s) STATS  = JSON.parse(d.s); } catch(e){}
-        try { if (d.w) WRONGS = JSON.parse(d.w); } catch(e){}
-        lsSave('cre26_stats_v5', STATS);
-        lsSave('cre26_wrongs_v5', WRONGS);
+      if (d && d.t) {
+        // 클라우드 데이터가 있을 때만 병합
+        var cloudStats  = {};
+        var cloudWrongs = [];
+        try { if (d.s) cloudStats  = JSON.parse(d.s); } catch(e){}
+        try { if (d.w) cloudWrongs = JSON.parse(d.w); } catch(e){}
+
+        // ── STATS 병합: 클라우드와 로컬 중 더 최신 데이터 유지
+        Object.keys(cloudStats).forEach(function(k) {
+          if (!STATS[k]) {
+            STATS[k] = cloudStats[k];
+          }
+        });
+
+        // ── WRONGS 병합: 중복 제거하며 합치기
+        var existing = new Set(WRONGS.map(function(w){ return w.lesson+'_'+w.num; }));
+        cloudWrongs.forEach(function(w) {
+          if (!existing.has(w.lesson+'_'+w.num)) {
+            WRONGS.push(w);
+            existing.add(w.lesson+'_'+w.num);
+          }
+        });
+
+        // lsSave 대신 localStorage 직접 저장 (syncUp 재트리거 방지)
+        try { localStorage.setItem(SK, JSON.stringify(STATS)); } catch(e){}
+        try { localStorage.setItem(WK, JSON.stringify(WRONGS)); } catch(e){}
+
         renderHome();
         updateNavWrong();
         showToast('☁️ 동기화 완료!');
       }
     })
-    .catch(function(e) { console.warn('동기화 실패:', e.message); });
+    .catch(function(e) { console.warn('동기화 실패:', e.message); })
+    .finally(function() {
+      _syncing = false; // 다운로드 완료 → syncUp 재허용
+    });
 }
 
 // 토스트
