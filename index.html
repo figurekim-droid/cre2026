@@ -1172,44 +1172,39 @@ var FB_CFG={
   appId:"1:278315977222:web:03a31e2c727d2ae80e9187"
 };
 
-// _auth 할당 완료까지 기다리는 Promise
-var _fbReadyResolve;
-var _fbReady = new Promise(function(resolve){ _fbReadyResolve = resolve; });
-
+// ★ 단순화: Promise 제거, 직접 초기화
 function _fbInit(){
-  // SDK 로드 확인 후 초기화
-  (function waitSDK(){
-    if(typeof firebase==='undefined' || typeof firebase.auth==='undefined'){
-      setTimeout(waitSDK, 200); return;
-    }
-    try{
-      var app = firebase.initializeApp(FB_CFG);
-      _auth = firebase.auth(app);
-      _db   = firebase.database(app);
-      _fbReadyResolve(); // ★ _auth 할당 완료 → Promise resolve
-      _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
-      _auth.onAuthStateChanged(function(user){
-        if(user){
-          _user=user; _cloud=true;
-          _setNav(user);
-          _hideModal();
-          localStorage.setItem(FB_LOG,'1');
-          localStorage.removeItem(FB_SKIP);
-          if(!_syncDone){_syncDone=true;_syncDown();}
-        }else{
-          _user=null; _cloud=false;
-          _setNav(null);
-          if(localStorage.getItem(FB_SKIP)||localStorage.getItem(FB_LOG))return;
-          setTimeout(function(){if(!_user)_showModal();},1000);
-        }
-      });
-    }catch(e){
-      console.error('FB init 실패:',e.message);
-      _fbReadyResolve(); // 실패해도 resolve (무한 대기 방지)
-      if(!localStorage.getItem(FB_SKIP)&&!localStorage.getItem(FB_LOG))
-        setTimeout(_showModal,1000);
-    }
-  })();
+  // Firebase SDK는 <head>에서 이미 로드됨
+  if(typeof firebase==='undefined'){
+    console.error('Firebase SDK 로드 안됨');
+    return;
+  }
+  try{
+    var app = firebase.initializeApp(FB_CFG);
+    _auth   = firebase.auth(app);
+    _db     = firebase.database(app);
+    _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
+    _auth.onAuthStateChanged(function(user){
+      if(user){
+        _user=user; _cloud=true;
+        _setNav(user);
+        _hideModal();
+        localStorage.setItem(FB_LOG,'1');
+        localStorage.removeItem(FB_SKIP);
+        if(!_syncDone){_syncDone=true;_syncDown();}
+      }else{
+        _user=null; _cloud=false;
+        _setNav(null);
+        if(localStorage.getItem(FB_SKIP)||localStorage.getItem(FB_LOG))return;
+        setTimeout(function(){if(!_user)_showModal();},1000);
+      }
+    });
+    console.log('Firebase 초기화 완료');
+  }catch(e){
+    console.error('FB init 실패:',e.message);
+    if(!localStorage.getItem(FB_SKIP)&&!localStorage.getItem(FB_LOG))
+      setTimeout(_showModal,1000);
+  }
 }
 
 function _setNav(user){
@@ -1239,50 +1234,72 @@ function _showErr(msg){
 }
 function showLoginModal(){_showModal();}
 
-// Google 로그인 (popup) - _auth 준비 완료 후 실행
+// Google 로그인
 function doGoogleLogin(){
-  _fbReady.then(function(){
-    if(!_auth){
-      // _fbReady가 resolve됐는데 _auth가 없으면 초기화 실패
-      _showErr('Firebase 초기화에 실패했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.');
-      return;
-    }
-    var p=new firebase.auth.GoogleAuthProvider();
-    p.setCustomParameters({prompt:'select_account'});
-    _auth.signInWithPopup(p)
-      .then(function(r){if(r.user)showToast('✅ Google 로그인 완료!');})
-      .catch(function(e){
-        if(e.code!=='auth/popup-closed-by-user')
-          _showErr('Google 오류: '+e.message);
-      });
-  });
+  if(!_auth){
+    // _auth 없으면 재시도 (최대 3초 대기)
+    var tries=0;
+    var wait=setInterval(function(){
+      tries++;
+      if(_auth){
+        clearInterval(wait);
+        _doGooglePopup();
+      } else if(tries>15){
+        clearInterval(wait);
+        _showErr('연결 오류가 발생했습니다. 페이지를 새로고침해 주세요.');
+      }
+    },200);
+    return;
+  }
+  _doGooglePopup();
+}
+function _doGooglePopup(){
+  var p=new firebase.auth.GoogleAuthProvider();
+  p.setCustomParameters({prompt:'select_account'});
+  _auth.signInWithPopup(p)
+    .then(function(r){if(r.user)showToast('✅ Google 로그인 완료!');})
+    .catch(function(e){
+      if(e.code!=='auth/popup-closed-by-user')
+        _showErr('Google 오류: '+e.message);
+    });
 }
 
-// 이메일 로그인 - _auth 준비 완료 후 실행
+// 이메일 로그인
 function doEmailLogin(){
-  _fbReady.then(function(){
-    if(!_auth){
-      _showErr('Firebase 초기화에 실패했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.');
-      return;
-    }
-    var email=(document.getElementById('inp-email')||{}).value||'';
-    var pw=(document.getElementById('inp-pw')||{}).value||'';
-    if(!email||pw.length<6){_showErr('이메일과 비밀번호(6자+)를 입력하세요');return;}
-    _auth.signInWithEmailAndPassword(email,pw)
-      .then(function(r){showToast('✅ 로그인 완료!');})
-      .catch(function(e){
-        var newCodes=['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials'];
-        if(newCodes.indexOf(e.code)>=0){
-          _auth.createUserWithEmailAndPassword(email,pw)
-            .then(function(){showToast('✅ 회원가입 완료!');})
-            .catch(function(e2){_showErr('가입 실패: '+e2.message);});
-        }else if(e.code==='auth/wrong-password'){
-          _showErr('비밀번호가 틀렸습니다');
-        }else{
-          _showErr('오류: '+e.message);
-        }
-      });
-  });
+  if(!_auth){
+    var tries=0;
+    var wait=setInterval(function(){
+      tries++;
+      if(_auth){
+        clearInterval(wait);
+        _doEmailSignIn();
+      } else if(tries>15){
+        clearInterval(wait);
+        _showErr('연결 오류가 발생했습니다. 페이지를 새로고침해 주세요.');
+      }
+    },200);
+    return;
+  }
+  _doEmailSignIn();
+}
+function _doEmailSignIn(){
+  var email=(document.getElementById('inp-email')||{}).value||'';
+  var pw=(document.getElementById('inp-pw')||{}).value||'';
+  if(!email||pw.length<6){_showErr('이메일과 비밀번호(6자+)를 입력하세요');return;}
+  _auth.signInWithEmailAndPassword(email,pw)
+    .then(function(){showToast('✅ 로그인 완료!');})
+    .catch(function(e){
+      var isNew=['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials'].indexOf(e.code)>=0;
+      if(isNew){
+        _auth.createUserWithEmailAndPassword(email,pw)
+          .then(function(){showToast('✅ 회원가입 완료!');})
+          .catch(function(e2){_showErr('가입 실패: '+e2.message);});
+      }else if(e.code==='auth/wrong-password'){
+        _showErr('비밀번호가 틀렸습니다');
+      }else{
+        _showErr('오류: '+e.message);
+      }
+    });
 }
 
 function skipLogin(){
