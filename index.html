@@ -1172,23 +1172,21 @@ var FB_CFG={
   appId:"1:278315977222:web:03a31e2c727d2ae80e9187"
 };
 
-// Firebase SDK 로드 완료를 기다리는 Promise
-var _fbReady = new Promise(function(resolve){
-  (function wait(){
-    if(typeof firebase!=='undefined'&&typeof firebase.auth!=='undefined'){
-      resolve();
-    }else{
-      setTimeout(wait,200);
-    }
-  })();
-});
+// _auth 할당 완료까지 기다리는 Promise
+var _fbReadyResolve;
+var _fbReady = new Promise(function(resolve){ _fbReadyResolve = resolve; });
 
 function _fbInit(){
-  _fbReady.then(function(){
+  // SDK 로드 확인 후 초기화
+  (function waitSDK(){
+    if(typeof firebase==='undefined' || typeof firebase.auth==='undefined'){
+      setTimeout(waitSDK, 200); return;
+    }
     try{
-      var app=firebase.initializeApp(FB_CFG);
-      _auth=firebase.auth(app);
-      _db=firebase.database(app);
+      var app = firebase.initializeApp(FB_CFG);
+      _auth = firebase.auth(app);
+      _db   = firebase.database(app);
+      _fbReadyResolve(); // ★ _auth 할당 완료 → Promise resolve
       _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
       _auth.onAuthStateChanged(function(user){
         if(user){
@@ -1206,11 +1204,12 @@ function _fbInit(){
         }
       });
     }catch(e){
-      console.error('FB init:',e);
+      console.error('FB init 실패:',e.message);
+      _fbReadyResolve(); // 실패해도 resolve (무한 대기 방지)
       if(!localStorage.getItem(FB_SKIP)&&!localStorage.getItem(FB_LOG))
         setTimeout(_showModal,1000);
     }
-  });
+  })();
 }
 
 function _setNav(user){
@@ -1240,10 +1239,14 @@ function _showErr(msg){
 }
 function showLoginModal(){_showModal();}
 
-// Google 로그인 (popup) - SDK 로드 완료 후 실행
+// Google 로그인 (popup) - _auth 준비 완료 후 실행
 function doGoogleLogin(){
   _fbReady.then(function(){
-    if(!_auth){_showErr('Firebase 연결 실패. 페이지를 새로고침해 주세요.');return;}
+    if(!_auth){
+      // _fbReady가 resolve됐는데 _auth가 없으면 초기화 실패
+      _showErr('Firebase 초기화에 실패했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.');
+      return;
+    }
     var p=new firebase.auth.GoogleAuthProvider();
     p.setCustomParameters({prompt:'select_account'});
     _auth.signInWithPopup(p)
@@ -1255,10 +1258,13 @@ function doGoogleLogin(){
   });
 }
 
-// 이메일 로그인 - SDK 로드 완료 후 실행
+// 이메일 로그인 - _auth 준비 완료 후 실행
 function doEmailLogin(){
   _fbReady.then(function(){
-    if(!_auth){_showErr('Firebase 연결 실패. 페이지를 새로고침해 주세요.');return;}
+    if(!_auth){
+      _showErr('Firebase 초기화에 실패했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.');
+      return;
+    }
     var email=(document.getElementById('inp-email')||{}).value||'';
     var pw=(document.getElementById('inp-pw')||{}).value||'';
     if(!email||pw.length<6){_showErr('이메일과 비밀번호(6자+)를 입력하세요');return;}
