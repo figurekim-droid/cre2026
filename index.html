@@ -1084,26 +1084,41 @@ function renderWrongTab(){
   const sub=ST.sub;
   const wqs=ST.qs.filter(q=>{const ul=q.choices[ST.answers[q.id]]?.label;return q.correct&&ul!==q.correct;});
   document.getElementById('wlist').innerHTML=wqs.map(q=>{
-    const ci=ST.answers[q.id],ul=ci!==undefined?q.choices[ci]?.label:'미답변';
+    const ci=ST.answers[q.id], ul=ci!==undefined?q.choices[ci]?.label:'미답변';
+    // ★ 5지선다 전체 표시
     const chs=q.choices.map((c,i)=>{
-      const isAns=c.label===q.correct,isUser=ci===i;
-      if(!isAns&&!isUser)return'';
-      return`<div class="wq-ch ${isAns?'ans':''} ${(isUser&&!isAns)?'bad':''}">
-        <span style="font-weight:800;color:${isAns?'#1B5E20':'#C62828'};flex-shrink:0">${c.label}</span>
-        <span style="flex:1;line-height:1.5">${esc(c.text)}</span>
-        <span>${isAns?'✅':''}</span></div>`;
+      const isAns =c.label===q.correct;
+      const isUser=i===ci;
+      let style='background:#FAFAFA;border:1.5px solid #E4E7EB;';
+      let labelColor=sub.color;
+      let mark='';
+      if(isAns){
+        style='background:#E8F5E9;border:1.5px solid #43A047;';
+        labelColor='#1B5E20';
+        mark='<span style="flex-shrink:0;margin-left:4px">✅</span>';
+      } else if(isUser){
+        style='background:#FFEBEE;border:1.5px solid #E53935;';
+        labelColor='#C62828';
+        mark='<span style="flex-shrink:0;margin-left:4px">❌</span>';
+      }
+      return`<div style="${style}border-radius:9px;padding:9px 11px;display:flex;gap:7px;align-items:flex-start;margin-bottom:6px">
+        <span style="font-weight:800;color:${labelColor};flex-shrink:0;font-size:14px">${c.label}</span>
+        <span style="font-size:14px;color:#333;line-height:1.5;flex:1">${esc(c.text)}</span>
+        ${mark}
+      </div>`;
     }).join('');
     return`<div class="wq-card">
-      <div class="qhdr" style="margin-bottom:7px">
-        <span class="qbadge" style="background:#FFEBEE;color:#C62828">Q${q.num}</span>
+      <div class="qhdr" style="margin-bottom:8px">
+        <span class="qbadge" style="background:#FFEBEE;color:#C62828;font-size:13px">Q${q.num}</span>
         <div class="qtext">${esc(q.question)}</div>
       </div>
-      <div style="display:flex;gap:14px;font-size:11.5px;margin-bottom:9px">
-        <span style="color:#E53935">내 답: ${esc(ul)}</span>
-        ${q.correct?`<span style="color:#1B5E20">✅ 정답: ${q.correct}</span>`:''}
-      </div>${chs}
-      ${q.expl?`<div style="margin-top:9px;background:#FFFBEB;border-radius:8px;padding:9px 11px;border-left:3px solid #F59E0B">
-        <div style="font-size:12px;color:var(--tx2);line-height:1.65">💡 ${esc(q.expl)}</div>
+      <div style="display:flex;gap:14px;font-size:13px;margin-bottom:10px;padding:8px 10px;background:#FFF5F5;border-radius:8px">
+        <span style="color:#E53935;font-weight:700">❌ 내 답: ${esc(ul)}</span>
+        ${q.correct?`<span style="color:#1B5E20;font-weight:700">✅ 정답: ${q.correct}</span>`:''}
+      </div>
+      <div>${chs}</div>
+      ${q.expl?`<div style="margin-top:10px;background:#FFFBEB;border-radius:9px;padding:10px 12px;border-left:3px solid #F59E0B">
+        <div style="font-size:13px;color:var(--tx2);line-height:1.7">💡 ${esc(q.expl)}</div>
       </div>`:''}
     </div>`;
   }).join('');
@@ -1121,21 +1136,52 @@ function renderAllWrong(){
   }
   body.innerHTML='';
   SUBS.forEach(sub=>{
-    const items=WRONGS.filter(w=>w.subject===sub.name);if(!items.length)return;
-    const g=document.createElement('div');g.style.marginBottom='18px';
-    g.innerHTML=`<div style="font-weight:800;font-size:13px;color:${sub.color};margin-bottom:9px;display:flex;align-items:center;gap:7px">
+    const items=WRONGS.filter(w=>w.subject===sub.name);
+    if(!items.length)return;
+    const g=document.createElement('div');
+    g.style.marginBottom='20px';
+    g.innerHTML=`<div style="font-weight:800;font-size:14px;color:${sub.color};margin-bottom:10px;display:flex;align-items:center;gap:7px">
       <span>${sub.icon}</span><span>${sub.name}</span>
-      <span style="background:${sub.light};color:${sub.color};border-radius:5px;padding:2px 7px;font-size:10px;font-weight:800">${items.length}문제</span>
+      <span style="background:${sub.light};color:${sub.color};border-radius:5px;padding:2px 8px;font-size:11px;font-weight:800">${items.length}문제</span>
     </div>`;
     items.forEach(w=>{
-      const d=document.createElement('div');d.className='aw-item';
-      d.innerHTML=`<div class="aw-sub">${esc(cleanT(w.lesson||''))}</div>
-        <div class="aw-q">Q${w.num}. ${esc(w.question)}</div>
-        <div style="display:flex;gap:12px;font-size:12px;margin-bottom:${w.expl?'6px':'0'}">
-          <span style="color:#E53935">내 답: ${esc(w.userLabel||'')}</span>
-          ${w.correct?`<span style="color:#1B5E20">✅ ${w.correct}</span>`:''}
+      const d=document.createElement('div');
+      d.className='aw-item';
+
+      // ★ 5지선다 전체 표시
+      const choicesHtml=(w.choices||[]).map((c,i)=>{
+        const isAns =c.label===w.correct;
+        const isUser=c.label===w.userLabel;
+        let style='background:#FAFAFA;border:1.5px solid #E4E7EB;';
+        let labelColor='#555';
+        let mark='';
+        if(isAns){
+          style='background:#E8F5E9;border:1.5px solid #43A047;';
+          labelColor='#1B5E20';
+          mark='<span style="flex-shrink:0;margin-left:4px;font-size:13px">✅</span>';
+        } else if(isUser){
+          style='background:#FFEBEE;border:1.5px solid #E53935;';
+          labelColor='#C62828';
+          mark='<span style="flex-shrink:0;margin-left:4px;font-size:13px">❌</span>';
+        }
+        return`<div style="${style}border-radius:9px;padding:9px 11px;display:flex;gap:7px;align-items:flex-start;margin-bottom:6px">
+          <span style="font-weight:800;color:${labelColor};flex-shrink:0;font-size:14px">${c.label}</span>
+          <span style="font-size:14px;color:#333;line-height:1.5;flex:1">${esc(c.text||'')}</span>
+          ${mark}
+        </div>`;
+      }).join('');
+
+      d.innerHTML=`
+        <div style="font-size:11px;color:#aaa;margin-bottom:5px">${esc(cleanT(w.lesson||''))}</div>
+        <div style="font-weight:700;font-size:14px;line-height:1.55;margin-bottom:10px;color:var(--tx)">Q${w.num}. ${esc(w.question)}</div>
+        <div style="display:flex;gap:14px;font-size:13px;margin-bottom:10px;padding:8px 10px;background:#FFF5F5;border-radius:8px">
+          <span style="color:#E53935;font-weight:700">❌ 내 답: ${esc(w.userLabel||'')}</span>
+          ${w.correct?`<span style="color:#1B5E20;font-weight:700">✅ 정답: ${w.correct}</span>`:''}
         </div>
-        ${w.expl?`<div class="aw-expl">💡 ${esc(w.expl)}</div>`:''}`;
+        <div>${choicesHtml}</div>
+        ${w.expl?`<div style="margin-top:10px;background:#FFFBEB;border-radius:9px;padding:10px 12px;border-left:3px solid #F59E0B">
+          <div style="font-size:13px;color:var(--tx2);line-height:1.7">💡 ${esc(w.expl)}</div>
+        </div>`:''}`;
       g.appendChild(d);
     });
     body.appendChild(g);
