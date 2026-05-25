@@ -502,37 +502,62 @@ function parseQs(text){
     }
     if(!qtext||qtext.length<4)return;
 
-    // 정답 추출: "정답: ①" 또는 "정답 ①" 패턴
-    const am=blk.match(/정답\s*[:：]?\s*([①②③④⑤])/);
-    const correct=am?am[1]:null;
+    // ── 정답 추출 (다양한 패턴)
+    const am = blk.match(/정답\s*[:：]?\s*([①②③④⑤])/);
+    const correct = am ? am[1] : null;
 
-    // 해설 추출: 정답 표시 이후 텍스트 (분석줄 제외)
-    let expl='';
-    if(am){
-      const afterIdx=blk.indexOf(am[0])+am[0].length;
-      const afterText=blk.slice(afterIdx);
-      // ①번 분석 / (정답) / (옳음) 등 해설줄 이전까지만
-      const stopIdx=afterText.search(/[①②③④⑤]번\s*(분석|해설)/);
-      const raw=stopIdx>0 ? afterText.slice(0,stopIdx) : afterText.slice(0,200);
-      expl=raw.replace(/\n/g,' ').replace(/\s+/g,' ').trim();
+    // ── 해설 완전 수집 (잘리지 않게 500자까지)
+    let expl = '';
+
+    // 방법1: "정답: ①" 이후 텍스트
+    if (am) {
+      const afterIdx = blk.indexOf(am[0]) + am[0].length;
+      const afterText = blk.slice(afterIdx);
+      // 다음 문제 시작 전까지 전체 수집
+      const nextQIdx = afterText.search(/\n(?:문제|Q)\s*\d/i);
+      const raw = nextQIdx > 0 ? afterText.slice(0, nextQIdx) : afterText;
+      expl = raw.replace(/\n/g,' ').replace(/\s+/g,' ').trim().slice(0, 500);
     }
 
-    // 해설줄 수집: "① (정답) ...", "② (옳음) ..." 형태
-    // 이 줄들을 analyses 대신 expl에 통합
-    const explLines=lines.filter(l=>
+    // 방법2: "① (정답) ..." 형태 해설 줄들 수집
+    const annotLines = lines.filter(l =>
       /^[①②③④⑤]/.test(l) &&
       /\(정답\)|\(오답\)|\(옳음\)|\(틀림\)|\(맞음\)/.test(l)
-    ).map(l=>l.replace(/^[①②③④⑤]\s*/,'').trim());
-
-    // expl이 없으면 해설줄로 대체
-    if(!expl && explLines.length>0){
-      expl=explLines.join(' / ').slice(0,300);
+    );
+    if (annotLines.length > 0) {
+      const annotText = annotLines.map(l => l.replace(/^[①②③④⑤]\s*/,'').trim()).join(' | ');
+      if (!expl) {
+        expl = annotText.slice(0, 500);
+      } else {
+        // 정답 선택지 해설 앞에 추가
+        const rightAnnot = annotLines.find(l => /\(정답\)/.test(l));
+        if (rightAnnot) {
+          const rightText = rightAnnot.replace(/^[①②③④⑤]\s*/,'').trim();
+          if (!expl.includes(rightText.slice(0,20))) {
+            expl = rightText + ' | ' + expl;
+          }
+        }
+      }
     }
 
-    // analyses는 제거 (선택지처럼 렌더링되는 문제 방지)
-    const analyses=[];
+    // 방법3: "①번 분석", "해설:", "풀이:" 패턴
+    if (!expl) {
+      const analysisMatch = blk.match(/(?:해설|풀이|설명)\s*[:：]\s*([^\n]{10,500})/);
+      if (analysisMatch) expl = analysisMatch[1].trim();
+    }
 
-    qs.push({id:'q'+idx, num, question:qtext, choices, correct, expl, analyses});
+    // 방법4: 각 선택지별 분석 줄 → 하나로 합치기
+    const perChoiceAnalysis = [];
+    ['①','②','③','④','⑤'].forEach(c => {
+      const re = new RegExp(escRe(c) + '번?\\s*분석[^:：\\n]*[：:]?\\s*([^\\n①②③④⑤]{5,300})');
+      const m2 = blk.match(re);
+      if (m2) perChoiceAnalysis.push(c + ': ' + m2[1].replace(/\s+/g,' ').trim());
+    });
+    if (perChoiceAnalysis.length > 0 && !expl) {
+      expl = perChoiceAnalysis.join(' / ').slice(0, 500);
+    }
+
+    qs.push({id:'q'+idx, num, question:qtext, choices, correct, expl, perChoiceAnalysis});
   });
   return qs;
 }
@@ -972,20 +997,88 @@ function pickAns(qid,ci){
   const resEl=document.getElementById('res-'+qid);
   if(resEl){
     let html='';
+
+    // 정오 표시
     if(isCorrect){
-      html+='<div style="color:#2E7D32;font-weight:700;margin-bottom:6px">✅ 정답입니다!</div>';
+      html+='<div style="font-weight:800;font-size:16px;color:#2E7D32;margin-bottom:8px">✅ 정답입니다!</div>';
     } else {
-      html+='<div style="color:#C62828;font-weight:700;margin-bottom:6px">❌ 오답 — 정답: <b>'+esc(q.correct||'미제공')+'</b></div>';
+      const correctChoice = q.choices.find(c=>c.label===q.correct);
+      html+='<div style="font-weight:800;font-size:16px;color:#C62828;margin-bottom:8px">❌ 오답</div>';
+      if(q.correct){
+        html+='<div style="background:#E8F5E9;border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:15px">';
+        html+='<b style="color:#1B5E20">✅ 정답: '+esc(q.correct)+'</b>';
+        if(correctChoice) html+=' — '+esc(correctChoice.text);
+        html+='</div>';
+      }
     }
-    // 해설(블로그 원문에서 파싱된 것만, AI 생성 분석 제외)
+
+    // 해설 표시
     if(q.expl){
-      html+='<div style="font-size:12px;color:#4B5563;line-height:1.7">'+esc(q.expl)+'</div>';
+      html+='<div style="background:#FFFBEB;border-left:3px solid #F59E0B;border-radius:0 9px 9px 0;padding:10px 12px;font-size:15px;color:#374151;line-height:1.75">';
+      html+='<div style="font-weight:700;color:#92400E;margin-bottom:5px;font-size:14px">💡 해설</div>';
+      html+=esc(q.expl);
+      html+='</div>';
+    } else {
+      // 해설 없을 때 AI로 생성
+      html+='<div id="ai-expl-'+qid+'" style="background:#EFF6FF;border-left:3px solid #60A5FA;border-radius:0 9px 9px 0;padding:10px 12px;font-size:14px;color:#1E40AF">💭 해설 생성 중...</div>';
     }
+
+    // 선택지별 분석이 있으면 추가 표시
+    if(q.perChoiceAnalysis && q.perChoiceAnalysis.length>0){
+      html+='<details style="margin-top:8px"><summary style="font-size:13px;color:#6B7280;cursor:pointer;padding:4px 0">📋 선택지별 분석 보기</summary>';
+      html+='<div style="margin-top:6px;font-size:13px;color:#4B5563;line-height:1.75;background:#F9FAFB;padding:10px;border-radius:8px">';
+      q.perChoiceAnalysis.forEach(a=>{
+        html+='<div style="margin-bottom:5px">'+esc(a)+'</div>';
+      });
+      html+='</div></details>';
+    }
+
     resEl.innerHTML=html;
     resEl.style.display='block';
+
+    // 해설 없으면 AI로 생성 (비동기)
+    if(!q.expl){
+      _generateExpl(q, qid, isCorrect, sub);
+    }
   }
 
   updateSubBtn();
+}
+
+// AI로 해설 생성
+function _generateExpl(q, qid, isCorrect, sub){
+  var prompt = '공인중개사 시험 문제 해설을 2~3문장으로 간결하게 설명해주세요.\n\n'
+    + '문제: ' + q.question + '\n'
+    + '선택지:\n' + q.choices.map(function(c){return c.label+' '+c.text;}).join('\n') + '\n'
+    + (q.correct ? '정답: '+q.correct : '') + '\n\n'
+    + '정답인 이유와 오답인 이유를 핵심만 설명하세요.';
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:300,
+      messages:[{role:'user',content:prompt}]
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var text=(d.content||[]).map(function(c){return c.text||'';}).join('');
+    var el=document.getElementById('ai-expl-'+qid);
+    if(el && text){
+      el.style.background='#FFFBEB';
+      el.style.borderColor='#F59E0B';
+      el.style.color='#374151';
+      el.innerHTML='<div style="font-weight:700;color:#92400E;margin-bottom:5px;font-size:14px">💡 AI 해설</div>'+esc(text);
+      // 파싱된 문제에 해설 저장 (오답노트에도 반영)
+      q.expl=text;
+    }
+  })
+  .catch(function(){
+    var el=document.getElementById('ai-expl-'+qid);
+    if(el) el.style.display='none';
+  });
 }
 
 // ══════════════════════════════════════════
@@ -1303,7 +1396,12 @@ function _syncUp() {
   }).then(function() {
     showToast('☁️ 저장 완료');
   }).catch(function(e) {
-    console.warn('업로드 실패:', e.message);
+    console.error('업로드 실패:', e.code, e.message);
+    if (e.code === 'PERMISSION_DENIED') {
+      showToast('⚠️ DB 권한 오류 - Firebase Console에서 규칙을 확인하세요');
+    } else {
+      showToast('⚠️ 저장 실패: ' + e.message);
+    }
   });
 }
 
@@ -1341,9 +1439,24 @@ function _syncDown() {
         _syncing = false;
         _syncUp();
         return;
+      } else {
+        showToast('☁️ 연결됨 (저장된 데이터 없음)');
       }
     })
-    .catch(function(e) { console.warn('다운로드 실패:', e.message); showToast('⚠️ 동기화 실패'); })
+    .catch(function(e) {
+      console.error('다운로드 실패:', e.code, e.message);
+      if (e.code === 'PERMISSION_DENIED') {
+        showToast('⚠️ DB 권한 오류');
+        // 권한 오류 상세 안내
+        var errEl = document.getElementById('fb-err');
+        if (errEl) {
+          errEl.style.display = 'block';
+          errEl.textContent = 'DB 권한 오류: Firebase Console → Realtime Database → 규칙 탭에서 아래 규칙을 설정하세요:\n{"rules":{".read":"auth!=null",".write":"auth!=null"}}';
+        }
+      } else {
+        showToast('⚠️ 동기화 실패: ' + e.message);
+      }
+    })
     .finally(function() { _syncing = false; });
 }
 
