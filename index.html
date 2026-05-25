@@ -358,7 +358,7 @@ let STATS=lsGet(SK,{}), WRONGS=lsGet(WK,[]);
 let _cbId=0;
 
 function lsGet(k,d){try{return JSON.parse(localStorage.getItem(k))||d;}catch{return d;}}
-var _syncing=false; // syncDown 중 syncUp 차단 플래그
+var _syncing=false;
 function lsSave(k,v){
   try{localStorage.setItem(k,JSON.stringify(v));}catch{}
   if(_syncing)return;
@@ -419,41 +419,21 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 // ★ 핵심 수정: li·br·p·div 태그를 줄바꿈으로 변환해야
 //   선택지가 한 줄에 붙지 않고 개별 파싱됨
 function h2t(h){
-  // script/style 블록 제거 (문자열 분리 방식 사용)
-  var scClose='</'+'script>';
-  var stClose='</'+'style>';
-  while(h.indexOf('<script')>=0){
-    var s0=h.indexOf('<script'),s1=h.indexOf(scClose,s0);
-    if(s1<0){h=h.slice(0,s0);break;}
-    h=h.slice(0,s0)+h.slice(s1+scClose.length);
-  }
-  while(h.indexOf('<style')>=0){
-    var t0=h.indexOf('<style'),t1=h.indexOf(stClose,t0);
-    if(t1<0){h=h.slice(0,t0);break;}
-    h=h.slice(0,t0)+h.slice(t1+stClose.length);
-  }
-  // JS 코드 패턴 제거
-  h=h.replace(/function\s+\w+\s*\([^)]*\)\s*\{[^{}]*\}/g,'')
-     .replace(/var\s+\w+\s*=\s*document[^;]{0,150};/g,'')
-     .replace(/\w+\.(style|innerText|innerHTML|display)\s*=[^;]{0,150};/g,'')
-     .replace(/document\.getElementById[^)]{0,80}\)/g,'')
-     .replace(/if\s*\([^)]{0,80}\)\s*\{[^{}]{0,200}\}/g,'');
   return h
-    .replace(/<li[^>]*>/gi,'\n')
+    .replace(/<li[^>]*>/gi,'\n')      // <li> → 줄바꿈 (선택지 구분 핵심!)
     .replace(/<\/li>/gi,'')
     .replace(/<br\s*\/?>/gi,'\n')
     .replace(/<p[^>]*>/gi,'\n')
     .replace(/<\/p>/gi,'')
     .replace(/<div[^>]*>/gi,'\n')
     .replace(/<\/div>/gi,'')
-    .replace(/<[^>]+>/g,' ')
+    .replace(/<[^>]+>/g,' ')          // 나머지 태그 → 공백
     .replace(/&nbsp;/g,' ').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')
-    .replace(/[ \t]+/g,' ')
+    .replace(/[ \t]+/g,' ')           // 수평 공백만 정리 (줄바꿈은 유지)
     .replace(/\n[ \t]+/g,'\n')
     .replace(/\n{3,}/g,'\n\n')
     .trim();
 }
-
 function cleanT(t){return t.replace(/\[2026\s*공인중개사\]\s*/i,'').replace(/\s*\d+\s*차시\.\s*/,'').trim();}
 function dday(){return Math.ceil((EXAM-new Date())/86400000);}
 function subStats(){
@@ -630,99 +610,80 @@ function buildStudyData(text){
 // ══════════════════════════════════════════
 //  학습 콘텐츠 렌더링
 // ══════════════════════════════════════════
-function renderStudyContent(data, sub){
-  var el=document.getElementById('study-content');
-  var learn=data.learn||[], memory=data.memory||[], caution=data.caution||[], tip=data.tip||'';
+function renderStudyContent(data,sub){
+  const el=document.getElementById('study-content');
+  const {learn,memory,caution,exam,tip}=data;
 
-  // 정크 판별
-  function isJunk(s){
-    return !s||s.length<8
-      ||/function\s*\(|var\s+\w+=|document\.|style\.|showans|innerText|getElementById/i.test(s)
-      ||/^[,\s.·•。\-]+$/.test(s)
-      ||/^\s*[,.]/.test(s)
-      ||((s.match(/,/g)||[]).length>5)
-      ||/^(모두|전체|해당|기타|등|없음|있음)\s*$/.test(s.trim());
-  }
+  el.innerHTML=`
+  <!-- TIP 배너 -->
+  <div class="tip-banner" style="background:linear-gradient(135deg,${sub.color},${sub.color}BB)">
+    <div class="tip-lbl">⚡ 이 차시 핵심 포인트</div>
+    <div class="tip-txt">${esc(tip)}</div>
+  </div>
 
-  // 암기 항목 정제 (번호+내용, 구분 없이)
-  var memList=memory.map(function(m){
-    if(!m)return null;
-    var text='';
-    if(typeof m==='string'){
-      text=_cleanText(m);
-    }else{
-      var k=_cleanText(m.key||m.label||'');
-      var v=_cleanText(m.val||'');
-      var n=_cleanText(m.note||m['비고']||'');
-      text=k&&v?k+': '+v+(n?' ('+n+')':''):(v||k);
-    }
-    text=_cleanText(text);
-    return isJunk(text)?null:text;
-  }).filter(function(t){return t&&t.length>8;}).slice(0,14);
+  <!-- 1. 기본 학습 -->
+  <div class="study-section ss-learn">
+    <div class="ss-hdr" onclick="toggleSS('learn')">
+      <div class="ss-ico">📖</div>
+      <div class="ss-ttl">기본 학습 내용<span class="ss-cnt">${learn.length}항목</span></div>
+      <div class="ss-arr open" id="learn-arr">▼</div>
+    </div>
+    <div class="ss-body open" id="learn-body">
+      ${learn.map(item=>`
+        <div class="si">
+          <div class="si-dot" style="background:#059669"></div>
+          <div class="si-txt">${hl(esc(item))}</div>
+        </div>`).join('')}
+    </div>
+  </div>
 
-  // 주의사항 정제
-  var cList=caution.map(function(c){
-    return{title:_cleanText(c.title||'주의'),body:_cleanText(c.body||'')};
-  }).filter(function(c){return c.body.length>8&&!isJunk(c.body);});
+  <!-- 2. 반드시 암기 -->
+  <div class="study-section ss-mem">
+    <div class="ss-hdr" onclick="toggleSS('mem')">
+      <div class="ss-ico">🧠</div>
+      <div class="ss-ttl">반드시 암기할 내용<span class="ss-cnt">${memory.length}항목</span></div>
+      <div class="ss-arr open" id="mem-arr">▼</div>
+    </div>
+    <div class="ss-body open" id="mem-body">
+      ${memory.length?`<table class="mem-tbl">
+        <tr><th style="width:36%">키워드</th><th>암기 내용</th></tr>
+        ${memory.map(m=>`<tr><td class="mem-key">${esc(m.key)}</td><td class="mem-val">${hl(esc(m.val))}</td></tr>`).join('')}
+      </table>`:`<div style="font-size:12px;color:var(--tx3);padding:6px 0">이 차시에서 숫자·기준 항목을 자동으로 찾을 수 없었습니다. 블로그 원문을 참고하세요.</div>`}
+    </div>
+  </div>
 
-  // 기본학습 정제
-  var lList=learn.map(function(item){return _cleanText(item);})
-    .filter(function(t){return t&&t.length>5&&!isJunk(t);});
+  <!-- 3. 주의 사항 -->
+  <div class="study-section ss-warn">
+    <div class="ss-hdr" onclick="toggleSS('warn')">
+      <div class="ss-ico">⚠️</div>
+      <div class="ss-ttl">주의할 내용<span class="ss-cnt">${caution.length}항목</span></div>
+      <div class="ss-arr open" id="warn-arr">▼</div>
+    </div>
+    <div class="ss-body open" id="warn-body">
+      ${caution.map((c,i)=>`
+        <div class="wb">
+          <div class="wb-ttl">🚫 주의 ${i+1}</div>
+          <div class="wb-body">${hl(esc(c.body))}</div>
+        </div>`).join('')}
+    </div>
+  </div>
 
-  el.innerHTML=
-  '<div class="tip-banner" style="background:linear-gradient(135deg,'+sub.color+','+sub.color+'BB)">'
-  +'<div class="tip-lbl">⚡ 이 차시 합격 핵심</div>'
-  +'<div class="tip-txt">'+esc(tip)+'</div>'
-  +'</div>'
-
-  // 1. 기본 학습
-  +'<div class="study-section ss-learn">'
-  +'<div class="ss-hdr" onclick="toggleSS('learn')">'
-  +'<div class="ss-ico">📖</div>'
-  +'<div class="ss-ttl">기본 학습 내용<span class="ss-cnt">'+lList.length+'항목</span></div>'
-  +'<div class="ss-arr open" id="learn-arr">▼</div></div>'
-  +'<div class="ss-body open" id="learn-body">'
-  +(lList.length?lList.map(function(t){
-    return '<div class="si"><div class="si-dot" style="background:'+sub.color+'"></div>'
-      +'<div class="si-txt">'+hl(esc(t))+'</div></div>';
-  }).join(''):'<div style="font-size:15px;color:var(--tx3);padding:6px 0">AI 분석 중...</div>')
-  +'</div></div>'
-
-  // 2. 반드시 암기
-  +'<div class="study-section ss-mem">'
-  +'<div class="ss-hdr" onclick="toggleSS('mem')">'
-  +'<div class="ss-ico">🧠</div>'
-  +'<div class="ss-ttl">반드시 암기할 내용<span class="ss-cnt">'+memList.length+'항목</span></div>'
-  +'<div class="ss-arr open" id="mem-arr">▼</div></div>'
-  +'<div class="ss-body open" id="mem-body">'
-  +(memList.length?memList.map(function(t,i){
-    return '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;'
-      +'padding:11px 13px;background:'+(i%2===0?'#F8FAFF':'#fff')
-      +';border-radius:10px;border-left:3px solid '+sub.color+'">'
-      +'<div style="min-width:26px;height:26px;border-radius:7px;background:'+sub.color
-      +';color:#fff;font-size:13px;font-weight:900;display:flex;align-items:center;'
-      +'justify-content:center;flex-shrink:0">'+(i+1)+'</div>'
-      +'<div style="font-size:16px;color:#1a1a2e;line-height:1.8;font-weight:500">'+hl(esc(t))+'</div>'
-      +'</div>';
-  }).join(''):'<div style="font-size:15px;color:var(--tx3);padding:6px 0">AI 분석 중...</div>')
-  +'</div></div>'
-
-  // 3. 주의사항
-  +'<div class="study-section ss-warn">'
-  +'<div class="ss-hdr" onclick="toggleSS('warn')">'
-  +'<div class="ss-ico">⚠️</div>'
-  +'<div class="ss-ttl">주의할 내용<span class="ss-cnt">'+cList.length+'항목</span></div>'
-  +'<div class="ss-arr open" id="warn-arr">▼</div></div>'
-  +'<div class="ss-body open" id="warn-body">'
-  +cList.map(function(c){
-    return '<div style="margin-bottom:12px;border-radius:11px;overflow:hidden;border:1.5px solid #FED7AA">'
-      +'<div style="background:#FFF7ED;padding:9px 13px;font-weight:800;font-size:14px;color:#9A3412;border-bottom:1px solid #FED7AA">⚠️ '+esc(c.title)+'</div>'
-      +'<div style="padding:10px 13px;font-size:15px;color:#374151;line-height:1.8;background:#FFFDF9">'+hl(esc(c.body))+'</div>'
-      +'</div>';
-  }).join('')
-  +'</div></div>';
+  <!-- 4. 출제 포인트 -->
+  <div class="study-section ss-exam">
+    <div class="ss-hdr" onclick="toggleSS('exam')">
+      <div class="ss-ico">🎯</div>
+      <div class="ss-ttl">출제 예상 포인트<span class="ss-cnt">${exam.length}항목</span></div>
+      <div class="ss-arr open" id="exam-arr">▼</div>
+    </div>
+    <div class="ss-body open" id="exam-body">
+      ${exam.map((e,i)=>`
+        <div class="ep">
+          <div class="ep-num">${i+1}</div>
+          <div class="ep-txt">${hl(esc(e))}</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
 }
-
 
 function toggleSS(id){
   const body=document.getElementById(id+'-body');
@@ -1194,21 +1155,21 @@ function updateNavWrong(){
   else{b.classList.remove('on');b.textContent='❌ 오답노트';}
 }
 
-// 텍스트 정제 함수
+// ── 텍스트 정제
 function _cleanText(s){
   if(!s)return'';
   return s
-    .replace(/function\s+\w+\s*\([^)]*\)\s*\{[\s\S]*?\}/g,'')
+    .replace(/function\s+\w+\s*\([^)]*\)\s*\{[^{}]*\}/g,'')
     .replace(/var\s+\w+\s*=\s*document[^;]{0,150};/g,'')
     .replace(/\w+\.(style|innerText|innerHTML)\s*=[^;]{0,150};/g,'')
     .replace(/showAns\s*\([^)]*\)[^;]{0,50};?/g,'')
     .replace(/document\.getElementById[^;)]{0,100}[;)]/g,'')
-    .replace(/^[\s,.·•。\-]+/,'')
+    .replace(/^[\s,.\u00B7\u2022\u3002\-]+/,'')
     .replace(/\s*,\s*,\s*/g,', ')
-    .replace(/내가\s*선택한\s*번호[^.。\n]*/g,'')
-    .replace(/상세\s*해설\s*및\s*오답\s*분석[^.。\n]*/g,'')
+    .replace(/내가\s*선택한\s*번호[^.\n]*/g,'')
+    .replace(/상세\s*해설\s*및\s*오답\s*분석[^.\n]*/g,'')
     .replace(/\(정답\)|\(오답\)|\(옳음\)|\(틀림\)|\(맞음\)/g,'')
-    .replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g,'')
+    .replace(/[\u2460-\u2469]/g,'')
     .replace(/\s{2,}/g,' ')
     .trim();
 }
@@ -1220,123 +1181,21 @@ document.addEventListener('DOMContentLoaded',function(){
   renderHome();
   buildTabs();
   if(typeof firebase!=='undefined') _fbInit();
-  else console.warn('Firebase SDK 미로드');
 });
-
-
-
-function _aiEnhanceStudy(sub, text){
-  const bar=document.getElementById('abar');
-  const dot=document.getElementById('adot');
-  const barTxt=document.getElementById('abar-txt');
-  if(bar){bar.className='abar loading';bar.style.display='flex';}
-  if(dot)dot.className='adot pulse';
-  if(barTxt)barTxt.textContent='📡 학습자료 검색 중...';
-
-  // 과목별 티스토리 URL
-  const tistoryUrls={
-    '공법':       'https://breakthru.tistory.com/category/%EA%B3%B5%EC%9D%B8%EC%A4%91%EA%B0%9C%EC%82%AC/%EA%B3%B5%EB%B2%95',
-    '민법':       'https://breakthru.tistory.com/category/%EA%B3%B5%EC%9D%B8%EC%A4%91%EA%B0%9C%EC%82%AC/%EB%AF%BC%EB%B2%95',
-    '세법':       'https://breakthru.tistory.com/category/%EA%B3%B5%EC%9D%B8%EC%A4%91%EA%B0%9C%EC%82%AC/%EC%84%B8%EB%B2%95',
-    '공시법':     'https://breakthru.tistory.com/category/%EA%B3%B5%EC%9D%B8%EC%A4%91%EA%B0%9C%EC%82%AC/%EA%B3%B5%EC%8B%9C%EB%B2%95%EB%A0%B9',
-    '부동산학개론':'https://breakthru.tistory.com/category/%EA%B3%B5%EC%9D%B8%EC%A4%91%EA%B0%9C%EC%82%AC/%EB%B6%80%EB%8F%99%EC%82%B0%ED%95%99%EA%B0%9C%EB%A1%A0',
-    '중개사법':   'https://breakthru.tistory.com/category/%EA%B3%B5%EC%9D%B8%EC%A4%91%EA%B0%9C%EC%82%AC/%EA%B3%B5%EC%9D%B8%EC%A4%91%EA%B0%9C%EC%82%AC%EB%B2%95'
-  };
-
-  // 2026년 현재 확인된 개정 법률 기준 (학습정리에 반영)
-  const amendedLaw2026 = {
-    '공법': [
-      '【2026 개정】다중주택 연면적 기준: 660㎡ 이하 (구 330㎡에서 확대)',
-      '【2026 현행】다가구주택 바닥면적: 660㎡ 이하, 19세대 이하, 3층 이하',
-      '【2026 현행】다세대주택: 연면적 660㎡ 이하, 4층 이하',
-      '【2026 현행】연립주택: 연면적 660㎡ 초과, 4층 이하',
-    ],
-    '세법': [
-      '【2026 개정】다주택자 양도소득세 중과 유예: 2022.5.10~2026.5.9까지 양도 시 중과 배제',
-      '【2026 개정】생애최초 주택 취득세 감면 100% 연장 적용',
-      '【2026 개정】인구감소지역 생애최초 취득세 감면 한도 200만→300만원 확대',
-      '【2026 개정】출산·양육 주택 취득세 감면 100%(500만원 한도) 연장',
-      '【2026 개정】종부세 인구감소·비수도권 주택 주택수 제외 추가',
-    ],
-    '민법': [
-      '【2026 현행】주택임대차보호법 최우선변제금액: 지역별 상이 (서울 5,500만원 등)',
-      '【2026 현행】상가임대차보호법 환산보증금: 서울 9억원 이하 적용',
-    ],
-    '공시법': [
-      '【2026 현행】부동산등기법: 등기원인증서 원본 제출 의무 강화',
-    ],
-    '중개사법': [
-      '【2026.8.28 시행 예정】공인중개사법 개정: 중개보수 요율 변경사항 확인 필요',
-    ],
-    '부동산학개론': []
-  };
-
-  // 문제 요약 (JS코드·불필요 텍스트 완전 제거)
-  const qSummary=ST.qs.map((q,i)=>{
-    const ans=q.choices.find(c=>c.label===q.correct);
-    const cleanQ=_cleanText(q.question);
-    if(cleanQ.length<5)return''; // JS코드만 있던 문제 제외
-    const wrongChoices=q.choices.filter(c=>c.label!==q.correct)
-      .map(c=>c.label+': '+_cleanText(c.text)).join(' / ');
-    return (i+1)+'번. '+cleanQ
-      +'\n  정답('+q.correct+'): '+(ans?_cleanText(ans.text):'미제공')
-      +(wrongChoices?'\n  오답: '+wrongChoices.slice(0,200):'')
-      +(q.expl?'\n  해설: '+_cleanText(q.expl).slice(0,150):'');
-  }).filter(Boolean).join('\n\n');
-
-  const subGuide={
-    '공법':'국토계획법(용도지역·지구·구역·개발행위허가), 건축법(허가·신고·용도변경·주택종류), 주택법, 도시정비법. 숫자·면적·기간 기준 암기 필수.',
-    '민법':'민법총칙(법률행위·의사표시·대리·무효취소), 물권법(물권변동·소유권·담보물권), 계약법(매매·임대차), 민사특별법(주임법·상임법·집합건물법). 판례 다수.',
-    '세법':'취득세·재산세·종합부동산세·양도소득세·부가가치세. 2026년 개정 사항 반드시 반영. 세율·공제·납부기한·비과세 요건, 계산형 대비.',
-    '공시법':'부동산등기법(절차·신청인·효력), 공간정보관리법(지적공부·지목·면적). 추정력·공신력 구별, 절차와 기간.',
-    '부동산학개론':'부동산 개념·특성, 수요·공급론, 감정평가 3방식, 투자론(수익률·레버리지). 계산형.',
-    '중개사법':'공인중개사법(의무·금지행위·중개보수), 거래신고법, 실명법. 2026년 개정 예정 사항 확인. 결격사유·등록취소·과태료.'
-  };
-
-  const lessonTitle=cleanT(ST.lesson?.title||'');
-  const tistoryUrl=tistoryUrls[sub.id]||'https://breakthru.tistory.com/category/%EA%B3%B5%EC%9D%B8%EC%A4%91%EA%B0%9C%EC%82%AC';
-  const theoryText=_cleanText(text.slice(0,1800));
-  const amendedItems=(amendedLaw2026[sub.id]||[]).join('\n');
-
-  if(barTxt)barTxt.textContent='📚 breakthru.tistory.com 학습자료 검색 중...';
-
-  // 티스토리 fetch → AI
-  fetch(tistoryUrl)
-    .then(r=>r.text())
-    .then(catHtml=>{
-      const links=[...catHtml.matchAll(/href="(https:\/\/breakthru\.tistory\.com\/\d+)"/g)]
-        .map(m=>m[1]).filter((v,i,a)=>a.indexOf(v)===i).slice(0,4);
-      if(barTxt)barTxt.textContent='📖 관련 학습자료 '+links.length+'개 분석 중...';
-      return Promise.all(links.slice(0,2).map(url=>
-        fetch(url).then(r=>r.text()).then(h=>{
-          // 본문 추출 후 JS 코드 제거
-          const m=h.match(/<div[^>]*class="[^"]*tt_article_useless_p_margin[^"]*"[^>]*>([\s\S]*?)<div[^>]*class="[^"]*container_postbtn/i)
-            ||h.match(/<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
-          if(m){
-            return m[1]
-              /* script 제거는 h2t에서 처리 */
-              .replace(/function\s+\w+[\s\S]*?\}/g,'')
-              .replace(/<[^>]+>/g,' ')
-              .replace(/&nbsp;/g,' ').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
-              .replace(/\s+/g,' ').trim().slice(0,1000);
-          }
-          return '';
-        }).catch(()=>'')
-      ));
-    }
-
 </script>
 
 <script>
-// ════════════════════════════════════════
-//  Firebase 로그인 & 동기화
-// ════════════════════════════════════════
+// ═══════════════════════════════════════
+//  Firebase 인증 & 동기화
+// ═══════════════════════════════════════
 var FB_CFG={
   apiKey:"AIzaSyBSmnAKzscPBC52OCvGuKytCpGlnJjE4qs",
   authDomain:"re-test-20fd8.firebaseapp.com",
   databaseURL:"https://re-test-20fd8-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId:"re-test-20fd8",storageBucket:"re-test-20fd8.firebasestorage.app",
-  messagingSenderId:"278315977222",appId:"1:278315977222:web:03a31e2c727d2ae80e9187"
+  projectId:"re-test-20fd8",
+  storageBucket:"re-test-20fd8.firebasestorage.app",
+  messagingSenderId:"278315977222",
+  appId:"1:278315977222:web:03a31e2c727d2ae80e9187"
 };
 var _auth=null,_db=null,_user=null,_cloud=false,_syncDone=false;
 var FB_LOG='fb9_logged',FB_SKIP='fb9_skip';
@@ -1346,7 +1205,8 @@ function _fbInit(){
   try{
     var app;
     try{app=firebase.app();}catch(e){app=firebase.initializeApp(FB_CFG);}
-    _auth=firebase.auth(app);_db=firebase.database(app);
+    _auth=firebase.auth(app);
+    _db=firebase.database(app);
     _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
     _auth.onAuthStateChanged(function(user){
       if(user){
@@ -1366,54 +1226,54 @@ function _fbInit(){
   }
 }
 
-function _navBtn(user){
+function _navBtn(u){
   var b=document.getElementById('nav-user');if(!b)return;
-  if(user){b.textContent='👤 '+(user.displayName||user.email||'').slice(0,8);
+  if(u){b.textContent='\u{1F464} '+(u.displayName||u.email||'').slice(0,8);
     b.style.background='#E8F5E9';b.style.color='#1B5E20';}
-  else{b.textContent='👤 로그인';b.style.background='#F3F4F6';b.style.color='#555';}
+  else{b.textContent='\u{1F464} \ub85c\uadf8\uc778';b.style.background='#F3F4F6';b.style.color='#555';}
 }
 function _openModal(){
   var m=document.getElementById('fb-modal');if(m)m.style.display='flex';
   var e=document.getElementById('fb-err');if(e)e.style.display='none';
 }
 function _closeModal(){var m=document.getElementById('fb-modal');if(m)m.style.display='none';}
-function _errMsg(msg){var e=document.getElementById('fb-err');if(e){e.textContent=msg;e.style.display='block';}}
+function _errMsg(s){var e=document.getElementById('fb-err');if(e){e.textContent=s;e.style.display='block';}}
 function showLoginModal(){_openModal();}
 
 function doGoogleLogin(){
-  if(!_auth){_errMsg('로딩 중... 잠시 후 다시 눌러주세요');return;}
+  if(!_auth){_errMsg('\ub85c\ub529 \uc911... \uc7a0\uc2dc \ud6c4 \ub2e4\uc2dc \ub208\ub7ec\uc8fc\uc138\uc694');return;}
   var p=new firebase.auth.GoogleAuthProvider();
   p.setCustomParameters({prompt:'select_account'});
   _auth.signInWithPopup(p)
-    .then(function(r){if(r.user)showToast('✅ Google 로그인 완료!');})
-    .catch(function(e){if(e.code!=='auth/popup-closed-by-user')_errMsg('Google 오류: '+e.message);});
+    .then(function(r){if(r.user)showToast('\u2705 Google \ub85c\uadf8\uc778 \uc644\ub8cc!');})
+    .catch(function(e){if(e.code!=='auth/popup-closed-by-user')_errMsg('Google \uc624\ub958: '+e.message);});
 }
 function doEmailLogin(){
-  if(!_auth){_errMsg('로딩 중... 잠시 후 다시 눌러주세요');return;}
+  if(!_auth){_errMsg('\ub85c\ub529 \uc911...');return;}
   var email=(document.getElementById('fb-email')||{}).value||'';
   var pw=(document.getElementById('fb-pw')||{}).value||'';
-  if(!email||pw.length<6){_errMsg('이메일과 비밀번호(6자+)를 입력하세요');return;}
+  if(!email||pw.length<6){_errMsg('\uc774\uba54\uc77c\uacfc \ube44\ubc00\ubc88\ud638(6\uc790+)\ub97c \uc785\ub825\ud558\uc138\uc694');return;}
   _auth.signInWithEmailAndPassword(email,pw)
-    .then(function(){showToast('✅ 로그인 완료!');})
+    .then(function(){showToast('\u2705 \ub85c\uadf8\uc778 \uc644\ub8cc!');})
     .catch(function(e){
       var isNew=['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials'].indexOf(e.code)>=0;
       if(isNew){
         _auth.createUserWithEmailAndPassword(email,pw)
-          .then(function(){showToast('✅ 회원가입 완료!');})
-          .catch(function(e2){_errMsg('가입 실패: '+e2.message);});
-      }else if(e.code==='auth/wrong-password'){_errMsg('비밀번호가 틀렸습니다');
-      }else{_errMsg('오류: '+e.message);}
+          .then(function(){showToast('\u2705 \ud68c\uc6d0\uac00\uc785 \uc644\ub8cc!');})
+          .catch(function(e2){_errMsg('\uac00\uc785 \uc2e4\ud328: '+e2.message);});
+      }else if(e.code==='auth/wrong-password'){_errMsg('\ube44\ubc00\ubc88\ud638\uac00 \ud2c0\ub838\uc2b5\ub2c8\ub2e4');
+      }else{_errMsg('\uc624\ub958: '+e.message);}
     });
 }
 function skipLogin(){
   _cloud=false;localStorage.setItem(FB_SKIP,'1');localStorage.removeItem(FB_LOG);
-  _closeModal();showToast('이 기기에만 저장됩니다');
+  _closeModal();showToast('\uc774 \uae30\uae30\uc5d0\ub9cc \uc800\uc7a5\ub429\ub2c8\ub2e4');
 }
 function showUserMenu(){
   if(_user){
-    if(confirm('👤 '+(_user.email||_user.displayName||'')+'\n로그아웃 하시겠습니까?')){
+    if(confirm('\u{1F464} '+(_user.email||_user.displayName||'')+'\n\ub85c\uadf8\uc544\uc6c3 \ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?')){
       _auth.signOut();_user=null;_cloud=false;_syncDone=false;
-      localStorage.removeItem(FB_LOG);_navBtn(null);showToast('로그아웃 되었습니다');
+      localStorage.removeItem(FB_LOG);_navBtn(null);showToast('\ub85c\uadf8\uc544\uc6c3 \ub418\uc5c8\uc2b5\ub2c8\ub2e4');
     }
   }else{_openModal();}
 }
@@ -1421,8 +1281,8 @@ function showUserMenu(){
 function _syncUp(){
   if(!_cloud||!_user||!_db||_syncing)return;
   _db.ref('u/'+_user.uid).set({s:JSON.stringify(STATS),w:JSON.stringify(WRONGS),t:Date.now()})
-    .then(function(){showToast('☁️ 저장 완료');})
-    .catch(function(e){console.warn('저장 실패:',e.message);});
+    .then(function(){showToast('\u2601\ufe0f \uc800\uc7a5 \uc644\ub8cc');})
+    .catch(function(e){console.warn('\uc800\uc7a5 \uc2e4\ud328:',e.message);});
 }
 function _syncDown(){
   if(!_user||!_db)return;
@@ -1444,12 +1304,12 @@ function _syncDown(){
         try{localStorage.setItem(SK,JSON.stringify(STATS));}catch(e){}
         try{localStorage.setItem(WK,JSON.stringify(WRONGS));}catch(e){}
         renderHome();updateNavWrong();
-        showToast('☁️ 동기화 완료! ('+Object.keys(STATS).length+'차시·오답'+WRONGS.length+'개)');
+        showToast('\u2601\ufe0f \ub3d9\uae30\ud654 \uc644\ub8cc! ('+Object.keys(STATS).length+'\ucc28\uc2dc\u30b7\uc624\ub2f5'+WRONGS.length+'\uac1c)');
       }else if(Object.keys(STATS).length>0||WRONGS.length>0){
         _syncing=false;_syncUp();return;
       }
     })
-    .catch(function(e){console.warn('동기화 실패:',e.message);showToast('⚠️ 동기화 실패');})
+    .catch(function(e){console.warn('\ub3d9\uae30\ud654 \uc2e4\ud328:',e.message);showToast('\u26a0\ufe0f \ub3d9\uae30\ud654 \uc2e4\ud328');})
     .finally(function(){_syncing=false;});
 }
 function showToast(msg){
@@ -1464,24 +1324,24 @@ function showToast(msg){
 <div id="fb-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:22px;padding:28px 22px;width:min(360px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.28)">
     <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:40px;margin-bottom:8px">📗</div>
-      <div style="font-weight:900;font-size:21px;color:#1B4332">공인중개사 2026</div>
-      <div style="font-size:14px;color:#888;margin-top:5px;line-height:1.6">로그인하면 어디서나<br>오답노트가 동기화됩니다</div>
+      <div style="font-size:40px;margin-bottom:8px">&#128217;</div>
+      <div style="font-weight:900;font-size:21px;color:#1B4332">&#44277;&#51064;&#51473;&#44060;&#49324; 2026</div>
+      <div style="font-size:14px;color:#888;margin-top:5px;line-height:1.6">&#47196;&#44536;&#51064;&#54616;&#47732; &#50612;&#46356;&#49436;&#45208;<br>&#50724;&#45813;&#45432;&#53944;&#44032; &#46041;&#44592;&#54868;&#46121;&#45768;&#45796;</div>
     </div>
-    <input id="fb-email" type="email" placeholder="이메일" autocomplete="email"
+    <input id="fb-email" type="email" placeholder="&#51060;&#47700;&#51068;" autocomplete="email"
       style="width:100%;padding:13px 14px;border-radius:11px;border:1.5px solid #ddd;font-size:16px;margin-bottom:9px;font-family:inherit;outline:none;box-sizing:border-box"/>
-    <input id="fb-pw" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password"
+    <input id="fb-pw" type="password" placeholder="&#48708;&#48128;&#48264;&#54840; (6&#51088; &#51060;&#49345;)" autocomplete="current-password"
       style="width:100%;padding:13px 14px;border-radius:11px;border:1.5px solid #ddd;font-size:16px;margin-bottom:12px;font-family:inherit;outline:none;box-sizing:border-box"/>
     <div id="fb-err" style="display:none;color:#C62828;font-size:13px;margin-bottom:10px;padding:8px 12px;background:#FFEBEE;border-radius:8px"></div>
-    <button onclick="doEmailLogin()" style="width:100%;padding:14px;border-radius:11px;border:none;background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;font-weight:800;font-size:17px;cursor:pointer;margin-bottom:9px">로그인 / 회원가입</button>
-    <div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:12px">처음이면 자동으로 회원가입됩니다</div>
+    <button onclick="doEmailLogin()" style="width:100%;padding:14px;border-radius:11px;border:none;background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;font-weight:800;font-size:17px;cursor:pointer;margin-bottom:9px">&#47196;&#44536;&#51064; / &#54924;&#50896;&#44032;&#51077;</button>
+    <div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:12px">&#52376;&#51020;&#51060;&#47732; &#51088;&#46041;&#51004;&#47196; &#54924;&#50896;&#44032;&#51077;&#46121;&#45768;&#45796;</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-      <div style="flex:1;height:1px;background:#eee"></div><span style="font-size:12px;color:#ccc">또는</span><div style="flex:1;height:1px;background:#eee"></div>
+      <div style="flex:1;height:1px;background:#eee"></div><span style="font-size:12px;color:#ccc">&#46608;&#45716;</span><div style="flex:1;height:1px;background:#eee"></div>
     </div>
     <button onclick="doGoogleLogin()" style="width:100%;padding:13px;border-radius:11px;border:1.5px solid #ddd;background:#fff;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:9px">
-      <img src="https://www.google.com/favicon.ico" width="18" height="18">Google 계정으로 로그인
+      <img src="https://www.google.com/favicon.ico" width="18" height="18">Google &#44228;&#51221;&#51004;&#47196; &#47196;&#44536;&#51064;
     </button>
-    <button onclick="skipLogin()" style="width:100%;padding:11px;border-radius:11px;border:none;background:#F5F5F5;color:#999;font-size:14px;cursor:pointer">로그인 없이 계속</button>
+    <button onclick="skipLogin()" style="width:100%;padding:11px;border-radius:11px;border:none;background:#F5F5F5;color:#999;font-size:14px;cursor:pointer">&#47196;&#44536;&#51064; &#50630;&#51060; &#44228;&#49549;</button>
   </div>
 </div>
 <div id="fb-toast" style="display:none"></div>
