@@ -203,7 +203,6 @@ button:active{opacity:.75;transform:scale(.97);}
 ::-webkit-scrollbar{width:3px;}
 ::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px;}
 </style>
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -213,10 +212,7 @@ button:active{opacity:.75;transform:scale(.97);}
 <!-- NAV -->
 <div id="nav">
   <button id="nav-home" onclick="goHome()">📗 공인중개사 2026</button>
-  <div style="display:flex;align-items:center;gap:6px">
-  <button id="nav-user" onclick="showUserMenu()" style="padding:6px 12px;border-radius:9px;font-size:14px;font-weight:700;background:#F3F4F6;color:#555;border:none;cursor:pointer">👤</button>
-  <button id="nav-wrong" onclick="goWrong()">❌ 오답노트</button>
-</div>
+  <div style="display:flex;align-items:center;gap:6px"><button id="nav-user" onclick="showUserMenu()" style="padding:6px 12px;border-radius:9px;font-size:14px;font-weight:700;background:#F3F4F6;color:#555;border:none;cursor:pointer">👤</button><button id="nav-wrong" onclick="goWrong()">❌ 오답노트</button></div>
 </div>
 
 <!-- HOME -->
@@ -360,7 +356,7 @@ let _cbId=0;
 function lsGet(k,d){try{return JSON.parse(localStorage.getItem(k))||d;}catch{return d;}}
 var _syncing=false;
 function lsSave(k,v){
-  try{localStorage.setItem(k,JSON.stringify(v));}catch{}
+  try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}
   if(_syncing)return;
   clearTimeout(lsSave._t);
   lsSave._t=setTimeout(function(){if(typeof _syncUp==='function')_syncUp();},2500);
@@ -416,44 +412,51 @@ function ring(el,pct,color,sz,sw){
 // ══════════════════════════════════════════
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// script/style 제거용 문자열 (직접 쓰면 브라우저가 태그로 오인하므로 변수로 분리)
-var _SC='</';var _SC_END=_SC+'script>';var _ST_END=_SC+'style>';
-
-// ★ 핵심: HTML→텍스트 변환 + CSS/JS 코드 완전 제거
+// ★ 핵심 수정: li·br·p·div 태그를 줄바꿈으로 변환해야
+//   선택지가 한 줄에 붙지 않고 개별 파싱됨
+var _SCEND=('<')+'/'+'scr'+'ipt>';
+var _STEND=('<')+'/'+'st'+'yle>';
 function h2t(h){
   if(!h)return'';
-  // 1단계: script/style 블록 제거
-  while(h.indexOf('<script')>=0){
-    var a=h.indexOf('<script'),b=h.indexOf(_SC_END,a);
-    if(b<0){h=h.slice(0,a);break;}
-    h=h.slice(0,a)+h.slice(b+_SC_END.length);
+  // script/style 제거
+  var i0;
+  while((i0=h.indexOf('<scr'+'ipt'))>=0){
+    var i1=h.indexOf(_SCEND,i0);
+    if(i1<0){h=h.slice(0,i0);break;}
+    h=h.slice(0,i0)+h.slice(i1+_SCEND.length);
   }
-  while(h.indexOf('<style')>=0){
-    var a=h.indexOf('<style'),b=h.indexOf(_ST_END,a);
-    if(b<0){h=h.slice(0,a);break;}
-    h=h.slice(0,a)+h.slice(b+_ST_END.length);
+  while((i0=h.indexOf('<sty'+'le'))>=0){
+    var i1=h.indexOf(_STEND,i0);
+    if(i1<0){h=h.slice(0,i0);break;}
+    h=h.slice(0,i0)+h.slice(i1+_STEND.length);
   }
-  // 2단계: JS/CSS 코드 패턴 제거
-  h=h
-    .replace(/function\s+\w+\s*\([^)]*\)\s*\{[^{}]*\}/g,'')
-    .replace(/var\s+\w+\s*=\s*document[^;]{0,150};/g,'')
-    .replace(/\.\w+\s*\{[^}]{0,300}\}/g,'')
-    .replace(/#\w+\s*\{[^}]{0,300}\}/g,'')
-    .replace(/\{[^{}]{0,50}(background|color|font|padding|margin|border|display)[^{}]{0,200}\}/g,'')
-    .replace(/showAns\s*\([^)]*\)/g,'')
-    .replace(/document\.getElementById[^)]{0,80}\)/g,'');
-  // 3단계: HTML 태그 → 줄바꿈/공백
+  // CSS/JS 코드 패턴 제거 (정규식 대신 문자열 처리)
+  h=h.replace(/각\s*지문을\s*클릭하면[^\n]*/g,'');
+  // CSS 블록 제거: { ... } 반복 제거
+  var safety=0;
+  while(h.indexOf('{')>=0 && ++safety<50){
+    var cb=h.indexOf('{');
+    var ce=h.indexOf('}',cb);
+    if(ce<0)break;
+    var block=h.slice(cb+1,ce);
+    if(/background|color|font-size|padding|margin|border/.test(block)||
+       /quiz|container|options/.test(h.slice(Math.max(0,cb-30),cb))){
+      h=h.slice(0,cb)+h.slice(ce+1);
+    }else{
+      break;
+    }
+  }
   return h
-    .replace(/<li[^>]*>/gi,'\n')
+    .replace(/<li[^>]*>/gi,'\n')      // <li> → 줄바꿈 (선택지 구분 핵심!)
     .replace(/<\/li>/gi,'')
     .replace(/<br\s*\/?>/gi,'\n')
     .replace(/<p[^>]*>/gi,'\n')
     .replace(/<\/p>/gi,'')
     .replace(/<div[^>]*>/gi,'\n')
     .replace(/<\/div>/gi,'')
-    .replace(/<[^>]+>/g,' ')
+    .replace(/<[^>]+>/g,' ')          // 나머지 태그 → 공백
     .replace(/&nbsp;/g,' ').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')
-    .replace(/[ \t]+/g,' ')
+    .replace(/[ \t]+/g,' ')           // 수평 공백만 정리 (줄바꿈은 유지)
     .replace(/\n[ \t]+/g,'\n')
     .replace(/\n{3,}/g,'\n\n')
     .trim();
@@ -567,43 +570,33 @@ function parseQs(text){
 function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
 
 // ══════════════════════════════════════════
-//  학습 데이터 파싱
+//  블로그 본문에서 학습 콘텐츠 파싱
+//  ★ 문제 영역(문제01~) 이전 텍스트만 사용 ★
 // ══════════════════════════════════════════
 function buildStudyData(text){
   const allLines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+
+  // 문제 시작 인덱스
   const firstQIdx=allLines.findIndex(l=>/^(?:문제|Q)\s*\d/i.test(l));
+
+  // ★ 학습 자료: 문제 영역 이전만 (선택지 절대 포함 안 됨)
   const studyLines=firstQIdx>0
     ?allLines.slice(0,firstQIdx)
     :allLines.filter(l=>!/^[①②③④⑤]/.test(l)&&!/^(?:문제|Q)\s*\d/i.test(l)&&!/^(?:정답|해설)/i.test(l));
 
-  // ★ CSS/JS 코드 줄 필터 (학습정리에 불필요)
-  function isBadLine(l){
-    return /^\s*[.#][\w-]+\s*\{/.test(l)           // .quiz-container { ...
-      || /\{\s*(background|color|font|padding|margin|border|display)\s*[-:]/.test(l) // CSS 속성
-      || /\b(function|var|const|let|return|document|window|querySelector)\b/.test(l) // JS 키워드
-      || /^\s*\/\//.test(l)                          // JS 주석
-      || /margin|padding|border-radius|font-size|overflow|background-color/.test(l) // CSS 값
-      || /quiz-container|quiz|options|\.question\b/.test(l) // 퀴즈 CSS 클래스명
-      || /각 지문을 클릭하면/.test(l)                // 블로그 퀴즈 안내문
-      || l.length > 300;                             // 너무 긴 줄 (HTML/코드)
-  }
-
-  const cleanLines=studyLines.filter(l=>!isBadLine(l));
-  const bullets=cleanLines.filter(l=>/^[-•·]/.test(l)).map(l=>l.replace(/^[-•·]\s*/,'').trim()).filter(l=>l.length>8);
-  const sentences=cleanLines.filter(l=>!/^[-•·]/.test(l)&&l.length>10&&l.length<300
-    &&!/^(?:제\d+차시|핵심|총정리|##|라벨|작성자|공유|이 글|관련 글)/.test(l)
-    &&!isBadLine(l));
+  const bullets=studyLines.filter(l=>/^[-•·]/.test(l)).map(l=>l.replace(/^[-•·]\s*/,'').trim()).filter(l=>l.length>10);
+  const sentences=studyLines.filter(l=>!/^[-•·]/.test(l)&&l.length>15&&!/^(?:제\d+차시|핵심|총정리|##|라벨|작성자)/.test(l));
 
   // [1] 기본 학습
   let learn=[...bullets];
-  if(learn.length<6) sentences.forEach(s=>{if(learn.length<14&&!learn.includes(s))learn.push(s);});
-  learn=[...new Set(learn)].filter(l=>l.length>8&&!/^\d+$/.test(l)&&!isBadLine(l)).slice(0,14);
+  if(learn.length<6)sentences.forEach(s=>{if(learn.length<14&&!learn.includes(s))learn.push(s);});
+  learn=[...new Set(learn)].filter(l=>l.length>10&&!/^\d+$/.test(l)).slice(0,14);
 
-  // [2] 암기 (숫자·기준 포함)
+  // [2] 암기
   const hasNum=s=>/\d+\s*(?:㎡|m²|미터|층|년|개월|일|명|만원|억원|%|이상|이하|초과|미만|이내)/.test(s);
   const memItems=[];
   [...bullets,...sentences].forEach(s=>{
-    if(memItems.length>=10||!hasNum(s)||isBadLine(s))return;
+    if(memItems.length>=10||!hasNum(s))return;
     const c=s.indexOf(':');
     const key=c>0&&c<35?s.slice(0,c).trim():s.split(/\s+/).slice(0,4).join(' ');
     const val=c>0?s.slice(c+1).trim():s;
@@ -617,107 +610,36 @@ function buildStudyData(text){
     });
   }
 
-  // [3] 주의사항
-  const negPat=/(?:아니다|없다|안\s*된다|불가|제외|예외|주의|절대|혼동)/;
+  // [3] 주의 사항 (studyLines에서만! 선택지 텍스트 제외)
+  const negPat=/(?:아니다|없다|안\s*된다|불가|제외|예외|주의|절대|반드시\s*(?:아님|아니)|혼동)/;
   const cautionRaw=[];
-  [...bullets,...sentences].forEach(s=>{if(cautionRaw.length<5&&negPat.test(s)&&!isBadLine(s))cautionRaw.push(s);});
-  const caution=[...new Set(cautionRaw)].slice(0,5).map((c,i)=>({title:'주의 '+(i+1),body:c.slice(0,220)}));
-  if(caution.length<2){
+  [...bullets,...sentences].forEach(s=>{if(cautionRaw.length<6&&negPat.test(s))cautionRaw.push(s);});
+  const caution=[...new Set(cautionRaw)].slice(0,6).map((c,i)=>({title:'주의 '+(i+1),body:c.slice(0,220)}));
+  if(caution.length===0){
     caution.push({title:'원칙과 예외 구분',body:'원칙적 기준과 예외 규정을 명확히 구분하여 학습하세요.'});
-    if(caution.length<2) caution.push({title:'숫자 기준 혼동 주의',body:'면적·기간·층수 등 숫자 기준을 정확히 암기하고 혼동하지 않도록 주의하세요.'});
+    caution.push({title:'숫자 기준 혼동 주의',body:'면적·기간·층수 등 숫자 기준을 정확히 암기하고 혼동하지 않도록 주의하세요.'});
+  }else if(caution.length===1){
+    caution.push({title:'숫자 기준 혼동 주의',body:'면적·기간·층수 등 숫자 기준을 정확히 암기하고 혼동하지 않도록 주의하세요.'});
   }
 
-  const tip=bullets.find(b=>b.length>12&&b.length<90)||learn.find(l=>l.length>12&&l.length<90)||'핵심 개념·숫자 기준을 중심으로 학습하고 원칙과 예외를 명확히 구분하세요.';
-  return{learn,memory,caution,exam:[],tip};
+  // [4] 출제 포인트
+  const examPoints=[];
+  ST.qs.forEach(q=>{if(examPoints.length<8)examPoints.push(q.question.length>70?q.question.slice(0,68)+'...':q.question);});
+  if(examPoints.length<4)learn.slice(0,6).forEach(l=>{if(examPoints.length<8)examPoints.push(l.slice(0,80)+(l.length>80?'...':''));});
+  const subTips={'공법':['건축허가 요건 및 면적·층수 기준','용도지역별 건폐율·용적률 수치','개발행위허가 대상 여부 판단','허가 취소 사유 및 절차'],'민법':['판례의 입장 (옳다/틀리다 구별)','법률행위의 효력발생 요건','취소·무효·추인의 차이','대리권의 범위와 남용'],'세법':['세율·공제액 계산 문제','납세의무자 판단 기준','비과세·감면 요건 구별','납부 기한·신고 절차'],'공시법':['등기 신청 주체·기간·절차','등기부 기재 사항 및 효력','등기의 추정력·공신력 구별','각종 등기의 유형'],'부동산학개론':['부동산 개념·분류','시장 분석 이론','투자 수익률 계산','가격 결정 원리'],'중개사법':['중개업자 의무·금지행위','중개보수 한도 및 계산','결격사유·등록 취소','손해배상 책임']};
+  (subTips[ST.sub?.id]||[]).forEach(t=>{if(examPoints.length<8)examPoints.push(t);});
+
+  const tip=bullets.find(b=>b.length>15&&b.length<100)||learn.find(l=>l.length>15&&l.length<100)||'핵심 개념·숫자 기준을 중심으로 학습하고 원칙과 예외를 명확히 구분하세요.';
+  return{learn,memory,caution,exam:examPoints.slice(0,8),tip};
 }
+
 
 // ══════════════════════════════════════════
 //  학습 콘텐츠 렌더링
 // ══════════════════════════════════════════
 function renderStudyContent(data,sub){
-  var el=document.getElementById('study-content');
-  var learn=data.learn||[], memory=data.memory||[], caution=data.caution||[], tip=data.tip||'';
-
-  // 정크 판별
-  function isJunk(s){
-    return !s||s.length<8
-      ||/function\s*\(|var\s+\w+=|document\.|style\.|showans|quiz-container|background-color|font-size/i.test(s)
-      ||/^[,\s.·•。\-]+$/.test(s)
-      ||/^\s*[,.{]/.test(s)
-      ||(s.match(/,/g)||[]).length>6
-      ||/^(모두|전체|해당|기타|등|없음|있음)\s*$/.test(s.trim());
-  }
-
-  // 암기 항목 정제
-  var memList=memory.map(function(m){
-    if(!m)return null;
-    var text='';
-    if(typeof m==='string'){text=m;}
-    else{
-      var k=m.key||m.label||'', v=m.val||'', n=m.note||'';
-      text=k&&v?k+': '+v+(n?' ('+n+')':''):(v||k);
-    }
-    if(typeof _cleanText==='function')text=_cleanText(text);
-    return isJunk(text)?null:text;
-  }).filter(function(t){return t&&t.length>8;}).slice(0,12);
-
-  var lList=learn.map(function(item){
-    var t=typeof _cleanText==='function'?_cleanText(item):item;
-    return (t&&t.length>5&&!isJunk(t))?t:null;
-  }).filter(Boolean);
-
-  var cList=caution.map(function(c){
-    return{title:c.title||'주의',body:typeof _cleanText==='function'?_cleanText(c.body||''):c.body||''};
-  }).filter(function(c){return c.body.length>8&&!isJunk(c.body);});
-
-  el.innerHTML=
-  '<div class="tip-banner" style="background:linear-gradient(135deg,'+sub.color+','+sub.color+'BB)">'
-  +'<div class="tip-lbl">⚡ 이 차시 합격 핵심</div>'
-  +'<div class="tip-txt">'+esc(tip)+'</div>'
-  +'</div>'
-
-  // 1. 기본학습
-  +'<div class="study-section ss-learn">'
-  +'<div class="ss-hdr" onclick="toggleSS(\'learn\')">'
-  +'<div class="ss-ico">📖</div>'
-  +'<div class="ss-ttl">기본 학습 내용<span class="ss-cnt">'+lList.length+'항목</span></div>'
-  +'<div class="ss-arr open" id="learn-arr">▼</div></div>'
-  +'<div class="ss-body open" id="learn-body">'
-  +(lList.length?lList.map(function(t){
-    return '<div class="si"><div class="si-dot" style="background:'+sub.color+'"></div><div class="si-txt">'+hl(esc(t))+'</div></div>';
-  }).join(''):'<div style="font-size:15px;color:var(--tx3);padding:6px 0">AI 분석 중...</div>')
-  +'</div></div>'
-
-  // 2. 반드시 암기
-  +'<div class="study-section ss-mem">'
-  +'<div class="ss-hdr" onclick="toggleSS(\'mem\')">'
-  +'<div class="ss-ico">🧠</div>'
-  +'<div class="ss-ttl">반드시 암기할 내용<span class="ss-cnt">'+memList.length+'항목</span></div>'
-  +'<div class="ss-arr open" id="mem-arr">▼</div></div>'
-  +'<div class="ss-body open" id="mem-body">'
-  +(memList.length?memList.map(function(t,i){
-    return '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;padding:11px 13px;background:'+(i%2===0?'#F8FAFF':'#fff')+';border-radius:10px;border-left:3px solid '+sub.color+'">'
-      +'<div style="min-width:26px;height:26px;border-radius:7px;background:'+sub.color+';color:#fff;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(i+1)+'</div>'
-      +'<div style="font-size:16px;color:#1a1a2e;line-height:1.8;font-weight:500">'+hl(esc(t))+'</div></div>';
-  }).join(''):'<div style="font-size:15px;color:var(--tx3);padding:6px 0">AI 분석 중...</div>')
-  +'</div></div>'
-
-  // 3. 주의사항
-  +'<div class="study-section ss-warn">'
-  +'<div class="ss-hdr" onclick="toggleSS(\'warn\')">'
-  +'<div class="ss-ico">⚠️</div>'
-  +'<div class="ss-ttl">주의할 내용<span class="ss-cnt">'+cList.length+'항목</span></div>'
-  +'<div class="ss-arr open" id="warn-arr">▼</div></div>'
-  +'<div class="ss-body open" id="warn-body">'
-  +cList.map(function(c){
-    return '<div style="margin-bottom:12px;border-radius:11px;overflow:hidden;border:1.5px solid #FED7AA">'
-      +'<div style="background:#FFF7ED;padding:9px 13px;font-weight:800;font-size:14px;color:#9A3412;border-bottom:1px solid #FED7AA">⚠️ '+esc(c.title)+'</div>'
-      +'<div style="padding:10px 13px;font-size:15px;color:#374151;line-height:1.8;background:#FFFDF9">'+hl(esc(c.body))+'</div>'
-      +'</div>';
-  }).join('')
-  +'</div></div>';
-}
-
+  const el=document.getElementById('study-content');
+  const {learn,memory,caution,exam,tip}=data;
 
   el.innerHTML=`
   <!-- TIP 배너 -->
@@ -1260,43 +1182,12 @@ function updateNavWrong(){
   else{b.classList.remove('on');b.textContent='❌ 오답노트';}
 }
 
-// ── 텍스트 정제
-function _cleanText(s){
-  if(!s)return'';
-  return s
-    .replace(/function\s+\w+\s*\([^)]*\)\s*\{[^{}]*\}/g,'')
-    .replace(/var\s+\w+\s*=\s*document[^;]{0,150};/g,'')
-    .replace(/\w+\.(style|innerText|innerHTML)\s*=[^;]{0,150};/g,'')
-    .replace(/showAns\s*\([^)]*\)[^;]{0,50};?/g,'')
-    .replace(/document\.getElementById[^;)]{0,100}[;)]/g,'')
-    .replace(/^[\s,.\u00B7\u2022\u3002\-]+/,'')
-    .replace(/\s*,\s*,\s*/g,', ')
-    .replace(/내가\s*선택한\s*번호[^.\n]*/g,'')
-    .replace(/상세\s*해설\s*및\s*오답\s*분석[^.\n]*/g,'')
-    .replace(/\(정답\)|\(오답\)|\(옳음\)|\(틀림\)|\(맞음\)/g,'')
-    .replace(/[\u2460-\u2469]/g,'')
-    .replace(/\s{2,}/g,' ')
-    .trim();
-}
-
-
 // INIT
-document.addEventListener('DOMContentLoaded',function(){
-  updateNavWrong();
-  renderHome();
-  buildTabs();
-});
-// Firebase는 두 번째 script 블록에 있으므로 window.load에서 호출
-window.addEventListener('load',function(){
-  if(typeof _fbInit==='function') _fbInit();
-});
+document.addEventListener('DOMContentLoaded',function(){updateNavWrong();renderHome();buildTabs();});
 </script>
 
 <script>
-// ═══════════════════════════════════════
-//  Firebase 인증 & 동기화
-// ═══════════════════════════════════════
-var FB_CFG={
+var _FB={
   apiKey:"AIzaSyBSmnAKzscPBC52OCvGuKytCpGlnJjE4qs",
   authDomain:"re-test-20fd8.firebaseapp.com",
   databaseURL:"https://re-test-20fd8-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -1306,117 +1197,104 @@ var FB_CFG={
   appId:"1:278315977222:web:03a31e2c727d2ae80e9187"
 };
 var _auth=null,_db=null,_user=null,_cloud=false,_syncDone=false;
-var FB_LOG='fb9_logged',FB_SKIP='fb9_skip';
+var _FLOG='fb9_ok',_FSKIP='fb9_skip';
 
 function _fbInit(){
-  if(typeof firebase==='undefined'){console.warn('Firebase SDK 미로드');return;}
   try{
     var app;
-    try{app=firebase.app();}catch(e){app=firebase.initializeApp(FB_CFG);}
+    try{app=firebase.app();}catch(e){app=firebase.initializeApp(_FB);}
     _auth=firebase.auth(app);
     _db=firebase.database(app);
     _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
-    _auth.onAuthStateChanged(function(user){
-      if(user){
-        _user=user;_cloud=true;_navBtn(user);_closeModal();
-        localStorage.setItem(FB_LOG,'1');localStorage.removeItem(FB_SKIP);
-        if(!_syncDone){_syncDone=true;_syncDown();}
+    _auth.onAuthStateChanged(function(u){
+      if(u){
+        _user=u;_cloud=true;_nb(u);_hm();
+        localStorage.setItem(_FLOG,'1');localStorage.removeItem(_FSKIP);
+        if(!_syncDone){_syncDone=true;_sd();}
       }else{
-        _user=null;_cloud=false;_navBtn(null);
-        if(localStorage.getItem(FB_SKIP)||localStorage.getItem(FB_LOG))return;
-        setTimeout(function(){if(!_user)_openModal();},1000);
+        _user=null;_cloud=false;_nb(null);
+        if(localStorage.getItem(_FSKIP)||localStorage.getItem(_FLOG))return;
+        setTimeout(function(){if(!_user)_om();},1000);
       }
     });
   }catch(e){
-    console.error('FB init:',e.message);
-    if(!localStorage.getItem(FB_SKIP)&&!localStorage.getItem(FB_LOG))
-      setTimeout(_openModal,1000);
+    console.error('FB:',e.message);
+    if(!localStorage.getItem(_FSKIP)&&!localStorage.getItem(_FLOG))
+      setTimeout(_om,1000);
   }
 }
-
-function _navBtn(u){
+function _nb(u){
   var b=document.getElementById('nav-user');if(!b)return;
-  if(u){b.textContent='\u{1F464} '+(u.displayName||u.email||'').slice(0,8);
+  if(u){b.textContent='👤 '+(u.displayName||u.email||'').slice(0,8);
     b.style.background='#E8F5E9';b.style.color='#1B5E20';}
-  else{b.textContent='\u{1F464} \ub85c\uadf8\uc778';b.style.background='#F3F4F6';b.style.color='#555';}
+  else{b.textContent='👤 로그인';b.style.background='#F3F4F6';b.style.color='#555';}
 }
-function _openModal(){
-  var m=document.getElementById('fb-modal');if(m)m.style.display='flex';
-  var e=document.getElementById('fb-err');if(e)e.style.display='none';
-}
-function _closeModal(){var m=document.getElementById('fb-modal');if(m)m.style.display='none';}
-function _errMsg(s){var e=document.getElementById('fb-err');if(e){e.textContent=s;e.style.display='block';}}
-function showLoginModal(){_openModal();}
+function _om(){var m=document.getElementById('_fm');if(m)m.style.display='flex';
+  var e=document.getElementById('_fe');if(e)e.style.display='none';}
+function _hm(){var m=document.getElementById('_fm');if(m)m.style.display='none';}
+function _em(s){var e=document.getElementById('_fe');if(e){e.textContent=s;e.style.display='block';}}
+function showLoginModal(){_om();}
 
 function doGoogleLogin(){
-  // _auth 준비 안 됐으면 최대 3초 대기 후 재시도
   if(!_auth){
-    var tries=0;
-    var wait=setInterval(function(){
-      tries++;
-      if(_auth){ clearInterval(wait); _doGooglePopup(); }
-      else if(tries>15){ clearInterval(wait); _errMsg('Firebase 연결 실패. 페이지를 새로고침해 주세요.'); }
-    },200);
-    return;
+    var t=0,iv=setInterval(function(){
+      if(_auth){clearInterval(iv);_gp();}
+      else if(++t>20){clearInterval(iv);_em('연결 실패. 새로고침해 주세요.');}
+    },200);return;
   }
-  _doGooglePopup();
+  _gp();
 }
-function _doGooglePopup(){
+function _gp(){
   var p=new firebase.auth.GoogleAuthProvider();
   p.setCustomParameters({prompt:'select_account'});
   _auth.signInWithPopup(p)
     .then(function(r){if(r.user)showToast('✅ Google 로그인 완료!');})
-    .catch(function(e){if(e.code!=='auth/popup-closed-by-user')_errMsg('Google 오류: '+e.message);});
+    .catch(function(e){if(e.code!=='auth/popup-closed-by-user')_em('Google 오류: '+e.message);});
 }
-
 function doEmailLogin(){
   if(!_auth){
-    var tries=0;
-    var wait=setInterval(function(){
-      tries++;
-      if(_auth){ clearInterval(wait); _doEmailSignIn(); }
-      else if(tries>15){ clearInterval(wait); _errMsg('Firebase 연결 실패. 페이지를 새로고침해 주세요.'); }
-    },200);
-    return;
+    var t=0,iv=setInterval(function(){
+      if(_auth){clearInterval(iv);_ep();}
+      else if(++t>20){clearInterval(iv);_em('연결 실패. 새로고침해 주세요.');}
+    },200);return;
   }
-  _doEmailSignIn();
+  _ep();
 }
-function _doEmailSignIn(){
-  var email=(document.getElementById('fb-email')||{}).value||'';
-  var pw=(document.getElementById('fb-pw')||{}).value||'';
-  if(!email||pw.length<6){_errMsg('이메일과 비밀번호(6자+)를 입력하세요');return;}
-  _auth.signInWithEmailAndPassword(email,pw)
+function _ep(){
+  var em=(document.getElementById('_fee')||{}).value||'';
+  var pw=(document.getElementById('_fep')||{}).value||'';
+  if(!em||pw.length<6){_em('이메일과 비밀번호(6자+)를 입력하세요');return;}
+  _auth.signInWithEmailAndPassword(em,pw)
     .then(function(){showToast('✅ 로그인 완료!');})
     .catch(function(e){
-      var isNew=['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials'].indexOf(e.code)>=0;
-      if(isNew){
-        _auth.createUserWithEmailAndPassword(email,pw)
+      if(['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials'].indexOf(e.code)>=0){
+        _auth.createUserWithEmailAndPassword(em,pw)
           .then(function(){showToast('✅ 회원가입 완료!');})
-          .catch(function(e2){_errMsg('가입 실패: '+e2.message);});
-      }else if(e.code==='auth/wrong-password'){_errMsg('비밀번호가 틀렸습니다');
-      }else{_errMsg('오류: '+e.message);}
+          .catch(function(e2){_em('가입 실패: '+e2.message);});
+      }else if(e.code==='auth/wrong-password'){_em('비밀번호가 틀렸습니다');
+      }else{_em('오류: '+e.message);}
     });
 }
 function skipLogin(){
-  _cloud=false;localStorage.setItem(FB_SKIP,'1');localStorage.removeItem(FB_LOG);
-  _closeModal();showToast('\uc774 \uae30\uae30\uc5d0\ub9cc \uc800\uc7a5\ub429\ub2c8\ub2e4');
+  _cloud=false;localStorage.setItem(_FSKIP,'1');localStorage.removeItem(_FLOG);
+  _hm();showToast('이 기기에만 저장됩니다');
 }
 function showUserMenu(){
   if(_user){
-    if(confirm('\u{1F464} '+(_user.email||_user.displayName||'')+'\n\ub85c\uadf8\uc544\uc6c3 \ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?')){
+    if(confirm('👤 '+(_user.email||_user.displayName||'')+'
+로그아웃 하시겠습니까?')){
       _auth.signOut();_user=null;_cloud=false;_syncDone=false;
-      localStorage.removeItem(FB_LOG);_navBtn(null);showToast('\ub85c\uadf8\uc544\uc6c3 \ub418\uc5c8\uc2b5\ub2c8\ub2e4');
+      localStorage.removeItem(_FLOG);_nb(null);showToast('로그아웃 되었습니다');
     }
-  }else{_openModal();}
+  }else{_om();}
 }
-
-function _syncUp(){
+function _su(){
   if(!_cloud||!_user||!_db||_syncing)return;
   _db.ref('u/'+_user.uid).set({s:JSON.stringify(STATS),w:JSON.stringify(WRONGS),t:Date.now()})
-    .then(function(){showToast('\u2601\ufe0f \uc800\uc7a5 \uc644\ub8cc');})
-    .catch(function(e){console.warn('\uc800\uc7a5 \uc2e4\ud328:',e.message);});
+    .then(function(){showToast('☁️ 저장 완료');})
+    .catch(function(e){console.warn('저장실패:',e.message);});
 }
-function _syncDown(){
+function _sd(){
   if(!_user||!_db)return;
   _syncing=true;
   _db.ref('u/'+_user.uid).once('value')
@@ -1436,46 +1314,76 @@ function _syncDown(){
         try{localStorage.setItem(SK,JSON.stringify(STATS));}catch(e){}
         try{localStorage.setItem(WK,JSON.stringify(WRONGS));}catch(e){}
         renderHome();updateNavWrong();
-        showToast('\u2601\ufe0f \ub3d9\uae30\ud654 \uc644\ub8cc! ('+Object.keys(STATS).length+'\ucc28\uc2dc\u30b7\uc624\ub2f5'+WRONGS.length+'\uac1c)');
+        showToast('☁️ 동기화 완료! ('+Object.keys(STATS).length+'차시·오답'+WRONGS.length+'개)');
       }else if(Object.keys(STATS).length>0||WRONGS.length>0){
-        _syncing=false;_syncUp();return;
+        _syncing=false;_su();return;
       }
     })
-    .catch(function(e){console.warn('\ub3d9\uae30\ud654 \uc2e4\ud328:',e.message);showToast('\u26a0\ufe0f \ub3d9\uae30\ud654 \uc2e4\ud328');})
+    .catch(function(e){showToast('⚠️ 동기화 실패');console.warn(e);})
     .finally(function(){_syncing=false;});
 }
+// _syncUp 을 lsSave가 호출할 수 있도록 연결
+var _syncUp=_su;
+
 function showToast(msg){
-  var t=document.getElementById('fb-toast');if(!t)return;
-  clearTimeout(t._tid);t.textContent=msg;
-  t.style.cssText='display:block;opacity:1;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1B4332;color:#fff;padding:11px 20px;border-radius:22px;font-size:15px;font-weight:600;z-index:9000;white-space:nowrap;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.22)';
-  t._tid=setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.style.display='none';},300);},2500);
+  var t=document.getElementById('_ft');if(!t)return;
+  clearTimeout(t._id);t.textContent=msg;
+  t.style.cssText='display:block;opacity:1;position:fixed;bottom:88px;left:50%;'
+    +'transform:translateX(-50%);background:#1B4332;color:#fff;padding:11px 20px;'
+    +'border-radius:22px;font-size:15px;font-weight:600;z-index:9000;'
+    +'white-space:nowrap;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.22)';
+  t._id=setTimeout(function(){
+    t.style.opacity='0';
+    setTimeout(function(){t.style.display='none';},300);
+  },2500);
 }
 </script>
 
 <!-- 로그인 모달 -->
-<div id="fb-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:22px;padding:28px 22px;width:min(360px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.28)">
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:40px;margin-bottom:8px">&#128217;</div>
-      <div style="font-weight:900;font-size:21px;color:#1B4332">&#44277;&#51064;&#51473;&#44060;&#49324; 2026</div>
-      <div style="font-size:14px;color:#888;margin-top:5px;line-height:1.6">&#47196;&#44536;&#51064;&#54616;&#47732; &#50612;&#46356;&#49436;&#45208;<br>&#50724;&#45813;&#45432;&#53944;&#44032; &#46041;&#44592;&#54868;&#46121;&#45768;&#45796;</div>
+<div id="_fm" style="display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:22px;padding:28px 22px;
+    width:min(360px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.28)">
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:38px;margin-bottom:7px">📗</div>
+      <div style="font-weight:900;font-size:20px;color:#1B4332">공인중개사 2026</div>
+      <div style="font-size:14px;color:#888;margin-top:5px;line-height:1.6">
+        로그인하면 어디서나<br>오답노트가 동기화됩니다</div>
     </div>
-    <input id="fb-email" type="email" placeholder="&#51060;&#47700;&#51068;" autocomplete="email"
-      style="width:100%;padding:13px 14px;border-radius:11px;border:1.5px solid #ddd;font-size:16px;margin-bottom:9px;font-family:inherit;outline:none;box-sizing:border-box"/>
-    <input id="fb-pw" type="password" placeholder="&#48708;&#48128;&#48264;&#54840; (6&#51088; &#51060;&#49345;)" autocomplete="current-password"
-      style="width:100%;padding:13px 14px;border-radius:11px;border:1.5px solid #ddd;font-size:16px;margin-bottom:12px;font-family:inherit;outline:none;box-sizing:border-box"/>
-    <div id="fb-err" style="display:none;color:#C62828;font-size:13px;margin-bottom:10px;padding:8px 12px;background:#FFEBEE;border-radius:8px"></div>
-    <button onclick="doEmailLogin()" style="width:100%;padding:14px;border-radius:11px;border:none;background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;font-weight:800;font-size:17px;cursor:pointer;margin-bottom:9px">&#47196;&#44536;&#51064; / &#54924;&#50896;&#44032;&#51077;</button>
-    <div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:12px">&#52376;&#51020;&#51060;&#47732; &#51088;&#46041;&#51004;&#47196; &#54924;&#50896;&#44032;&#51077;&#46121;&#45768;&#45796;</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-      <div style="flex:1;height:1px;background:#eee"></div><span style="font-size:12px;color:#ccc">&#46608;&#45716;</span><div style="flex:1;height:1px;background:#eee"></div>
-    </div>
-    <button onclick="doGoogleLogin()" style="width:100%;padding:13px;border-radius:11px;border:1.5px solid #ddd;background:#fff;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:9px">
-      <img src="https://www.google.com/favicon.ico" width="18" height="18">Google &#44228;&#51221;&#51004;&#47196; &#47196;&#44536;&#51064;
+    <input id="_fee" type="email" placeholder="이메일" autocomplete="email"
+      style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #ddd;
+      font-size:16px;margin-bottom:8px;font-family:inherit;outline:none;box-sizing:border-box"/>
+    <input id="_fep" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password"
+      style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #ddd;
+      font-size:16px;margin-bottom:11px;font-family:inherit;outline:none;box-sizing:border-box"/>
+    <div id="_fe" style="display:none;color:#C62828;font-size:13px;margin-bottom:9px;
+      padding:8px 12px;background:#FFEBEE;border-radius:8px"></div>
+    <button onclick="doEmailLogin()" style="width:100%;padding:13px;border-radius:10px;
+      border:none;background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;
+      font-weight:800;font-size:16px;cursor:pointer;margin-bottom:8px">
+      로그인 / 회원가입
     </button>
-    <button onclick="skipLogin()" style="width:100%;padding:11px;border-radius:11px;border:none;background:#F5F5F5;color:#999;font-size:14px;cursor:pointer">&#47196;&#44536;&#51064; &#50630;&#51060; &#44228;&#49549;</button>
+    <div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:11px">
+      처음이면 자동으로 회원가입됩니다</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
+      <div style="flex:1;height:1px;background:#eee"></div>
+      <span style="font-size:12px;color:#ccc">또는</span>
+      <div style="flex:1;height:1px;background:#eee"></div>
+    </div>
+    <button onclick="doGoogleLogin()" style="width:100%;padding:12px;border-radius:10px;
+      border:1.5px solid #ddd;background:#fff;font-weight:700;font-size:15px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      gap:9px;margin-bottom:8px">
+      <img src="https://www.google.com/favicon.ico" width="17" height="17">
+      Google 계정으로 로그인
+    </button>
+    <button onclick="skipLogin()" style="width:100%;padding:10px;border-radius:10px;
+      border:none;background:#F5F5F5;color:#999;font-size:14px;cursor:pointer">
+      로그인 없이 계속
+    </button>
   </div>
 </div>
-<div id="fb-toast" style="display:none"></div>
+<div id="_ft" style="display:none"></div>
 </body>
 </html>
