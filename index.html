@@ -1180,7 +1180,10 @@ document.addEventListener('DOMContentLoaded',function(){
   updateNavWrong();
   renderHome();
   buildTabs();
-  if(typeof firebase!=='undefined') _fbInit();
+});
+// Firebase는 두 번째 script 블록에 있으므로 window.load에서 호출
+window.addEventListener('load',function(){
+  if(typeof _fbInit==='function') _fbInit();
 });
 </script>
 
@@ -1241,28 +1244,52 @@ function _errMsg(s){var e=document.getElementById('fb-err');if(e){e.textContent=
 function showLoginModal(){_openModal();}
 
 function doGoogleLogin(){
-  if(!_auth){_errMsg('\ub85c\ub529 \uc911... \uc7a0\uc2dc \ud6c4 \ub2e4\uc2dc \ub208\ub7ec\uc8fc\uc138\uc694');return;}
+  // _auth 준비 안 됐으면 최대 3초 대기 후 재시도
+  if(!_auth){
+    var tries=0;
+    var wait=setInterval(function(){
+      tries++;
+      if(_auth){ clearInterval(wait); _doGooglePopup(); }
+      else if(tries>15){ clearInterval(wait); _errMsg('Firebase 연결 실패. 페이지를 새로고침해 주세요.'); }
+    },200);
+    return;
+  }
+  _doGooglePopup();
+}
+function _doGooglePopup(){
   var p=new firebase.auth.GoogleAuthProvider();
   p.setCustomParameters({prompt:'select_account'});
   _auth.signInWithPopup(p)
-    .then(function(r){if(r.user)showToast('\u2705 Google \ub85c\uadf8\uc778 \uc644\ub8cc!');})
-    .catch(function(e){if(e.code!=='auth/popup-closed-by-user')_errMsg('Google \uc624\ub958: '+e.message);});
+    .then(function(r){if(r.user)showToast('✅ Google 로그인 완료!');})
+    .catch(function(e){if(e.code!=='auth/popup-closed-by-user')_errMsg('Google 오류: '+e.message);});
 }
+
 function doEmailLogin(){
-  if(!_auth){_errMsg('\ub85c\ub529 \uc911...');return;}
+  if(!_auth){
+    var tries=0;
+    var wait=setInterval(function(){
+      tries++;
+      if(_auth){ clearInterval(wait); _doEmailSignIn(); }
+      else if(tries>15){ clearInterval(wait); _errMsg('Firebase 연결 실패. 페이지를 새로고침해 주세요.'); }
+    },200);
+    return;
+  }
+  _doEmailSignIn();
+}
+function _doEmailSignIn(){
   var email=(document.getElementById('fb-email')||{}).value||'';
   var pw=(document.getElementById('fb-pw')||{}).value||'';
-  if(!email||pw.length<6){_errMsg('\uc774\uba54\uc77c\uacfc \ube44\ubc00\ubc88\ud638(6\uc790+)\ub97c \uc785\ub825\ud558\uc138\uc694');return;}
+  if(!email||pw.length<6){_errMsg('이메일과 비밀번호(6자+)를 입력하세요');return;}
   _auth.signInWithEmailAndPassword(email,pw)
-    .then(function(){showToast('\u2705 \ub85c\uadf8\uc778 \uc644\ub8cc!');})
+    .then(function(){showToast('✅ 로그인 완료!');})
     .catch(function(e){
       var isNew=['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials'].indexOf(e.code)>=0;
       if(isNew){
         _auth.createUserWithEmailAndPassword(email,pw)
-          .then(function(){showToast('\u2705 \ud68c\uc6d0\uac00\uc785 \uc644\ub8cc!');})
-          .catch(function(e2){_errMsg('\uac00\uc785 \uc2e4\ud328: '+e2.message);});
-      }else if(e.code==='auth/wrong-password'){_errMsg('\ube44\ubc00\ubc88\ud638\uac00 \ud2c0\ub838\uc2b5\ub2c8\ub2e4');
-      }else{_errMsg('\uc624\ub958: '+e.message);}
+          .then(function(){showToast('✅ 회원가입 완료!');})
+          .catch(function(e2){_errMsg('가입 실패: '+e2.message);});
+      }else if(e.code==='auth/wrong-password'){_errMsg('비밀번호가 틀렸습니다');
+      }else{_errMsg('오류: '+e.message);}
     });
 }
 function skipLogin(){
