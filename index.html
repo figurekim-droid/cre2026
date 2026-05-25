@@ -416,28 +416,30 @@ function ring(el,pct,color,sz,sw){
 // ══════════════════════════════════════════
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+// script/style 제거용 문자열 (직접 쓰면 브라우저가 태그로 오인하므로 변수로 분리)
+var _SC='</';var _SC_END=_SC+'script>';var _ST_END=_SC+'style>';
+
 // ★ 핵심: HTML→텍스트 변환 + CSS/JS 코드 완전 제거
 function h2t(h){
   if(!h)return'';
-  // 1단계: script/style 블록 제거 (문자열 분리로 </script> 직접 참조 방지)
-  var sc='</'+'script>', st='</'+'style>';
+  // 1단계: script/style 블록 제거
   while(h.indexOf('<script')>=0){
-    var a=h.indexOf('<script'),b=h.indexOf(sc,a);
+    var a=h.indexOf('<script'),b=h.indexOf(_SC_END,a);
     if(b<0){h=h.slice(0,a);break;}
-    h=h.slice(0,a)+h.slice(b+sc.length);
+    h=h.slice(0,a)+h.slice(b+_SC_END.length);
   }
   while(h.indexOf('<style')>=0){
-    var a=h.indexOf('<style'),b=h.indexOf(st,a);
+    var a=h.indexOf('<style'),b=h.indexOf(_ST_END,a);
     if(b<0){h=h.slice(0,a);break;}
-    h=h.slice(0,a)+h.slice(b+st.length);
+    h=h.slice(0,a)+h.slice(b+_ST_END.length);
   }
   // 2단계: JS/CSS 코드 패턴 제거
   h=h
     .replace(/function\s+\w+\s*\([^)]*\)\s*\{[^{}]*\}/g,'')
     .replace(/var\s+\w+\s*=\s*document[^;]{0,150};/g,'')
-    .replace(/\.\w+\s*\{[^}]{0,300}\}/g,'')   // CSS 규칙 .클래스 { ... }
-    .replace(/#\w+\s*\{[^}]{0,300}\}/g,'')    // CSS 규칙 #id { ... }
-    .replace(/\{[^{}]{0,50}(background|color|font|padding|margin|border|display)[^{}]{0,200}\}/g,'') // CSS 속성 블록
+    .replace(/\.\w+\s*\{[^}]{0,300}\}/g,'')
+    .replace(/#\w+\s*\{[^}]{0,300}\}/g,'')
+    .replace(/\{[^{}]{0,50}(background|color|font|padding|margin|border|display)[^{}]{0,200}\}/g,'')
     .replace(/showAns\s*\([^)]*\)/g,'')
     .replace(/document\.getElementById[^)]{0,80}\)/g,'');
   // 3단계: HTML 태그 → 줄바꿈/공백
