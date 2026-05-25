@@ -416,20 +416,42 @@ function ring(el,pct,color,sz,sw){
 // ══════════════════════════════════════════
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// ★ 핵심 수정: li·br·p·div 태그를 줄바꿈으로 변환해야
-//   선택지가 한 줄에 붙지 않고 개별 파싱됨
+// ★ 핵심: HTML→텍스트 변환 + CSS/JS 코드 완전 제거
 function h2t(h){
+  if(!h)return'';
+  // 1단계: script/style 블록 제거 (문자열 분리로 </script> 직접 참조 방지)
+  var sc='</'+'script>', st='</'+'style>';
+  while(h.indexOf('<script')>=0){
+    var a=h.indexOf('<script'),b=h.indexOf(sc,a);
+    if(b<0){h=h.slice(0,a);break;}
+    h=h.slice(0,a)+h.slice(b+sc.length);
+  }
+  while(h.indexOf('<style')>=0){
+    var a=h.indexOf('<style'),b=h.indexOf(st,a);
+    if(b<0){h=h.slice(0,a);break;}
+    h=h.slice(0,a)+h.slice(b+st.length);
+  }
+  // 2단계: JS/CSS 코드 패턴 제거
+  h=h
+    .replace(/function\s+\w+\s*\([^)]*\)\s*\{[^{}]*\}/g,'')
+    .replace(/var\s+\w+\s*=\s*document[^;]{0,150};/g,'')
+    .replace(/\.\w+\s*\{[^}]{0,300}\}/g,'')   // CSS 규칙 .클래스 { ... }
+    .replace(/#\w+\s*\{[^}]{0,300}\}/g,'')    // CSS 규칙 #id { ... }
+    .replace(/\{[^{}]{0,50}(background|color|font|padding|margin|border|display)[^{}]{0,200}\}/g,'') // CSS 속성 블록
+    .replace(/showAns\s*\([^)]*\)/g,'')
+    .replace(/document\.getElementById[^)]{0,80}\)/g,'');
+  // 3단계: HTML 태그 → 줄바꿈/공백
   return h
-    .replace(/<li[^>]*>/gi,'\n')      // <li> → 줄바꿈 (선택지 구분 핵심!)
+    .replace(/<li[^>]*>/gi,'\n')
     .replace(/<\/li>/gi,'')
     .replace(/<br\s*\/?>/gi,'\n')
     .replace(/<p[^>]*>/gi,'\n')
     .replace(/<\/p>/gi,'')
     .replace(/<div[^>]*>/gi,'\n')
     .replace(/<\/div>/gi,'')
-    .replace(/<[^>]+>/g,' ')          // 나머지 태그 → 공백
+    .replace(/<[^>]+>/g,' ')
     .replace(/&nbsp;/g,' ').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')
-    .replace(/[ \t]+/g,' ')           // 수평 공백만 정리 (줄바꿈은 유지)
+    .replace(/[ \t]+/g,' ')
     .replace(/\n[ \t]+/g,'\n')
     .replace(/\n{3,}/g,'\n\n')
     .trim();
@@ -543,33 +565,43 @@ function parseQs(text){
 function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
 
 // ══════════════════════════════════════════
-//  블로그 본문에서 학습 콘텐츠 파싱
-//  ★ 문제 영역(문제01~) 이전 텍스트만 사용 ★
+//  학습 데이터 파싱
 // ══════════════════════════════════════════
 function buildStudyData(text){
   const allLines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
-
-  // 문제 시작 인덱스
   const firstQIdx=allLines.findIndex(l=>/^(?:문제|Q)\s*\d/i.test(l));
-
-  // ★ 학습 자료: 문제 영역 이전만 (선택지 절대 포함 안 됨)
   const studyLines=firstQIdx>0
     ?allLines.slice(0,firstQIdx)
     :allLines.filter(l=>!/^[①②③④⑤]/.test(l)&&!/^(?:문제|Q)\s*\d/i.test(l)&&!/^(?:정답|해설)/i.test(l));
 
-  const bullets=studyLines.filter(l=>/^[-•·]/.test(l)).map(l=>l.replace(/^[-•·]\s*/,'').trim()).filter(l=>l.length>10);
-  const sentences=studyLines.filter(l=>!/^[-•·]/.test(l)&&l.length>15&&!/^(?:제\d+차시|핵심|총정리|##|라벨|작성자)/.test(l));
+  // ★ CSS/JS 코드 줄 필터 (학습정리에 불필요)
+  function isBadLine(l){
+    return /^\s*[.#][\w-]+\s*\{/.test(l)           // .quiz-container { ...
+      || /\{\s*(background|color|font|padding|margin|border|display)\s*[-:]/.test(l) // CSS 속성
+      || /\b(function|var|const|let|return|document|window|querySelector)\b/.test(l) // JS 키워드
+      || /^\s*\/\//.test(l)                          // JS 주석
+      || /margin|padding|border-radius|font-size|overflow|background-color/.test(l) // CSS 값
+      || /quiz-container|quiz|options|\.question\b/.test(l) // 퀴즈 CSS 클래스명
+      || /각 지문을 클릭하면/.test(l)                // 블로그 퀴즈 안내문
+      || l.length > 300;                             // 너무 긴 줄 (HTML/코드)
+  }
+
+  const cleanLines=studyLines.filter(l=>!isBadLine(l));
+  const bullets=cleanLines.filter(l=>/^[-•·]/.test(l)).map(l=>l.replace(/^[-•·]\s*/,'').trim()).filter(l=>l.length>8);
+  const sentences=cleanLines.filter(l=>!/^[-•·]/.test(l)&&l.length>10&&l.length<300
+    &&!/^(?:제\d+차시|핵심|총정리|##|라벨|작성자|공유|이 글|관련 글)/.test(l)
+    &&!isBadLine(l));
 
   // [1] 기본 학습
   let learn=[...bullets];
-  if(learn.length<6)sentences.forEach(s=>{if(learn.length<14&&!learn.includes(s))learn.push(s);});
-  learn=[...new Set(learn)].filter(l=>l.length>10&&!/^\d+$/.test(l)).slice(0,14);
+  if(learn.length<6) sentences.forEach(s=>{if(learn.length<14&&!learn.includes(s))learn.push(s);});
+  learn=[...new Set(learn)].filter(l=>l.length>8&&!/^\d+$/.test(l)&&!isBadLine(l)).slice(0,14);
 
-  // [2] 암기
+  // [2] 암기 (숫자·기준 포함)
   const hasNum=s=>/\d+\s*(?:㎡|m²|미터|층|년|개월|일|명|만원|억원|%|이상|이하|초과|미만|이내)/.test(s);
   const memItems=[];
   [...bullets,...sentences].forEach(s=>{
-    if(memItems.length>=10||!hasNum(s))return;
+    if(memItems.length>=10||!hasNum(s)||isBadLine(s))return;
     const c=s.indexOf(':');
     const key=c>0&&c<35?s.slice(0,c).trim():s.split(/\s+/).slice(0,4).join(' ');
     const val=c>0?s.slice(c+1).trim():s;
@@ -583,36 +615,107 @@ function buildStudyData(text){
     });
   }
 
-  // [3] 주의 사항 (studyLines에서만! 선택지 텍스트 제외)
-  const negPat=/(?:아니다|없다|안\s*된다|불가|제외|예외|주의|절대|반드시\s*(?:아님|아니)|혼동)/;
+  // [3] 주의사항
+  const negPat=/(?:아니다|없다|안\s*된다|불가|제외|예외|주의|절대|혼동)/;
   const cautionRaw=[];
-  [...bullets,...sentences].forEach(s=>{if(cautionRaw.length<6&&negPat.test(s))cautionRaw.push(s);});
-  const caution=[...new Set(cautionRaw)].slice(0,6).map((c,i)=>({title:'주의 '+(i+1),body:c.slice(0,220)}));
-  if(caution.length===0){
+  [...bullets,...sentences].forEach(s=>{if(cautionRaw.length<5&&negPat.test(s)&&!isBadLine(s))cautionRaw.push(s);});
+  const caution=[...new Set(cautionRaw)].slice(0,5).map((c,i)=>({title:'주의 '+(i+1),body:c.slice(0,220)}));
+  if(caution.length<2){
     caution.push({title:'원칙과 예외 구분',body:'원칙적 기준과 예외 규정을 명확히 구분하여 학습하세요.'});
-    caution.push({title:'숫자 기준 혼동 주의',body:'면적·기간·층수 등 숫자 기준을 정확히 암기하고 혼동하지 않도록 주의하세요.'});
-  }else if(caution.length===1){
-    caution.push({title:'숫자 기준 혼동 주의',body:'면적·기간·층수 등 숫자 기준을 정확히 암기하고 혼동하지 않도록 주의하세요.'});
+    if(caution.length<2) caution.push({title:'숫자 기준 혼동 주의',body:'면적·기간·층수 등 숫자 기준을 정확히 암기하고 혼동하지 않도록 주의하세요.'});
   }
 
-  // [4] 출제 포인트
-  const examPoints=[];
-  ST.qs.forEach(q=>{if(examPoints.length<8)examPoints.push(q.question.length>70?q.question.slice(0,68)+'...':q.question);});
-  if(examPoints.length<4)learn.slice(0,6).forEach(l=>{if(examPoints.length<8)examPoints.push(l.slice(0,80)+(l.length>80?'...':''));});
-  const subTips={'공법':['건축허가 요건 및 면적·층수 기준','용도지역별 건폐율·용적률 수치','개발행위허가 대상 여부 판단','허가 취소 사유 및 절차'],'민법':['판례의 입장 (옳다/틀리다 구별)','법률행위의 효력발생 요건','취소·무효·추인의 차이','대리권의 범위와 남용'],'세법':['세율·공제액 계산 문제','납세의무자 판단 기준','비과세·감면 요건 구별','납부 기한·신고 절차'],'공시법':['등기 신청 주체·기간·절차','등기부 기재 사항 및 효력','등기의 추정력·공신력 구별','각종 등기의 유형'],'부동산학개론':['부동산 개념·분류','시장 분석 이론','투자 수익률 계산','가격 결정 원리'],'중개사법':['중개업자 의무·금지행위','중개보수 한도 및 계산','결격사유·등록 취소','손해배상 책임']};
-  (subTips[ST.sub?.id]||[]).forEach(t=>{if(examPoints.length<8)examPoints.push(t);});
-
-  const tip=bullets.find(b=>b.length>15&&b.length<100)||learn.find(l=>l.length>15&&l.length<100)||'핵심 개념·숫자 기준을 중심으로 학습하고 원칙과 예외를 명확히 구분하세요.';
-  return{learn,memory,caution,exam:examPoints.slice(0,8),tip};
+  const tip=bullets.find(b=>b.length>12&&b.length<90)||learn.find(l=>l.length>12&&l.length<90)||'핵심 개념·숫자 기준을 중심으로 학습하고 원칙과 예외를 명확히 구분하세요.';
+  return{learn,memory,caution,exam:[],tip};
 }
-
 
 // ══════════════════════════════════════════
 //  학습 콘텐츠 렌더링
 // ══════════════════════════════════════════
 function renderStudyContent(data,sub){
-  const el=document.getElementById('study-content');
-  const {learn,memory,caution,exam,tip}=data;
+  var el=document.getElementById('study-content');
+  var learn=data.learn||[], memory=data.memory||[], caution=data.caution||[], tip=data.tip||'';
+
+  // 정크 판별
+  function isJunk(s){
+    return !s||s.length<8
+      ||/function\s*\(|var\s+\w+=|document\.|style\.|showans|quiz-container|background-color|font-size/i.test(s)
+      ||/^[,\s.·•。\-]+$/.test(s)
+      ||/^\s*[,.{]/.test(s)
+      ||(s.match(/,/g)||[]).length>6
+      ||/^(모두|전체|해당|기타|등|없음|있음)\s*$/.test(s.trim());
+  }
+
+  // 암기 항목 정제
+  var memList=memory.map(function(m){
+    if(!m)return null;
+    var text='';
+    if(typeof m==='string'){text=m;}
+    else{
+      var k=m.key||m.label||'', v=m.val||'', n=m.note||'';
+      text=k&&v?k+': '+v+(n?' ('+n+')':''):(v||k);
+    }
+    if(typeof _cleanText==='function')text=_cleanText(text);
+    return isJunk(text)?null:text;
+  }).filter(function(t){return t&&t.length>8;}).slice(0,12);
+
+  var lList=learn.map(function(item){
+    var t=typeof _cleanText==='function'?_cleanText(item):item;
+    return (t&&t.length>5&&!isJunk(t))?t:null;
+  }).filter(Boolean);
+
+  var cList=caution.map(function(c){
+    return{title:c.title||'주의',body:typeof _cleanText==='function'?_cleanText(c.body||''):c.body||''};
+  }).filter(function(c){return c.body.length>8&&!isJunk(c.body);});
+
+  el.innerHTML=
+  '<div class="tip-banner" style="background:linear-gradient(135deg,'+sub.color+','+sub.color+'BB)">'
+  +'<div class="tip-lbl">⚡ 이 차시 합격 핵심</div>'
+  +'<div class="tip-txt">'+esc(tip)+'</div>'
+  +'</div>'
+
+  // 1. 기본학습
+  +'<div class="study-section ss-learn">'
+  +'<div class="ss-hdr" onclick="toggleSS(\'learn\')">'
+  +'<div class="ss-ico">📖</div>'
+  +'<div class="ss-ttl">기본 학습 내용<span class="ss-cnt">'+lList.length+'항목</span></div>'
+  +'<div class="ss-arr open" id="learn-arr">▼</div></div>'
+  +'<div class="ss-body open" id="learn-body">'
+  +(lList.length?lList.map(function(t){
+    return '<div class="si"><div class="si-dot" style="background:'+sub.color+'"></div><div class="si-txt">'+hl(esc(t))+'</div></div>';
+  }).join(''):'<div style="font-size:15px;color:var(--tx3);padding:6px 0">AI 분석 중...</div>')
+  +'</div></div>'
+
+  // 2. 반드시 암기
+  +'<div class="study-section ss-mem">'
+  +'<div class="ss-hdr" onclick="toggleSS(\'mem\')">'
+  +'<div class="ss-ico">🧠</div>'
+  +'<div class="ss-ttl">반드시 암기할 내용<span class="ss-cnt">'+memList.length+'항목</span></div>'
+  +'<div class="ss-arr open" id="mem-arr">▼</div></div>'
+  +'<div class="ss-body open" id="mem-body">'
+  +(memList.length?memList.map(function(t,i){
+    return '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;padding:11px 13px;background:'+(i%2===0?'#F8FAFF':'#fff')+';border-radius:10px;border-left:3px solid '+sub.color+'">'
+      +'<div style="min-width:26px;height:26px;border-radius:7px;background:'+sub.color+';color:#fff;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(i+1)+'</div>'
+      +'<div style="font-size:16px;color:#1a1a2e;line-height:1.8;font-weight:500">'+hl(esc(t))+'</div></div>';
+  }).join(''):'<div style="font-size:15px;color:var(--tx3);padding:6px 0">AI 분석 중...</div>')
+  +'</div></div>'
+
+  // 3. 주의사항
+  +'<div class="study-section ss-warn">'
+  +'<div class="ss-hdr" onclick="toggleSS(\'warn\')">'
+  +'<div class="ss-ico">⚠️</div>'
+  +'<div class="ss-ttl">주의할 내용<span class="ss-cnt">'+cList.length+'항목</span></div>'
+  +'<div class="ss-arr open" id="warn-arr">▼</div></div>'
+  +'<div class="ss-body open" id="warn-body">'
+  +cList.map(function(c){
+    return '<div style="margin-bottom:12px;border-radius:11px;overflow:hidden;border:1.5px solid #FED7AA">'
+      +'<div style="background:#FFF7ED;padding:9px 13px;font-weight:800;font-size:14px;color:#9A3412;border-bottom:1px solid #FED7AA">⚠️ '+esc(c.title)+'</div>'
+      +'<div style="padding:10px 13px;font-size:15px;color:#374151;line-height:1.8;background:#FFFDF9">'+hl(esc(c.body))+'</div>'
+      +'</div>';
+  }).join('')
+  +'</div></div>';
+}
+
 
   el.innerHTML=`
   <!-- TIP 배너 -->
