@@ -430,11 +430,16 @@ function h2t(h){
     if(i1<0){h=h.slice(0,i0);break;}
     h=h.slice(0,i0)+h.slice(i1+_STEND.length);
   }
-  // CSS/JS 코드 패턴 제거 (정규식 대신 문자열 처리)
+  // CSS/JS 코드 패턴 제거
   h=h.replace(/각\s*지문을\s*클릭하면[^\n]*/g,'');
-  // CSS 블록 제거: { ... } 반복 제거
+  // inline style / onclick 속성 제거 (태그 제거 전에 먼저 처리)
+  h=h.replace(/\s+style\s*=\s*"[^"]*"/gi,'')
+     .replace(/\s+style\s*=\s*'[^']*'/gi,'')
+     .replace(/\s+on\w+\s*=\s*"[^"]*"/gi,'')
+     .replace(/\s+on\w+\s*=\s*'[^']*'/gi,'');
+  // CSS 블록 제거
   var safety=0;
-  while(h.indexOf('{')>=0 && ++safety<50){
+  while(h.indexOf('{')>=0 && ++safety<30){
     var cb=h.indexOf('{');
     var ce=h.indexOf('}',cb);
     if(ce<0)break;
@@ -442,9 +447,7 @@ function h2t(h){
     if(/background|color|font-size|padding|margin|border/.test(block)||
        /quiz|container|options/.test(h.slice(Math.max(0,cb-30),cb))){
       h=h.slice(0,cb)+h.slice(ce+1);
-    }else{
-      break;
-    }
+    }else{break;}
   }
   return h
     .replace(/<li[^>]*>/gi,'\n')      // <li> → 줄바꿈 (선택지 구분 핵심!)
@@ -489,80 +492,219 @@ function hl(s){
 // ══════════════════════════════════════════
 function parseQs(text){
   const qs=[];
-  const LABELS=['①','②','③','④','⑤'];
+
+  // ── 전처리: HTML 속성 잔여물 제거
+  // style="...", onclick="...", cursor:pointer 등 HTML 속성이 섞인 경우
+  function preclean(t){
+    return t
+      .replace(/style\s*=\s*"[^"]*"/gi,'')
+      .replace(/style\s*=\s*'[^']*'/gi,'')
+      .replace(/on\w+\s*=\s*"[^"]*"/gi,'')
+      .replace(/on\w+\s*=\s*'[^']*'/gi,'')
+      .replace(/\[수정[^\]]*\]/g,'')
+      // CSS 속성 잔여물
+      .replace(/(?:display|width|text-align|padding|margin|cursor|font|color|background)\s*:[^;,\n]{0,80}[;,]/g,'')
+      // 따옴표+괄호 잔여물: ')" 또는 ') 등
+      .replace(/'\s*\)\s*"/g,'').replace(/'\s*\)/g,'').replace(/"\s*\)/g,'')
+      // HTML 닫힘 > → 원문자 앞 줄바꿈
+      .replace(/>\s*①/g,'\n①').replace(/>\s*②/g,'\n②')
+      .replace(/>\s*③/g,'\n③').replace(/>\s*④/g,'\n④')
+      .replace(/>\s*⑤/g,'\n⑤')
+      .replace(/\s{2,}/g,' ').trim();
+  }
 
   const splitRe=/(?=\n?(?:문제|Q)\s*\d{1,2}[^\d])/i;
   const blocks=text.split(splitRe).filter(b=>/(?:문제|Q)\s*\d/i.test(b));
 
   blocks.forEach((blk,idx)=>{
+    // 블록 전처리
+    blk=preclean(blk);
+
     const nm=blk.match(/(?:문제|Q)\s*(\d{1,2})/i);
     if(!nm)return;
     const num=+nm[1];
 
     const lines=blk.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
 
-    // ★ 진짜 선택지 줄 판별:
-    //   - ①~⑤ 로 시작하고
-    //   - "(정답)", "(오답)", "(옳음)", "(틀림)", "번 분석", "번 해설" 등 해설 표시가 없는 줄만
-    const isChoiceLine = l =>
-      /^[①②③④⑤]/.test(l) &&
-      !/\(정답\)|\(오답\)|\(옳음\)|\(틀림\)|\(맞음\)/.test(l) &&
-      !/^[①②③④⑤]번\s*(분석|해설|지문)/.test(l) &&
-      !/^[①②③④⑤]\s*번\s*(분석|해설)/.test(l) &&
-      !/(정답|오답|옳음|틀림)\s*[:：]/.test(l);
+    // ══ 해설줄 판별 ══
+    function isAnalysisLine(l){
+      if(!/^[①②③④⑤]/.test(l)) return false;
+      return (
+        /\(정답\)|\(오답\)|\(옳음\)|\(틀림\)|\(맞음\)/.test(l) ||
+        /^[①②③④⑤]\s*(맞음|틀림|옳음|오답)\s*[:：\-]/.test(l) ||
+        /^[①②③④⑤]\s*(맞음|틀림|옳음|오답)\s*(입니다|이다|임)/.test(l) ||
+        /맞음\s*[:：]|틀림\s*[:：]|옳음\s*[:：]|오답\s*[:：]/.test(l) ||
+        /^[①②③④⑤]\s*(정답|해설|풀이)\s*[:：]/.test(l) ||
+        /^[①②③④⑤]\s*[○●✓✗×]\s/.test(l) ||
+        /^[①②③④⑤]번?\s*(분석|해설|지문|설명)\s*[:：]/.test(l) ||
+        (l.length>80&&/때문|따라서|이유|근거|규정|법령|조문|조항/.test(l)&&/[:：]/.test(l.slice(0,10)))
+      );
+    }
 
-    const choiceLines=lines.filter(isChoiceLine);
+    // 선택지: ①~⑤로 시작하고 해설줄이 아닌 것
+    const isChoiceLine = l =>
+      /^[①②③④⑤]/.test(l) && !isAnalysisLine(l);
+
+    // ── 선택지 수집 (중복 없이)
+    const seenLabels=new Set();
     const choices=[];
-    choiceLines.forEach(line=>{
+    lines.filter(isChoiceLine).forEach(line=>{
       const m=line.match(/^([①②③④⑤])\s*([\s\S]+)/);
-      if(!m)return;
-      const t=m[2].replace(/^[-•]\s*/,'').replace(/\s+/g,' ').trim();
-      if(t.length>=2)choices.push({label:m[1],text:t});
+      if(!m||seenLabels.has(m[1]))return;
+      // 선택지 텍스트에서도 HTML 잔여물 제거
+      const t=m[2]
+        .replace(/style\s*=\s*"[^"]*"/gi,'')
+        .replace(/on\w+\s*=\s*"[^"]*"/gi,'')
+        .replace(/^[-•>]\s*/,'')
+        .replace(/\s+/g,' ').trim();
+      if(t.length>=2){choices.push({label:m[1],text:t});seenLabels.add(m[1]);}
     });
     if(choices.length<2)return;
 
-    // 질문 텍스트: 첫 선택지 줄 이전
+    // ── 질문 텍스트: 첫 선택지 이전 줄들
+    const firstChoiceIdx=lines.findIndex(isChoiceLine);
+    let qtext='';
+    if(firstChoiceIdx>0){
+      qtext=lines.slice(0,firstChoiceIdx)
+        .map(l=>l
+          .replace(/^(?:문제|Q)\s*\d{1,2}\s*/i,'')
+          // HTML 잔여물 제거
+          .replace(/style\s*=\s*"[^"]*"/gi,'')
+          .replace(/on\w+\s*=\s*"[^"]*"/gi,'')
+          .replace(/">[^"]{0,5}$/,'')   // ">① 같은 패턴
+          .replace(/>\s*$/,'')
+          .trim()
+        )
+        .filter(l=>
+          l.length>0 &&
+          !/^(?:정답|해설|풀이)/i.test(l) &&
+          // 해설줄처럼 보이는 것 제외
+          !isAnalysisLine(l) &&
+          // HTML 속성만 남은 줄 제외
+          !/^(?:style|display|width|padding|margin|cursor|font|color)/.test(l) &&
+          // 너무 짧은 줄 제외 (잔여물)
+          l.length>2
+        )
+        .join(' ').replace(/\s+/g,' ').trim();
+    }
+    if(!qtext||qtext.length<4)return;
+
+    // ── 정답 추출
+    const am=blk.match(/정답\s*[:：]?\s*([①②③④⑤])/);
+    const correct=am?am[1]:null;
+
+    // ── 해설 수집
+    let expl='';
+    if(am){
+      const afterIdx=blk.indexOf(am[0])+am[0].length;
+      const raw=blk.slice(afterIdx,afterIdx+300).replace(/\n/g,' ').replace(/\s+/g,' ').trim();
+      if(raw.length>3)expl=raw;
+    }
+    const analysisLines=lines.filter(isAnalysisLine)
+      .map(l=>l.replace(/^[①②③④⑤]\s*/,'').trim());
+    if(!expl && analysisLines.length>0){
+      expl=analysisLines.join(' | ').slice(0,400);
+    } else if(expl && analysisLines.length>0 && correct){
+      const rightA=lines.find(l=>l.startsWith(correct)&&isAnalysisLine(l));
+      if(rightA){
+        const rt=rightA.replace(/^[①②③④⑤]\s*/,'').trim();
+        if(!expl.includes(rt.slice(0,15)))expl=rt+' | '+expl;
+      }
+    }
+
+    qs.push({id:'q'+idx, num, question:qtext, choices, correct, expl});
+  });
+  return qs;
+}
+
+    const lines=blk.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+
+    // ══ 해설줄 판별 (이 줄들은 선택지에서 완전히 제외) ══
+    // 블로그별로 다양한 패턴이 있으므로 포괄적으로 처리
+    function isAnalysisLine(l){
+      if(!/^[①②③④⑤]/.test(l)) return false;
+      return (
+        // 패턴1: ① (정답), ② (오답), ③ (옳음), ④ (틀림), ⑤ (맞음)
+        /\(정답\)|\(오답\)|\(옳음\)|\(틀림\)|\(맞음\)/.test(l) ||
+        // 패턴2: ① 맞음: ..., ② 틀림: ..., ③ 옳음: ...
+        /^[①②③④⑤]\s*(맞음|틀림|옳음|오답)\s*[:：\-]/.test(l) ||
+        // 패턴3: ① 맞음입니다, ② 틀립니다
+        /^[①②③④⑤]\s*(맞음|틀림|옳음|오답)\s*(입니다|이다|임)/.test(l) ||
+        // 패턴4: 맞음:, 틀림:, 옳음:, 오답: 어디서든
+        /맞음\s*[:：]|틀림\s*[:：]|옳음\s*[:：]|오답\s*[:：]/.test(l) ||
+        // 패턴5: ① 정답:, ② 해설:
+        /^[①②③④⑤]\s*(정답|해설|풀이)\s*[:：]/.test(l) ||
+        // 패턴6: ① ○, ② ✓, ③ ✗ (O/X 표시)
+        /^[①②③④⑤]\s*[○●✓✗×]\s/.test(l) ||
+        // 패턴7: ① 번 분석, ② 번 해설
+        /^[①②③④⑤]번?\s*(분석|해설|지문|설명)\s*[:：]/.test(l) ||
+        // 패턴8: 줄이 매우 길고 해설처럼 보이는 경우 (선택지는 보통 짧음)
+        (l.length > 80 && /^[①②③④⑤]/.test(l) && /때문|따라서|이유|근거|해당|규정|법령|조문|조항/.test(l) && /[:：]/.test(l.slice(0,10)))
+      );
+    }
+
+    // 선택지: ①~⑤로 시작하고 해설줄이 아닌 것
+    // 단, 선택지 이후에 나오는 ①~⑤ 줄은 해설로 간주
+    const isChoiceLine = l =>
+      /^[①②③④⑤]/.test(l) && !isAnalysisLine(l);
+
+    // ── 선택지 5개 수집 (최초 등장 순서대로, 중복 없이)
+    const choiceLines=lines.filter(isChoiceLine);
+    const choices=[];
+    const seenLabels=new Set();
+    choiceLines.forEach(line=>{
+      const m=line.match(/^([①②③④⑤])\s*([\s\S]+)/);
+      if(!m||seenLabels.has(m[1]))return;
+      const t=m[2].replace(/^[-•]\s*/,'').replace(/\s+/g,' ').trim();
+      if(t.length>=2){choices.push({label:m[1],text:t});seenLabels.add(m[1]);}
+    });
+    if(choices.length<2)return;
+
+    // ── 질문 텍스트: 첫 선택지 줄 이전
     const firstChoiceIdx=lines.findIndex(isChoiceLine);
     let qtext='';
     if(firstChoiceIdx>0){
       qtext=lines.slice(0,firstChoiceIdx)
         .map(l=>l.replace(/^(?:문제|Q)\s*\d{1,2}\s*/i,'').trim())
-        .filter(l=>l.length>0 && !/^(?:정답|해설)/i.test(l))
+        .filter(l=>l.length>0 && !/^(?:정답|해설|풀이)/i.test(l))
         .join(' ').trim();
     }
     if(!qtext||qtext.length<4)return;
 
-    // 정답 추출: "정답: ①" 또는 "정답 ①" 패턴
+    // ── 정답 추출
     const am=blk.match(/정답\s*[:：]?\s*([①②③④⑤])/);
     const correct=am?am[1]:null;
 
-    // 해설 추출: 정답 표시 이후 텍스트 (분석줄 제외)
+    // ── 해설 수집: 해설줄 + 정답 이후 텍스트
     let expl='';
+
+    // 방법1: 정답 표시 이후 텍스트
     if(am){
       const afterIdx=blk.indexOf(am[0])+am[0].length;
       const afterText=blk.slice(afterIdx);
-      // ①번 분석 / (정답) / (옳음) 등 해설줄 이전까지만
-      const stopIdx=afterText.search(/[①②③④⑤]번\s*(분석|해설)/);
-      const raw=stopIdx>0 ? afterText.slice(0,stopIdx) : afterText.slice(0,200);
-      expl=raw.replace(/\n/g,' ').replace(/\s+/g,' ').trim();
+      const raw=afterText.slice(0,300).replace(/\n/g,' ').replace(/\s+/g,' ').trim();
+      if(raw.length>3)expl=raw;
     }
 
-    // 해설줄 수집: "① (정답) ...", "② (옳음) ..." 형태
-    // 이 줄들을 analyses 대신 expl에 통합
-    const explLines=lines.filter(l=>
-      /^[①②③④⑤]/.test(l) &&
-      /\(정답\)|\(오답\)|\(옳음\)|\(틀림\)|\(맞음\)/.test(l)
-    ).map(l=>l.replace(/^[①②③④⑤]\s*/,'').trim());
+    // 방법2: 해설줄들 수집
+    const analysisLines=lines.filter(isAnalysisLine)
+      .map(l=>l.replace(/^[①②③④⑤]\s*/,'').trim());
 
-    // expl이 없으면 해설줄로 대체
-    if(!expl && explLines.length>0){
-      expl=explLines.join(' / ').slice(0,300);
+    if(!expl && analysisLines.length>0){
+      expl=analysisLines.join(' | ').slice(0,400);
+    } else if(expl && analysisLines.length>0){
+      // 정답 선택지 해설을 앞에 추가
+      const rightAnalysis=lines.find(l=>
+        l.startsWith(correct||'') && isAnalysisLine(l)
+      );
+      if(rightAnalysis){
+        const rt=rightAnalysis.replace(/^[①②③④⑤]\s*/,'').trim();
+        if(!expl.includes(rt.slice(0,15)))
+          expl=rt+(expl?' | '+expl:'');
+      }
     }
 
-    // analyses는 제거 (선택지처럼 렌더링되는 문제 방지)
-    const analyses=[];
-
-    qs.push({id:'q'+idx, num, question:qtext, choices, correct, expl, analyses});
+    qs.push({id:'q'+idx, num, question:qtext, choices, correct, expl});
   });
   return qs;
 }
@@ -791,31 +933,42 @@ function goWrong(){showView('wrong');renderAllWrong();}
 //  HOME
 // ══════════════════════════════════════════
 function renderHome(){
-  const dd=dday();
-  const ddEl=document.getElementById('dday');
-  ddEl.textContent='D-'+dd;ddEl.className='hero-dday-num'+(dd<90?' urgent':'');
-  const ss=subStats();
-  const tq=Object.values(ss).reduce((a,s)=>a+(s.total||0),0);
-  const tc=Object.values(ss).reduce((a,s)=>a+(s.correct||0),0);
-  const op=tq?Math.round(tc/tq*100):0;
-  document.getElementById('ov-score').innerHTML=tc+'<span style="font-size:12px;opacity:.65">/'+tq+' 문제</span>';
-  ring(document.getElementById('ring-ov'),op,'rgba(183,228,199,1)',66,6);
-  const wb=document.getElementById('wbanner');
-  if(WRONGS.length>0){wb.classList.add('show');document.getElementById('wbanner-t').textContent='오답노트 '+WRONGS.length+'문제';}
-  else wb.classList.remove('show');
-  const grid=document.getElementById('sgrid');grid.innerHTML='';
-  SUBS.forEach(sub=>{
-    const s=ss[sub.id]||{};
-    const pct=s.total?Math.round((s.correct||0)/s.total*100):0;
-    const card=document.createElement('button');card.className='scard';
-    card.style.borderColor=s.total?sub.light:'var(--bdr)';
-    card.innerHTML=`<div class="scard-top"><span style="font-size:24px">${sub.icon}</span><svg width="40" height="40"></svg></div>
-      <div><div class="scard-name">${sub.name}</div>
-      <div class="scard-meta">${s.total?s.total+'문제 · 정답 '+(s.correct||0):'아직 학습 전'}</div></div>`;
-    ring(card.querySelector('svg'),pct,sub.color,40,4);
-    card.onclick=()=>openSub(sub);grid.appendChild(card);
-  });
-  updateNavWrong();
+  try{
+    const dd=dday();
+    const ddEl=document.getElementById('dday');
+    if(ddEl){ddEl.textContent='D-'+dd;ddEl.className='hero-dday-num'+(dd<90?' urgent':'');}
+    const ss=subStats();
+    const tq=Object.values(ss).reduce((a,s)=>a+(s.total||0),0);
+    const tc=Object.values(ss).reduce((a,s)=>a+(s.correct||0),0);
+    const op=tq?Math.round(tc/tq*100):0;
+    const ovScoreEl=document.getElementById('ov-score');
+    if(ovScoreEl)ovScoreEl.innerHTML=tc+'<span style="font-size:12px;opacity:.65">/'+tq+' 문제</span>';
+    const ringOvEl=document.getElementById('ring-ov');
+    if(ringOvEl)ring(ringOvEl,op,'rgba(183,228,199,1)',66,6);
+    const wb=document.getElementById('wbanner');
+    if(wb){
+      if(WRONGS.length>0){wb.classList.add('show');const wt=document.getElementById('wbanner-t');if(wt)wt.textContent='오답노트 '+WRONGS.length+'문제';}
+      else wb.classList.remove('show');
+    }
+    const grid=document.getElementById('sgrid');
+    if(!grid)return;
+    grid.innerHTML='';
+    SUBS.forEach(sub=>{
+      const s=ss[sub.id]||{};
+      const pct=s.total?Math.round((s.correct||0)/s.total*100):0;
+      const card=document.createElement('button');card.className='scard';
+      card.style.borderColor=s.total?sub.light:'var(--bdr)';
+      card.innerHTML='<div class="scard-top"><span style="font-size:24px">'+sub.icon+'</span><svg width="40" height="40"></svg></div>'
+        +'<div><div class="scard-name">'+sub.name+'</div>'
+        +'<div class="scard-meta">'+(s.total?s.total+'문제 · 정답 '+(s.correct||0):'아직 학습 전')+'</div></div>';
+      ring(card.querySelector('svg'),pct,sub.color,40,4);
+      card.onclick=function(){openSub(sub);};
+      grid.appendChild(card);
+    });
+    updateNavWrong();
+  }catch(e){
+    console.error('renderHome 오류:',e);
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1183,7 +1336,14 @@ function updateNavWrong(){
 }
 
 // INIT
-document.addEventListener('DOMContentLoaded',function(){updateNavWrong();renderHome();buildTabs();});
+document.addEventListener('DOMContentLoaded',function(){
+  updateNavWrong();
+  renderHome();
+  buildTabs();
+});
+window.addEventListener('load',function(){
+  if(typeof _fbInit==='function') _fbInit();
+});
 </script>
 
 <script>
