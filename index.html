@@ -476,17 +476,19 @@ function hl(s){
 function parseQs(text){
   var qs=[];
   function preclean(t){
-    return t
-      .replace(/style\s*=\s*"[^"]*"/gi,'')
+    t=t.replace(/style\s*=\s*"[^"]*"/gi,'')
       .replace(/style\s*=\s*'[^']*'/gi,'')
       .replace(/on\w+\s*=\s*"[^"]*"/gi,'')
       .replace(/\[수정[^\]]*\]/g,'')
       .replace(/(?:display|width|text-align|padding|margin|cursor|font|color|background)\s*:[^;,\n]{0,80}[;,]/g,'')
-      .replace(/'\s*\)\s*"/g,'').replace(/'\s*\)/g,'').replace(/"\s*\)/g,'')
-      .replace(/>\s*\u2460/g,'\n\u2460').replace(/>\s*\u2461/g,'\n\u2461')
-      .replace(/>\s*\u2462/g,'\n\u2462').replace(/>\s*\u2463/g,'\n\u2463')
-      .replace(/>\s*\u2464/g,'\n\u2464')
-      .replace(/\s{2,}/g,' ').trim();
+      .replace(/'\s*\)\s*"/g,'').replace(/'\s*\)/g,'').replace(/"\s*\)/g,'');
+    // 원문자(①②③④⑤) 앞에 항상 줄바꿈 삽입 (한 줄에 붙은 선택지 분리)
+    t=t.replace(/\s*([\u2460\u2461\u2462\u2463\u2464])/g,'\n$1');
+    // 정답: 앞에도 줄바꿈
+    t=t.replace(/\s*(정답\s*[:\uFF1A])/g,'\n$1');
+    // 문제N 앞에도 줄바꿈
+    t=t.replace(/\s*((?:문제|Q)\s*\d{1,2}[.)])/g,'\n$1');
+    return t.replace(/[ \t]{2,}/g,' ').replace(/\n{2,}/g,'\n').trim();
   }
   var splitRe=/(?=\n?(?:\uBB38\uC81C|Q)\s*\d{1,2}[^\d])/i;
   var blocks=text.split(splitRe).filter(function(b){return /(?:\uBB38\uC81C|Q)\s*\d/i.test(b);});
