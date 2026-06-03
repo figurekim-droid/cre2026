@@ -482,12 +482,8 @@ function parseQs(text){
       .replace(/\[수정[^\]]*\]/g,'')
       .replace(/(?:display|width|text-align|padding|margin|cursor|font|color|background)\s*:[^;,\n]{0,80}[;,]/g,'')
       .replace(/'\s*\)\s*"/g,'').replace(/'\s*\)/g,'').replace(/"\s*\)/g,'');
-    // 원문자(①②③④⑤) 앞에 항상 줄바꿈 삽입 (한 줄에 붙은 선택지 분리)
     t=t.replace(/\s*([\u2460\u2461\u2462\u2463\u2464])/g,'\n$1');
-    // 정답: 앞에도 줄바꿈
     t=t.replace(/\s*(정답\s*[:\uFF1A])/g,'\n$1');
-    // 문제N 앞에도 줄바꿈
-    t=t.replace(/\s*((?:문제|Q)\s*\d{1,2}[.)])/g,'\n$1');
     return t.replace(/[ \t]{2,}/g,' ').replace(/\n{2,}/g,'\n').trim();
   }
   var splitRe=/(?=\n?(?:\uBB38\uC81C|Q)\s*\d{1,2}[^\d])/i;
@@ -1166,51 +1162,51 @@ document.addEventListener('DOMContentLoaded',function(){updateNavWrong();renderH
 <script>
 var _FB={apiKey:"AIzaSyBSmnAKzscPBC52OCvGuKytCpGlnJjE4qs",authDomain:"re-test-20fd8.firebaseapp.com",databaseURL:"https://re-test-20fd8-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"re-test-20fd8",storageBucket:"re-test-20fd8.firebasestorage.app",messagingSenderId:"278315977222",appId:"1:278315977222:web:03a31e2c727d2ae80e9187"};
 var _auth=null,_db=null,_user=null,_cloud=false,_syncDone=false;
-var _FLOG='fb9_ok',_FSKIP='fb9_skip';
+var _FLOG="fb9_ok",_FSKIP="fb9_skip";
 function _fbInit(){
-  if(typeof firebase==='undefined'){console.warn('SDK 미로드');return;}
+  if(typeof firebase==="undefined"){console.warn("SDK 미로드");return;}
   try{
     var app;try{app=firebase.app();}catch(e){app=firebase.initializeApp(_FB);}
     _auth=firebase.auth(app);_db=firebase.database(app);
     _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
     _auth.onAuthStateChanged(function(u){
-      if(u){_user=u;_cloud=true;_nb(u);_hm();localStorage.setItem(_FLOG,'1');localStorage.removeItem(_FSKIP);if(!_syncDone){_syncDone=true;_sd();}}
+      if(u){_user=u;_cloud=true;_nb(u);_hm();localStorage.setItem(_FLOG,"1");localStorage.removeItem(_FSKIP);if(!_syncDone){_syncDone=true;_sd();}}
       else{_user=null;_cloud=false;_nb(null);if(localStorage.getItem(_FSKIP)||localStorage.getItem(_FLOG))return;setTimeout(function(){if(!_user)_om();},1000);}
     });
-  }catch(e){console.error('FB:',e.message);if(!localStorage.getItem(_FSKIP)&&!localStorage.getItem(_FLOG))setTimeout(_om,1000);}
+  }catch(e){console.error("FB:",e.message);if(!localStorage.getItem(_FSKIP)&&!localStorage.getItem(_FLOG))setTimeout(_om,1000);}
 }
-function _nb(u){var b=document.getElementById('nav-user');if(!b)return;if(u){b.textContent='\uD83D\uDC64 '+(u.displayName||u.email||'').slice(0,8);b.style.background='#E8F5E9';b.style.color='#1B5E20';}else{b.textContent='\uD83D\uDC64';b.style.background='#F3F4F6';b.style.color='#555';}}
-function _om(){var m=document.getElementById('_fm');if(m)m.style.display='flex';var e=document.getElementById('_fe');if(e)e.style.display='none';}
-function _hm(){var m=document.getElementById('_fm');if(m)m.style.display='none';}
-function _em(s){var e=document.getElementById('_fe');if(e){e.textContent=s;e.style.display='block';}}
+function _nb(u){var b=document.getElementById("nav-user");if(!b)return;if(u){b.textContent="👤 "+(u.displayName||u.email||"").slice(0,8);b.style.background="#E8F5E9";b.style.color="#1B5E20";}else{b.textContent="👤";b.style.background="#F3F4F6";b.style.color="#555";}}
+function _om(){var m=document.getElementById("_fm");if(m)m.style.display="flex";var e=document.getElementById("_fe");if(e)e.style.display="none";}
+function _hm(){var m=document.getElementById("_fm");if(m)m.style.display="none";}
+function _em(s){var e=document.getElementById("_fe");if(e){e.textContent=s;e.style.display="block";}}
 function showLoginModal(){_om();}
-function doGoogleLogin(){if(!_auth){var t=0,iv=setInterval(function(){if(_auth){clearInterval(iv);_gp();}else if(++t>20){clearInterval(iv);_em('\uC5F0\uACB0 \uC2E4\uD328. \uC0C8\uB85C\uACE0\uCE68\uD574 \uC8FC\uC138\uC694.');}},200);return;}_gp();}
-function _gp(){var p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});_auth.signInWithPopup(p).then(function(r){if(r.user)showToast('\u2705 Google \uB85C\uADF8\uC778 \uC644\uB8CC!');}).catch(function(e){if(e.code!=='auth/popup-closed-by-user')_em('Google \uC624\uB958: '+e.message);});}
-function doEmailLogin(){if(!_auth){var t=0,iv=setInterval(function(){if(_auth){clearInterval(iv);_ep();}else if(++t>20){clearInterval(iv);_em('\uC5F0\uACB0 \uC2E4\uD328.');}},200);return;}_ep();}
-function _ep(){var em=(document.getElementById('_fee')||{}).value||'';var pw=(document.getElementById('_fep')||{}).value||'';if(!em||pw.length<6){_em('\uC774\uBA54\uC77C\uACFC \uBE44\uBC00\uBC88\uD638(6\uC790+)\uB97C \uC785\uB825\uD558\uC138\uC694');return;}_auth.signInWithEmailAndPassword(em,pw).then(function(){showToast('\u2705 \uB85C\uADF8\uC778 \uC644\uB8CC!');}).catch(function(e){if(['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials'].indexOf(e.code)>=0){_auth.createUserWithEmailAndPassword(em,pw).then(function(){showToast('\u2705 \uD68C\uC6D0\uAC00\uC785 \uC644\uB8CC!');}).catch(function(e2){_em('\uAC00\uC785 \uC2E4\uD328: '+e2.message);});}else if(e.code==='auth/wrong-password'){_em('\uBE44\uBC00\uBC88\uD638\uAC00 \uD2C0\uB838\uC2B5\uB2C8\uB2E4');}else{_em('\uC624\uB958: '+e.message);}});}
-function skipLogin(){_cloud=false;localStorage.setItem(_FSKIP,'1');localStorage.removeItem(_FLOG);_hm();showToast('\uC774 \uAE30\uAE30\uC5D0\uB9CC \uC800\uC7A5\uB429\uB2C8\uB2E4');}
-function showUserMenu(){if(_user){if(confirm('\uD83D\uDC64 '+(_user.email||_user.displayName||'')+'\n\uB85C\uADF8\uC544\uC6C3 \uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?')){_auth.signOut();_user=null;_cloud=false;_syncDone=false;localStorage.removeItem(_FLOG);_nb(null);showToast('\uB85C\uADF8\uC544\uC6C3 \uB418\uC5C8\uC2B5\uB2C8\uB2E4');}}else{_om();}}
-function _su(){if(!_cloud||!_user||!_db||_syncing)return;_db.ref('u/'+_user.uid).set({s:JSON.stringify(STATS),w:JSON.stringify(WRONGS),t:Date.now()}).then(function(){showToast('\u2601\uFE0F \uC800\uC7A5 \uC644\uB8CC');}).catch(function(e){console.warn(e.message);});}
-function _sd(){if(!_user||!_db)return;_syncing=true;_db.ref('u/'+_user.uid).once('value').then(function(snap){var d=snap.val();if(d&&d.t){var cs={},cw=[];try{cs=JSON.parse(d.s)||{};}catch(e){}try{cw=JSON.parse(d.w)||[];}catch(e){}var ms=JSON.parse(JSON.stringify(cs));Object.keys(STATS).forEach(function(k){if(!ms[k])ms[k]=STATS[k];});STATS=ms;var wm={};cw.forEach(function(w){wm[w.lesson+'|'+w.num]=w;});WRONGS.forEach(function(w){var k=w.lesson+'|'+w.num;if(!wm[k])wm[k]=w;});WRONGS=Object.values(wm);try{localStorage.setItem(SK,JSON.stringify(STATS));}catch(e){}try{localStorage.setItem(WK,JSON.stringify(WRONGS));}catch(e){}renderHome();updateNavWrong();showToast('\u2601\uFE0F \uB3D9\uAE30\uD654 \uC644\uB8CC!');}else if(Object.keys(STATS).length>0||WRONGS.length>0){_syncing=false;_su();return;}}).catch(function(e){showToast('\u26A0\uFE0F \uB3D9\uAE30\uD654 \uC2E4\uD328');}).finally(function(){_syncing=false;});}
+function doGoogleLogin(){if(!_auth){var t=0,iv=setInterval(function(){if(_auth){clearInterval(iv);_gp();}else if(++t>20){clearInterval(iv);_em("연결 실패. 새로고침해 주세요.");}},200);return;}_gp();}
+function _gp(){var p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});_auth.signInWithPopup(p).then(function(r){if(r.user)showToast("✅ Google 로그인 완료!");}).catch(function(e){if(e.code!=="auth/popup-closed-by-user")_em("Google 오류: "+e.message);});}
+function doEmailLogin(){if(!_auth){var t=0,iv=setInterval(function(){if(_auth){clearInterval(iv);_ep();}else if(++t>20){clearInterval(iv);_em("연결 실패.");}},200);return;}_ep();}
+function _ep(){var em=(document.getElementById("_fee")||{}).value||"";var pw=(document.getElementById("_fep")||{}).value||"";if(!em||pw.length<6){_em("이메일과 비밀번호(6자+)를 입력하세요");return;}_auth.signInWithEmailAndPassword(em,pw).then(function(){showToast("✅ 로그인 완료!");}).catch(function(e){if(["auth/user-not-found","auth/invalid-credential","auth/invalid-login-credentials"].indexOf(e.code)>=0){_auth.createUserWithEmailAndPassword(em,pw).then(function(){showToast("✅ 회원가입 완료!");}).catch(function(e2){_em("가입 실패: "+e2.message);});}else if(e.code==="auth/wrong-password"){_em("비밀번호가 틀렸습니다");}else{_em("오류: "+e.message);}});}
+function skipLogin(){_cloud=false;localStorage.setItem(_FSKIP,"1");localStorage.removeItem(_FLOG);_hm();showToast("이 기기에만 저장됩니다");}
+function showUserMenu(){if(_user){if(confirm("👤 "+(_user.email||_user.displayName||"")+"\n로그아웃 하시겠습니까?")){_auth.signOut();_user=null;_cloud=false;_syncDone=false;localStorage.removeItem(_FLOG);_nb(null);showToast("로그아웃 되었습니다");}}else{_om();}}
+function _su(){if(!_cloud||!_user||!_db||_syncing)return;_db.ref("u/"+_user.uid).set({s:JSON.stringify(STATS),w:JSON.stringify(WRONGS),t:Date.now()}).then(function(){showToast("☁️ 저장 완료");}).catch(function(e){console.warn(e.message);});}
+function _sd(){if(!_user||!_db)return;_syncing=true;_db.ref("u/"+_user.uid).once("value").then(function(snap){var d=snap.val();if(d&&d.t){var cs={},cw=[];try{cs=JSON.parse(d.s)||{};}catch(e){}try{cw=JSON.parse(d.w)||[];}catch(e){}var ms=JSON.parse(JSON.stringify(cs));Object.keys(STATS).forEach(function(k){if(!ms[k])ms[k]=STATS[k];});STATS=ms;var wm={};cw.forEach(function(w){wm[w.lesson+"|"+w.num]=w;});WRONGS.forEach(function(w){var k=w.lesson+"|"+w.num;if(!wm[k])wm[k]=w;});WRONGS=Object.values(wm);try{localStorage.setItem(SK,JSON.stringify(STATS));}catch(e){}try{localStorage.setItem(WK,JSON.stringify(WRONGS));}catch(e){}renderHome();updateNavWrong();showToast("☁️ 동기화 완료!");}else if(Object.keys(STATS).length>0||WRONGS.length>0){_syncing=false;_su();return;}}).catch(function(e){showToast("⚠️ 동기화 실패");}).finally(function(){_syncing=false;});}
 var _syncUp=_su;
-function showToast(msg){var t=document.getElementById('_ft');if(!t)return;clearTimeout(t._id);t.textContent=msg;t.style.cssText='display:block;opacity:1;position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#1B4332;color:#fff;padding:11px 20px;border-radius:22px;font-size:15px;font-weight:600;z-index:9000;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.22)';t._id=setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.style.display='none';},300);},2500);}
-window.addEventListener('load',function(){if(typeof _fbInit==='function')_fbInit();});
+function showToast(msg){var t=document.getElementById("_ft");if(!t)return;clearTimeout(t._id);t.textContent=msg;t.style.cssText="display:block;opacity:1;position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#1B4332;color:#fff;padding:11px 20px;border-radius:22px;font-size:15px;font-weight:600;z-index:9000;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.22)";t._id=setTimeout(function(){t.style.opacity="0";setTimeout(function(){t.style.display="none";},300);},2500);}
+window.addEventListener("load",function(){if(typeof _fbInit==="function")_fbInit();});
 </script>
 <div id="_fm" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:22px;padding:28px 22px;width:min(360px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.28)">
     <div style="text-align:center;margin-bottom:18px">
-      <div style="font-size:38px;margin-bottom:7px">\U0001F4D7</div>
-      <div style="font-weight:900;font-size:20px;color:#1B4332">\uACF5\uC778\uC911\uAC1C\uC0AC 2026</div>
-      <div style="font-size:14px;color:#888;margin-top:5px;line-height:1.6">\uB85C\uADF8\uC778\uD558\uBA74 \uC5B4\uB514\uC11C\uB098<br>\uC624\uB2F5\uB178\uD2B8\uAC00 \uB3D9\uAE30\uD654\uB429\uB2C8\uB2E4</div>
+      <div style="font-size:38px;margin-bottom:7px">📗</div>
+      <div style="font-weight:900;font-size:20px;color:#1B4332">공인중개사 2026</div>
+      <div style="font-size:14px;color:#888;margin-top:5px;line-height:1.6">로그인하면 어디서나<br>오답노트가 동기화됩니다</div>
     </div>
-    <input id="_fee" type="email" placeholder="\uC774\uBA54\uC77C" autocomplete="email" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #ddd;font-size:16px;margin-bottom:8px;font-family:inherit;outline:none;box-sizing:border-box"/>
-    <input id="_fep" type="password" placeholder="\uBE44\uBC00\uBC88\uD638 (6\uC790 \uC774\uC0C1)" autocomplete="current-password" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #ddd;font-size:16px;margin-bottom:11px;font-family:inherit;outline:none;box-sizing:border-box"/>
+    <input id="_fee" type="email" placeholder="이메일" autocomplete="email" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #ddd;font-size:16px;margin-bottom:8px;font-family:inherit;outline:none;box-sizing:border-box"/>
+    <input id="_fep" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #ddd;font-size:16px;margin-bottom:11px;font-family:inherit;outline:none;box-sizing:border-box"/>
     <div id="_fe" style="display:none;color:#C62828;font-size:13px;margin-bottom:9px;padding:8px 12px;background:#FFEBEE;border-radius:8px"></div>
-    <button onclick="doEmailLogin()" style="width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;font-weight:800;font-size:16px;cursor:pointer;margin-bottom:8px">\uB85C\uADF8\uC778 / \uD68C\uC6D0\uAC00\uC785</button>
-    <div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:11px">\uCC98\uC74C\uC774\uBA74 \uC790\uB3D9\uC73C\uB85C \uD68C\uC6D0\uAC00\uC785\uB429\uB2C8\uB2E4</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><div style="flex:1;height:1px;background:#eee"></div><span style="font-size:12px;color:#ccc">\uB610\uB294</span><div style="flex:1;height:1px;background:#eee"></div></div>
-    <button onclick="doGoogleLogin()" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid #ddd;background:#fff;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:8px"><img src="https://www.google.com/favicon.ico" width="17" height="17">Google \uACC4\uC815\uC73C\uB85C \uB85C\uADF8\uC778</button>
-    <button onclick="skipLogin()" style="width:100%;padding:10px;border-radius:10px;border:none;background:#F5F5F5;color:#999;font-size:14px;cursor:pointer">\uB85C\uADF8\uC778 \uC5C6\uC774 \uACC4\uC18D</button>
+    <button onclick="doEmailLogin()" style="width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;font-weight:800;font-size:16px;cursor:pointer;margin-bottom:8px">로그인 / 회원가입</button>
+    <div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:11px">처음이면 자동으로 회원가입됩니다</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><div style="flex:1;height:1px;background:#eee"></div><span style="font-size:12px;color:#ccc">또는</span><div style="flex:1;height:1px;background:#eee"></div></div>
+    <button onclick="doGoogleLogin()" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid #ddd;background:#fff;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:8px"><img src="https://www.google.com/favicon.ico" width="17" height="17">Google 계정으로 로그인</button>
+    <button onclick="skipLogin()" style="width:100%;padding:10px;border-radius:10px;border:none;background:#F5F5F5;color:#999;font-size:14px;cursor:pointer">로그인 없이 계속</button>
   </div>
 </div>
 <div id="_ft" style="display:none"></div>
