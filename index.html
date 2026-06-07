@@ -452,8 +452,11 @@ function dday(){return Math.ceil((EXAM-new Date())/86400000);}
 function subStats(){
   const o={};
   SUBS.forEach(s=>{
-    const ks=Object.keys(STATS).filter(k=>STATS[k].sid===s.id);
-    o[s.id]={total:ks.reduce((a,k)=>a+(STATS[k].total||0),0),correct:ks.reduce((a,k)=>a+(STATS[k].correct||0),0)};
+    const ks=Object.keys(STATS).filter(k=>STATS[k]&&STATS[k].sid===s.id);
+    o[s.id]={
+      total:ks.reduce((a,k)=>a+(STATS[k].total||0),0),
+      correct:ks.reduce((a,k)=>a+(STATS[k].correct||0),0)
+    };
   });
   return o;
 }
@@ -795,14 +798,23 @@ function renderHome(){
 //  SUBJECT
 // ══════════════════════════════════════════
 function openSub(sub){
+  const sameSubReload = ST.sub && ST.sub.id===sub.id && ST.posts && ST.posts.length>0;
   ST.sub=sub;
   const hdr=document.getElementById('sub-hdr');
   hdr.style.background=`linear-gradient(135deg,${sub.color} 0%,${sub.color}CC 100%)`;
   document.getElementById('sub-icon').textContent=sub.icon;
   document.getElementById('sub-name').textContent=sub.name;
+  showView('sub');
+  // 같은 과목 재진입 + 캐시 있으면 즉시 갱신 (진도율 반영)
+  if(sameSubReload){
+    renderLessonList({feed:{entry:ST.posts.map(p=>({
+      title:{$t:p.title}, link:[{rel:'alternate',href:p.link}],
+      content:{$t:p.content}, published:{$t:p.pub}
+    }))}}, sub);
+    return;
+  }
   document.getElementById('sub-meta').textContent='로딩 중...';
   document.getElementById('llist').innerHTML='<div class="spin-wrap"><div class="spin"></div></div>';
-  showView('sub');
   fetchLabel(sub.id)
     .then(data=>renderLessonList(data,sub))
     .catch(()=>{
@@ -865,7 +877,10 @@ function openLesson(post){
   hdr.style.background=`linear-gradient(135deg,${sub.color} 0%,${sub.color}AA 100%)`;
   document.getElementById('les-title').textContent=cleanT(post.title);
   document.getElementById('les-meta').textContent=sub.icon+' '+sub.name+' · '+ST.qs.length+'문제';
-  document.getElementById('les-back').onclick=()=>showView('sub');
+  document.getElementById('les-back').onclick=function(){
+    showView('sub');
+    if(ST.sub) openSub(ST.sub);
+  };
   document.getElementById('ring-les').style.display='none';
   document.getElementById('abar').style.display='none';
   document.getElementById('ai-retry').style.display='none';
@@ -1050,6 +1065,13 @@ function handleSubmit(){
   const rl=document.getElementById('ring-les');
   rl.style.display='block';ring(rl,pct,'rgba(255,255,255,.85)',40,4);
   buildTabs();
+
+  // 진도율 화면 갱신 (홈 + 차시목록)
+  try{ renderHome(); }catch(e){}
+  // 로그인 상태면 즉시 클라우드 저장
+  if(typeof _cloud!=='undefined' && _cloud && typeof _su==='function'){
+    setTimeout(function(){ _su(); }, 300);
+  }
 }
 
 
