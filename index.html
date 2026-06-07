@@ -507,13 +507,32 @@ function parseQs(text){
         || /^[\u2460\u2461\u2462\u2463\u2464]\uBC88?\s*(\uBD84\uC11D|\uD574\uC124)\s*[:\uFF1A]/.test(l);
     }
     function isChoice(l){return /^[\u2460\u2461\u2462\u2463\u2464]/.test(l)&&!isAnalysis(l);}
+
+    // ── 선택지 수집: 원문자 줄 + 이어지는 줄을 직전 선택지에 합침
     var seen={},choices=[];
-    lines.filter(isChoice).forEach(function(line){
-      var m=line.match(/^([\u2460\u2461\u2462\u2463\u2464])\s*([\s\S]+)/);
-      if(!m||seen[m[1]])return;
-      var t=m[2].replace(/style\s*=\s*"[^"]*"/gi,'').replace(/^[-\u2022>]\s*/,'').replace(/\s+/g,' ').trim();
-      if(t.length>=2){choices.push({label:m[1],text:t});seen[m[1]]=1;}
-    });
+    var firstChoiceFound=false, answerReached=false;
+    for(var li=0; li<lines.length; li++){
+      var L=lines[li];
+      // 정답/해설 영역 도달하면 선택지 수집 중단
+      if(/^(?:\uC815\uB2F5|\uD574\uC124|\uD480\uC774)\s*[:\uFF1A]/.test(L)){answerReached=true;}
+      if(answerReached)continue;
+      if(isChoice(L)){
+        var m=L.match(/^([\u2460\u2461\u2462\u2463\u2464])\s*([\s\S]+)/);
+        if(m&&!seen[m[1]]){
+          var t=m[2].replace(/style\s*=\s*"[^"]*"/gi,'').replace(/^[-\u2022>]\s*/,'').replace(/\s+/g,' ').trim();
+          if(t.length>=1){choices.push({label:m[1],text:t});seen[m[1]]=1;firstChoiceFound=true;}
+        }
+      } else if(firstChoiceFound && choices.length>0 && !isAnalysis(L)
+                && !/^(?:\uBB38\uC81C|Q)\s*\d/i.test(L)
+                && !/^(?:style|display|width|padding|margin|cursor)/.test(L)){
+        // 원문자 없는 줄 → 직전 선택지의 이어지는 내용
+        var prev=choices[choices.length-1];
+        var add=L.replace(/style\s*=\s*"[^"]*"/gi,'').replace(/\s+/g,' ').trim();
+        if(add.length>0 && prev.text.length<200){
+          prev.text=(prev.text+' '+add).trim();
+        }
+      }
+    }
     if(choices.length<2)return;
     var fci=-1;
     for(var k=0;k<lines.length;k++){if(isChoice(lines[k])){fci=k;break;}}
