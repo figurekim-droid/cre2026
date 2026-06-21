@@ -617,15 +617,52 @@ function buildStudyData(text){
     caution.push({title:'숫자 기준 혼동 주의',body:'면적·기간·층수 등 숫자 기준을 정확히 암기하고 혼동하지 않도록 주의하세요.'});
   }
 
-  // [4] 출제 포인트
+  // [4] 틀리기 쉬운 포인트 & 암기법 (AI 보강 전 임시 표시)
   const examPoints=[];
-  ST.qs.forEach(q=>{if(examPoints.length<8)examPoints.push(q.question.length>70?q.question.slice(0,68)+'...':q.question);});
-  if(examPoints.length<4)learn.slice(0,6).forEach(l=>{if(examPoints.length<8)examPoints.push(l.slice(0,80)+(l.length>80?'...':''));});
-  const subTips={'공법':['건축허가 요건 및 면적·층수 기준','용도지역별 건폐율·용적률 수치','개발행위허가 대상 여부 판단','허가 취소 사유 및 절차'],'민법':['판례의 입장 (옳다/틀리다 구별)','법률행위의 효력발생 요건','취소·무효·추인의 차이','대리권의 범위와 남용'],'세법':['세율·공제액 계산 문제','납세의무자 판단 기준','비과세·감면 요건 구별','납부 기한·신고 절차'],'공시법':['등기 신청 주체·기간·절차','등기부 기재 사항 및 효력','등기의 추정력·공신력 구별','각종 등기의 유형'],'부동산학개론':['부동산 개념·분류','시장 분석 이론','투자 수익률 계산','가격 결정 원리'],'중개사법':['중개업자 의무·금지행위','중개보수 한도 및 계산','결격사유·등록 취소','손해배상 책임']};
-  (subTips[ST.sub?.id]||[]).forEach(t=>{if(examPoints.length<8)examPoints.push(t);});
+  const subTraps={
+    '공법':[
+      {point:'건축허가권자를 도지사로 착각하기 쉽다',how:'원칙은 시장·군수·구청장. 21층↑·연면적 10만㎡↑만 특별/광역시장'},
+      {point:'건폐율과 용적률 수치를 혼동하기 쉽다',how:'건폐율=바닥면적/대지(평면), 용적률=연면적/대지(층수). 주거지역 수치 암기'},
+      {point:'개발행위허가 대상 여부 판단이 어렵다',how:'경작을 위한 형질변경은 허가 불필요로 암기'},
+      {point:'다중주택 면적 기준이 개정되었다',how:'2026년 660㎡ 이하(구 330㎡). 19세대·3층 이하 함께 암기'}
+    ],
+    '민법':[
+      {point:'판례의 옳다/틀리다를 반대로 고르기 쉽다',how:'핵심 판례는 결론만 따로 정리해 반복 암기'},
+      {point:'취소·무효·추인의 효과를 혼동한다',how:'무효=처음부터 효력없음, 취소=취소해야 무효, 추인=유효확정으로 구분'},
+      {point:'표현대리와 무권대리를 헷갈린다',how:'표현대리=본인 책임O, 협의의 무권대리=본인 책임X로 구분'}
+    ],
+    '세법':[
+      {point:'세율·공제액 계산에서 실수가 많다',how:'과세표준 구간별 세율을 표로 만들어 암기'},
+      {point:'납세의무자 판단을 틀리기 쉽다',how:'취득세=취득자, 재산세=6월1일 보유자로 기준일 암기'},
+      {point:'비과세·감면 요건을 혼동한다',how:'1세대1주택 2년 보유(조정지역 2년 거주) 요건 암기'},
+      {point:'양도세 중과 유예 기간을 놓친다',how:'2026.5.9까지 양도 시 중과 배제 (최신 개정)'}
+    ],
+    '공시법':[
+      {point:'등기 신청 주체·기간을 혼동한다',how:'소유권보존등기, 변경등기 신청기간을 표로 정리'},
+      {point:'추정력과 공신력을 헷갈린다',how:'등기=추정력O 공신력X, 점유=권리추정력으로 암기'},
+      {point:'지목의 종류와 부호를 헷갈린다',how:'28개 지목 중 자주 출제되는 것 위주로 암기'}
+    ],
+    '부동산학개론':[
+      {point:'수요·공급 변화와 변동을 혼동한다',how:'가격→곡선상 이동(량 변화), 가격 외 요인→곡선 자체 이동'},
+      {point:'감정평가 3방식을 헷갈린다',how:'원가법(비용), 거래사례비교법(시장), 수익환원법(수익)으로 구분'},
+      {point:'수익률·레버리지 계산 실수가 많다',how:'자기자본수익률 공식과 정(+)/부(-) 레버리지 조건 암기'}
+    ],
+    '중개사법':[
+      {point:'중개업자 금지행위 범위를 놓친다',how:'직접거래·쌍방대리·초과보수 금지를 묶어서 암기'},
+      {point:'중개보수 한도 계산을 틀린다',how:'거래금액별 상한요율과 한도액을 표로 암기'},
+      {point:'결격사유와 등록취소 사유를 혼동한다',how:'결격사유 종료 후 경과기간(3년 등)을 정확히 암기'}
+    ]
+  };
+  (subTraps[ST.sub?.id]||[]).forEach(t=>{if(examPoints.length<6)examPoints.push(t);});
+  // 부족하면 학습 항목에서 보충
+  if(examPoints.length<3){
+    learn.slice(0,3).forEach(l=>{
+      if(examPoints.length<6)examPoints.push({point:l.slice(0,60)+'에 주의',how:'핵심 키워드와 숫자를 정확히 암기하세요'});
+    });
+  }
 
   const tip=bullets.find(b=>b.length>15&&b.length<100)||learn.find(l=>l.length>15&&l.length<100)||'핵심 개념·숫자 기준을 중심으로 학습하고 원칙과 예외를 명확히 구분하세요.';
-  return{learn,memory,caution,exam:examPoints.slice(0,8),tip};
+  return{learn,memory,caution,exam:examPoints.slice(0,6),tip};
 }
 
 
@@ -694,15 +731,22 @@ function renderStudyContent(data,sub){
   <div class="study-section ss-exam">
     <div class="ss-hdr" onclick="toggleSS('exam')">
       <div class="ss-ico">🎯</div>
-      <div class="ss-ttl">출제 예상 포인트<span class="ss-cnt">${exam.length}항목</span></div>
+      <div class="ss-ttl">틀리기 쉬운 포인트 & 암기법<span class="ss-cnt">${exam.length}항목</span></div>
       <div class="ss-arr open" id="exam-arr">▼</div>
     </div>
     <div class="ss-body open" id="exam-body">
-      ${exam.map((e,i)=>`
-        <div class="ep">
-          <div class="ep-num">${i+1}</div>
-          <div class="ep-txt">${hl(esc(e))}</div>
-        </div>`).join('')}
+      ${exam.map((e,i)=>{
+        // e가 객체({point,how})면 분리, 문자열이면 그대로
+        const point = (e&&typeof e==='object') ? (e.point||e.trap||'') : e;
+        const how = (e&&typeof e==='object') ? (e.how||e.tip||'') : '';
+        return `<div style="margin-bottom:13px;padding:12px 13px;background:#F5F9FF;border-radius:11px;border-left:3px solid #3B82F6">
+          <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:${how?'7px':'0'}">
+            <div style="min-width:22px;height:22px;border-radius:6px;background:#3B82F6;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i+1}</div>
+            <div style="font-size:15px;color:#1E3A5F;line-height:1.7;font-weight:600">⚠️ ${hl(esc(point))}</div>
+          </div>
+          ${how?`<div style="margin-left:30px;font-size:14px;color:#475569;line-height:1.7;background:#fff;border-radius:8px;padding:8px 11px">💡 <b style="color:#1D4ED8">암기TIP:</b> ${hl(esc(how))}</div>`:''}
+        </div>`;
+      }).join('')}
     </div>
   </div>`;
 }
@@ -719,9 +763,54 @@ function toggleSS(id){
 // ══════════════════════════════════════════
 //  AI 분석 (Anthropic API - 연결되면 사용, 실패해도 자체 파싱으로 표시)
 // ══════════════════════════════════════════
-const AI_PROMPT=(title,content)=>`당신은 공인중개사 시험 전문 강사입니다. 아래 "${title}" 차시 내용을 분석해서 다음 JSON만 출력하세요. 다른 텍스트 없이 JSON만:
-{"learn":["항목1","항목2",...최소6개],"memory":[{"key":"키워드","val":"기준/숫자/조건"},...최소5개],"caution":[{"title":"주의제목","body":"상세설명"},...최소3개],"exam":["출제포인트1","포인트2",...최소4개],"tip":"1줄핵심TIP"}
-내용:${content.slice(0,2000)}`;
+const SUB_GUIDE={
+  '공법':'국토계획법(용도지역·지구·구역·개발행위허가), 건축법(허가·신고·용도변경·주택종류), 주택법, 도시정비법. 숫자·면적·기간 기준 암기 필수.',
+  '민법':'민법총칙(법률행위·의사표시·대리·무효취소), 물권법(물권변동·소유권·담보물권), 계약법(매매·임대차), 민사특별법(주임법·상임법·집합건물법). 판례 다수.',
+  '세법':'취득세·재산세·종합부동산세·양도소득세·부가가치세. 2026 개정사항 반영. 세율·공제·납부기한·비과세 요건, 계산형 대비.',
+  '공시법':'부동산등기법(절차·신청인·효력), 공간정보관리법(지적공부·지목·면적). 추정력·공신력 구별, 절차와 기간.',
+  '부동산학개론':'부동산 개념·특성, 수요·공급론, 감정평가 3방식, 투자론(수익률·레버리지). 계산형 대비.',
+  '중개사법':'공인중개사법(의무·금지행위·중개보수), 거래신고법, 실명법. 결격사유·등록취소·과태료 암기.'
+};
+const LAW_2026={
+  '공법':'다중주택 연면적 660㎡ 이하(구 330㎡), 다가구주택 660㎡·19세대·3층 이하, 다세대 660㎡·4층 이하',
+  '세법':'다주택 양도세 중과 유예 2026.5.9까지, 생애최초 취득세 100% 감면 연장, 인구감소지역 감면한도 300만원',
+  '중개사법':'공인중개사법 개정 2026.8.28 시행 예정'
+};
+
+const AI_PROMPT=(sub,title,content,qs)=>{
+  const guide=SUB_GUIDE[sub.id]||'';
+  const law=LAW_2026[sub.id]||'';
+  // 실제 출제 문제 요약 (정답+해설 포함)
+  const qSummary=(qs||[]).slice(0,10).map((q,i)=>{
+    const ans=(q.choices||[]).find(c=>c.label===q.correct);
+    return (i+1)+'. '+(q.question||'').slice(0,80)+' [정답:'+(q.correct||'')+(ans?' '+ans.text.slice(0,40):'')+']';
+  }).join('\n');
+
+  return `당신은 메가랜드·박문각·해커스·공인모 수준의 공인중개사 전문 강사입니다.
+
+[과목] ${sub.name}
+[차시] ${title}
+[과목 핵심] ${guide}
+${law?'[2026 개정 필수반영] '+law:''}
+
+아래 "차시 이론"과 "실제 출제 문제"를 종합 분석하여, 수험생이 이 차시만 공부해도 관련 문제를 모두 맞힐 수 있는 합격용 학습자료를 작성하세요.
+
+⚠️ 규칙:
+- 블로그 내용을 그대로 베끼지 말고, 시험에 출제되는 형태로 재구성
+- memory는 반드시 구체적 숫자·기간·면적·요건 포함 (시험 함정 위주)
+- caution은 실제로 자주 틀리는 함정 포인트 위주
+- 2026년 개정 법령이 있으면 반드시 최신 기준으로 작성
+- ①②③ 같은 원문자나 코드 절대 포함 금지
+
+JSON만 출력 (다른 텍스트 없이):
+{"learn":["완전한 문장으로 핵심이론",...최소8개],"memory":[{"key":"암기키워드","val":"구체적 기준·숫자·조건"},...최소7개],"caution":[{"title":"함정포인트","body":"왜 틀리는지+정확한 기준"},...최소5개],"exam":[{"point":"이 부분에서 자주 틀린다는 구체적 설명","how":"이렇게 암기하거나 이해하면 안 틀린다는 방법"},...최소5개],"tip":"이 차시 합격 핵심 1문장"}
+
+[차시 이론]
+${content.slice(0,1800)}
+
+[실제 출제 문제]
+${qSummary}`;
+};
 
 async function tryAIEnhance(sub){
   const bar=document.getElementById('abar');
@@ -740,8 +829,8 @@ async function tryAIEnhance(sub){
       method:'POST',signal:ctrl.signal,
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',max_tokens:1500,
-        messages:[{role:'user',content:AI_PROMPT(cleanT(ST.lesson.title),ST.text)}]
+        model:'claude-sonnet-4-20250514',max_tokens:2500,
+        messages:[{role:'user',content:AI_PROMPT(sub,cleanT(ST.lesson.title),ST.text,ST.qs)}]
       })
     });
     clearTimeout(tid);
@@ -753,9 +842,19 @@ async function tryAIEnhance(sub){
     if(!m)throw new Error('no JSON');
     const aiData=JSON.parse(m[0]);
 
+    // AI 결과 정리 (원문자·코드 제거)
+    const clean=s=>(s||'').replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g,'').replace(/function\s|\bvar\s|document\./g,'').replace(/\s{2,}/g,' ').trim();
+    if(aiData.learn)aiData.learn=aiData.learn.map(clean).filter(x=>x.length>5);
+    if(aiData.memory)aiData.memory=aiData.memory.map(m2=>({key:clean(m2.key),val:clean(m2.val)})).filter(m2=>m2.val&&m2.val.length>3);
+    if(aiData.caution)aiData.caution=aiData.caution.map(c=>({title:clean(c.title),body:clean(c.body)})).filter(c=>c.body&&c.body.length>5);
+    if(aiData.exam)aiData.exam=aiData.exam.map(function(e){
+      if(e&&typeof e==='object')return{point:clean(e.point||e.trap||''),how:clean(e.how||e.tip||'')};
+      return{point:clean(e),how:''};
+    }).filter(function(e){return e.point&&e.point.length>3;});
+
     // AI 성공: 결과로 교체
     bar.className='abar done';dot.className='adot';
-    barTxt.textContent='✅ AI 분석 완료 — 더욱 풍부한 학습 자료로 업데이트되었습니다';
+    barTxt.textContent='✅ AI 분석 완료 — 합격용 학습자료로 업데이트되었습니다';
     renderStudyContent(aiData,sub);
 
   }catch(e){
