@@ -156,6 +156,18 @@ button:active{opacity:.75;transform:scale(.97);}
 
 /* QUESTIONS */
 .qcard{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:12px;border:1.5px solid var(--bdr);transition:border-color .2s;}
+/* 모의고사 전용 */
+.qhead{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;}
+.qnum{min-width:24px;height:24px;border-radius:7px;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qopts{display:flex;flex-direction:column;gap:6px;}
+.qopt{padding:9px 12px;border-radius:9px;text-align:left;font-size:12.5px;display:flex;gap:8px;align-items:flex-start;border:1.5px solid var(--bdr);background:#FAFAFA;width:100%;cursor:pointer;transition:border-color .15s,background .15s;color:var(--tx1);}
+.qopt:not([disabled]):hover{border-color:#9CA3AF;background:#F3F4F6;}
+.qopt-label{font-weight:800;flex-shrink:0;}
+.qopt-text{flex:1;line-height:1.6;}
+.qopt.sel{border-color:#3B82F6;background:#EFF6FF;}
+.qopt.correct{border-color:#22C55E;background:#F0FDF4;}
+.qopt.wrong{border-color:#EF4444;background:#FEF2F2;}
+.qres{margin-top:4px;}
 .qhdr{display:flex;gap:7px;margin-bottom:9px;align-items:flex-start;}
 .qbadge{border-radius:5px;padding:2px 7px;font-size:10px;font-weight:800;flex-shrink:0;}
 .qtext{font-size:12.5px;font-weight:600;line-height:1.65;}
@@ -240,6 +252,15 @@ button:active{opacity:.75;transform:scale(.97);}
       <div style="font-size:11px;color:#888">틀린 문제를 복습하세요</div></div>
       <span style="margin-left:auto;font-size:14px;color:#ccc">›</span>
     </div>
+    <div class="slbl">📝 실전 모의고사</div>
+    <div onclick="goMock()" style="background:linear-gradient(135deg,#1B4332,#2D6A4F);border-radius:16px;padding:16px 16px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:13px;box-shadow:0 4px 14px rgba(27,67,50,.25)">
+      <div style="font-size:30px">🎯</div>
+      <div style="flex:1">
+        <div style="color:#fff;font-weight:800;font-size:16px">과목별 AI 모의고사</div>
+        <div style="color:rgba(255,255,255,.8);font-size:12.5px;margin-top:3px">실전처럼 40문제로 실력을 점검하세요</div>
+      </div>
+      <span style="color:rgba(255,255,255,.7);font-size:18px">›</span>
+    </div>
     <div class="slbl">📚 과목 선택</div>
     <div class="sgrid" id="sgrid"></div>
     <div class="trend-card">
@@ -248,6 +269,45 @@ button:active{opacity:.75;transform:scale(.97);}
       <div class="trend-item"><span style="font-size:15px">🏗️</span><div class="trend-text"><strong>공법</strong> 숫자·기준 혼합 문제 반복 출제</div></div>
       <div class="trend-item"><span style="font-size:15px">💰</span><div class="trend-text"><strong>세법</strong> 계산형 강화 → 양도세·취득세 집중</div></div>
       <div class="trend-item"><span style="font-size:15px">📋</span><div class="trend-text"><strong>공시법</strong> 절차·기간·등기관련 비교 문제</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MOCK EXAM (모의고사) -->
+<div id="v-mock" class="view">
+  <div class="wrap">
+    <div style="background:linear-gradient(135deg,#1B4332,#2D6A4F);border-radius:18px;padding:16px 14px;color:#fff;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <div style="flex:1"><div style="font-size:20px">🎯</div>
+        <div style="font-weight:800;font-size:17px;margin-top:2px">과목별 AI 모의고사</div>
+        <div style="font-size:12px;opacity:.85;margin-top:2px">과목을 선택하면 40문제가 생성됩니다</div>
+      </div>
+    </div>
+    <div id="mock-pick">
+      <div class="slbl">과목 선택</div>
+      <div class="sgrid" id="mock-grid"></div>
+      <div class="trend-card" style="margin-top:6px">
+        <div style="font-weight:800;font-size:13px;margin-bottom:7px">ℹ️ 모의고사 안내</div>
+        <div class="trend-text" style="margin-bottom:5px">· 각 과목 학습 내용을 바탕으로 AI가 40문제를 출제합니다</div>
+        <div class="trend-text" style="margin-bottom:5px">· 실제 시험과 같은 5지선다 형식입니다</div>
+        <div class="trend-text">· 생성에 20~40초 정도 걸립니다</div>
+      </div>
+    </div>
+    <div id="mock-loading" style="display:none;text-align:center;padding:50px 20px">
+      <div class="spin" style="margin:0 auto 16px"></div>
+      <div id="mock-loading-txt" style="font-size:15px;color:var(--tx2)">AI가 모의고사를 출제하고 있습니다...</div>
+      <div style="font-size:13px;color:var(--tx3);margin-top:8px">잠시만 기다려주세요 (최대 40초)</div>
+    </div>
+    <div id="mock-quiz" style="display:none">
+      <div id="mock-hdr" style="border-radius:14px;padding:13px 14px;color:#fff;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+        <div id="mock-icon" style="font-size:20px"></div>
+        <div style="flex:1"><div id="mock-title" style="font-weight:800;font-size:15px"></div>
+          <div id="mock-prog" style="font-size:12px;opacity:.85;margin-top:2px"></div></div>
+        <button onclick="goMock()" class="back-btn" style="background:rgba(255,255,255,.2)">↺</button>
+      </div>
+      <div id="mock-qlist"></div>
+      <button id="mock-submit" onclick="submitMock()" style="width:100%;padding:15px;border-radius:13px;border:none;color:#fff;font-weight:800;font-size:16px;cursor:pointer;margin:10px 0 30px">📊 채점하기</button>
+      <div id="mock-result" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -1042,6 +1102,200 @@ function retryAI(){if(ST.sub)tryAIEnhance(ST.sub);}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));const el=document.getElementById('v-'+id);if(el){el.classList.add('active');window.scrollTo(0,0);}}
 function goHome(){showView('home');renderHome();}
 function goWrong(){showView('wrong');renderAllWrong();}
+
+// ══════════════════════════════════════════
+//  모의고사 (과목별 AI 40문제)
+// ══════════════════════════════════════════
+var MOCK={sub:null,qs:[],answers:{},submitted:false};
+
+function goMock(){
+  showView('mock');
+  document.getElementById('mock-pick').style.display='block';
+  document.getElementById('mock-loading').style.display='none';
+  document.getElementById('mock-quiz').style.display='none';
+  // 과목 카드 렌더
+  var grid=document.getElementById('mock-grid');
+  grid.innerHTML='';
+  SUBS.forEach(function(sub){
+    var card=document.createElement('button');
+    card.className='scard';
+    card.style.borderColor=sub.light;
+    card.innerHTML='<div class="scard-top"><span style="font-size:24px">'+sub.icon+'</span>'
+      +'<span style="font-size:11px;font-weight:700;color:'+sub.color+';background:'+sub.light+';padding:3px 8px;border-radius:6px">40문제</span></div>'
+      +'<div><div class="scard-name">'+sub.name+'</div>'
+      +'<div class="scard-meta">AI 실전 모의고사</div></div>';
+    card.onclick=function(){startMock(sub);};
+    grid.appendChild(card);
+  });
+}
+
+async function startMock(sub){
+  MOCK={sub:sub,qs:[],answers:{},submitted:false};
+  document.getElementById('mock-pick').style.display='none';
+  document.getElementById('mock-quiz').style.display='none';
+  document.getElementById('mock-loading').style.display='block';
+  var ltxt=document.getElementById('mock-loading-txt');
+  ltxt.textContent=sub.name+' 학습 내용을 불러오는 중...';
+
+  try{
+    // 1) 과목 차시 목록 + 본문 수집
+    var data=await fetchLabel(sub.id,100);
+    var entries=(data&&data.feed&&data.feed.entry)||[];
+    var corpus='';
+    for(var i=0;i<entries.length && corpus.length<6000;i++){
+      var c=(entries[i].content&&entries[i].content.$t)||'';
+      corpus+=h2t(c).slice(0,800)+'\n';
+    }
+    if(corpus.length<100){
+      // 본문이 부족하면 과목 가이드만으로 생성
+      corpus=(typeof SUB_GUIDE!=='undefined'&&SUB_GUIDE[sub.id])||sub.name;
+    }
+
+    ltxt.textContent='AI가 '+sub.name+' 40문제를 출제하고 있습니다...';
+
+    // 2) AI에 40문제 요청 (분할: 한 번에 많으면 토큰 초과 → 2회 20문제씩)
+    var all=[];
+    for(var batch=0; batch<2; batch++){
+      ltxt.textContent='AI 모의고사 생성 중... ('+(batch*20)+'/40문제)';
+      var part=await _mockGen(sub, corpus, 20, batch);
+      all=all.concat(part);
+    }
+    // 번호 재정렬
+    all=all.map(function(q,idx){return Object.assign({},q,{id:'m'+idx,num:idx+1});});
+    if(all.length===0)throw new Error('문제 생성 실패');
+
+    MOCK.qs=all;
+    renderMock();
+  }catch(e){
+    document.getElementById('mock-loading').style.display='none';
+    document.getElementById('mock-pick').style.display='block';
+    if(typeof showToast==='function')showToast('⚠️ 생성 실패: '+e.message);
+  }
+}
+
+async function _mockGen(sub, corpus, count, batch){
+  var topics=(typeof SUB_GUIDE!=='undefined'&&SUB_GUIDE[sub.id])||'';
+  var prompt='당신은 공인중개사 시험 출제위원입니다. "'+sub.name+'" 과목의 실전 모의고사 '+count+'문제를 만드세요.\n'
+    +'난이도는 실제 시험 수준이며, 다양한 주제를 골고루 출제하세요'+(batch>0?' (앞서 낸 문제와 겹치지 않게 다른 주제로).':'.')+'\n'
+    +'과목 핵심 영역: '+topics+'\n'
+    +'2026년 개정 법령 기준으로 작성하세요.\n'
+    +'반드시 아래 JSON 형식으로만 출력 (다른 텍스트 절대 금지):\n'
+    +'{"questions":[{"q":"문제","choices":["선택지1","선택지2","선택지3","선택지4","선택지5"],"answer":1,"expl":"해설"}]}\n'
+    +'answer는 정답 번호(1~5). 해설은 1~2문장.\n\n[학습 참고 내용]\n'+corpus.slice(0,4000);
+
+  var resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:prompt}]})
+  });
+  if(!resp.ok)throw new Error('HTTP '+resp.status);
+  var d=await resp.json();
+  if(d.error)throw new Error(d.error.message);
+  var raw=(d.content||[]).map(function(c){return c.text||'';}).join('');
+  var m=raw.match(/\{[\s\S]+\}/);
+  if(!m)return [];
+  var parsed=JSON.parse(m[0]);
+  var labels=['①','②','③','④','⑤'];
+  return (parsed.questions||[]).map(function(q){
+    var choices=(q.choices||[]).slice(0,5).map(function(t,ci){return{label:labels[ci],text:String(t).trim()};});
+    var ai=Math.max(1,Math.min(5,q.answer||1))-1;
+    return{question:String(q.q||'').trim(),choices:choices,correct:labels[ai]||'①',expl:String(q.expl||'').trim()};
+  }).filter(function(q){return q.question&&q.choices.length>=4;});
+}
+
+function renderMock(){
+  var sub=MOCK.sub;
+  document.getElementById('mock-loading').style.display='none';
+  document.getElementById('mock-pick').style.display='none';
+  document.getElementById('mock-quiz').style.display='block';
+  document.getElementById('mock-result').style.display='none';
+
+  var hdr=document.getElementById('mock-hdr');
+  hdr.style.background='linear-gradient(135deg,'+sub.color+','+sub.color+'CC)';
+  document.getElementById('mock-icon').textContent=sub.icon;
+  document.getElementById('mock-title').textContent=sub.name+' 모의고사';
+  document.getElementById('mock-prog').textContent='총 '+MOCK.qs.length+'문제';
+
+  var sb=document.getElementById('mock-submit');
+  sb.style.background='linear-gradient(135deg,'+sub.color+','+sub.color+'AA)';
+
+  var qlist=document.getElementById('mock-qlist');
+  qlist.innerHTML=MOCK.qs.map(function(q,qi){
+    return '<div class="qcard" style="margin-bottom:14px">'
+      +'<div class="qhead"><span class="qnum" style="background:'+sub.color+'">'+(qi+1)+'</span>'
+      +'<div class="qtext">'+esc(q.question)+'</div></div>'
+      +'<div class="qopts">'+q.choices.map(function(c,ci){
+        return '<button class="qopt" id="mopt-'+qi+'-'+ci+'" onclick="pickMock('+qi+','+ci+')">'
+          +'<span class="qopt-label">'+c.label+'</span><span class="qopt-text">'+esc(c.text)+'</span></button>';
+      }).join('')+'</div>'
+      +'<div class="qres" id="mres-'+qi+'" style="display:none"></div>'
+      +'</div>';
+  }).join('');
+  window.scrollTo(0,0);
+}
+
+function pickMock(qi,ci){
+  if(MOCK.submitted)return;
+  MOCK.answers[qi]=ci;
+  var q=MOCK.qs[qi];
+  q.choices.forEach(function(c,idx){
+    var b=document.getElementById('mopt-'+qi+'-'+idx);
+    if(b)b.classList.toggle('sel',idx===ci);
+  });
+  var done=Object.keys(MOCK.answers).length;
+  document.getElementById('mock-prog').textContent=done+' / '+MOCK.qs.length+' 풀이';
+}
+
+function submitMock(){
+  if(MOCK.submitted)return;
+  var unanswered=MOCK.qs.length-Object.keys(MOCK.answers).length;
+  if(unanswered>0 && !confirm(unanswered+'문제를 풀지 않았습니다. 채점할까요?'))return;
+  MOCK.submitted=true;
+  var sub=MOCK.sub, correct=0;
+
+  MOCK.qs.forEach(function(q,qi){
+    var labels=['①','②','③','④','⑤'];
+    var pickedIdx=MOCK.answers[qi];
+    var correctIdx=labels.indexOf(q.correct);
+    var isC=pickedIdx===correctIdx;
+    if(isC)correct++;
+    q.choices.forEach(function(c,ci){
+      var b=document.getElementById('mopt-'+qi+'-'+ci);
+      if(!b)return;
+      b.disabled=true;
+      if(ci===correctIdx)b.classList.add('correct');
+      else if(ci===pickedIdx)b.classList.add('wrong');
+    });
+    var res=document.getElementById('mres-'+qi);
+    if(res){
+      res.style.display='block';
+      var head=isC?'<span style="color:#2E7D32;font-weight:700">✅ 정답</span>'
+        :'<span style="color:#C62828;font-weight:700">❌ 오답 — 정답: '+q.correct+'</span>';
+      var ex=q.expl?'<div style="font-size:13px;color:#4B5563;line-height:1.7;margin-top:5px">💡 '+esc(_explClean(q.expl))+'</div>':'';
+      res.innerHTML='<div style="background:#F8FAFB;border-radius:9px;padding:10px 12px;margin-top:8px">'+head+ex+'</div>';
+      // 오답은 오답노트에 저장
+      if(!isC){
+        WRONGS.push({lesson:'모의고사-'+sub.id,num:qi+1,question:q.question,choices:q.choices,correct:q.correct,expl:q.expl,sub:sub.id});
+      }
+    }
+  });
+  if(WRONGS.length)lsSave(WK,WRONGS);
+  updateNavWrong();
+
+  var pct=Math.round(correct/MOCK.qs.length*100);
+  var grade=pct>=80?'합격권 🎉':pct>=60?'경계선 ⚡':'더 분발 💪';
+  var rEl=document.getElementById('mock-result');
+  rEl.style.display='block';
+  rEl.innerHTML='<div style="background:linear-gradient(135deg,'+sub.color+','+sub.color+'CC);border-radius:16px;padding:22px;color:#fff;text-align:center;margin-bottom:14px">'
+    +'<div style="font-size:14px;opacity:.85">'+sub.name+' 모의고사 결과</div>'
+    +'<div style="font-size:40px;font-weight:900;margin:6px 0">'+correct+' / '+MOCK.qs.length+'</div>'
+    +'<div style="font-size:20px;font-weight:800">'+pct+'점 · '+grade+'</div>'
+    +'<div style="font-size:12px;opacity:.8;margin-top:8px">합격 기준: 40점 이상 + 전체 평균 60점</div></div>'
+    +'<button onclick="goMock()" style="width:100%;padding:13px;border-radius:12px;border:none;background:#F3F4F6;color:#333;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:30px">다른 과목 풀기</button>';
+  document.getElementById('mock-submit').style.display='none';
+  rEl.scrollIntoView({behavior:'smooth'});
+  if(typeof _cloud!=='undefined'&&_cloud&&typeof _su==='function')setTimeout(_su,300);
+}
+
 
 // ══════════════════════════════════════════
 //  HOME
