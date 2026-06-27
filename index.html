@@ -288,9 +288,10 @@ button:active{opacity:.75;transform:scale(.97);}
       <div class="sgrid" id="mock-grid"></div>
       <div class="trend-card" style="margin-top:6px">
         <div style="font-weight:800;font-size:13px;margin-bottom:7px">ℹ️ 모의고사 안내</div>
-        <div class="trend-text" style="margin-bottom:5px">· 각 과목 학습 내용을 바탕으로 AI가 40문제를 출제합니다</div>
-        <div class="trend-text" style="margin-bottom:5px">· 실제 시험과 같은 5지선다 형식입니다</div>
-        <div class="trend-text">· 생성에 20~40초 정도 걸립니다</div>
+        <div class="trend-text" style="margin-bottom:5px">· 실제 시험과 동일하게 <b>과목당 40문제</b> 5지선다로 구성됩니다</div>
+        <div class="trend-text" style="margin-bottom:5px">· 실제 출제 경향(단원별 비중)에 맞춰 출제됩니다</div>
+        <div class="trend-text" style="margin-bottom:5px">· 합격기준: 과목 40점 이상 + 전체 평균 60점 이상</div>
+        <div class="trend-text">· AI 생성에 20~40초 소요 (실패 시 내장 문제로 자동 전환)</div>
       </div>
     </div>
     <div id="mock-loading" style="display:none;text-align:center;padding:50px 20px">
@@ -534,6 +535,119 @@ function hl(s){
 }
 
 // ══════════════════════════════════════════
+//  차시별 정답·해설 내장 (블로그에 정답이 숨김처리된 차시 보완)
+//  키: 차시 제목 일부, 값: 문제순서대로 {a:정답번호, e:해설}
+// ══════════════════════════════════════════
+var LESSON_ANSWERS={
+  '감정평가의 기초이론':[
+    {a:4,e:'가치는 일정 시점에 여러 개가 존재할 수 있고, 가격은 하나만 존재합니다. 설명이 반대로 되어 있어 틀립니다.'},
+    {a:5,e:'이전성은 가치발생요인(효용·상대적희소성·유효수요·이전성)에 해당합니다. 가치형성요인이 아닙니다.'},
+    {a:2,e:'균형의 원칙 위반은 기능적 감가, 적합의 원칙 위반은 경제적 감가와 관련됩니다.'},
+    {a:3,e:'기준시점은 감정평가서 작성 완료일이 아니라 대상물건의 가격조사를 완료한 날짜입니다.'},
+    {a:4,e:'대상 부동산의 구체적 가치는 개별분석으로 판정합니다. 지역분석은 표준적 이용과 가격수준을 판정합니다.'},
+    {a:1,e:'기여의 원칙은 부동산 전체 가치가 각 구성부분의 기여도 합으로 결정된다는 원칙입니다.'},
+    {a:5,e:'내부 구성요소의 적정 결합을 강조하는 것은 균형의 원칙입니다. 대체의 원칙은 대체관계에 있는 부동산 간 가격 상호작용을 설명합니다.'},
+    {a:4,e:'개별적 요인은 가치형성요인입니다. 가치발생요인은 효용·상대적희소성·유효수요·이전성입니다.'},
+    {a:3,e:'가격은 가치에 의해 결정되며 장기적으로 가치와 일치합니다. 가격은 객관적·구체적 개념입니다.'},
+    {a:1,e:'엘리베이터 설치비 1억 투입으로 가치가 2억 상승하는지 판단하는 것은 기여도를 따지는 기여의 원칙 사례입니다.'}
+  ],
+  '감정평가의 기타 분류':[
+    {a:5,e:'시장가치는 통상적인 시장에서 충분한 기간 공개된 후 정통한 당사자 간 자발적으로 성립될 가능성이 가장 높은 가액입니다.'},
+    {a:2,e:'법령·의뢰인 요청·사회통념상 필요 시에는 시장가치 외의 가치를 기준으로 평가할 수 있습니다. "할 수 없다"는 틀립니다.'},
+    {a:4,e:'의뢰 조건의 적법성이 결여된 경우 감정평가를 하지 않거나 수정해야 합니다. 그대로 완료한다는 설명은 틀립니다.'},
+    {a:2,e:'기준시점은 가격조사를 완료한 날짜가 원칙입니다. 감정평가 의뢰를 받은 날이 아닙니다.'},
+    {a:1,e:'둘 이상의 물건이 일체로 거래되거나 용도상 불가분 관계에 있으면 일괄평가합니다.'},
+    {a:2,e:'하나의 물건이라도 가치를 달리하는 부분을 구분하여 평가하는 것은 구분평가입니다.'},
+    {a:3,e:'일체로 이용되는 물건의 일부분을 특수 목적으로 평가하는 것은 부분평가입니다.'},
+    {a:4,e:'현황평가는 기준시점의 이용상황과 공법상 제한을 받는 상태 그대로 평가하는 것입니다.'},
+    {a:5,e:'최유효이용 가능성 여부는 시장가치 외 가치 기준 시 검토사항(성격·합리성·적법성)에 포함되지 않습니다.'},
+    {a:2,e:'주택과 부지를 하나의 물건으로 보고 전체로 평가하는 것은 일괄평가입니다. 구분평가와의 연결이 틀립니다.'}
+  ],
+  '지역분석과 개별분석':[
+    {a:5,e:'개별분석은 대상 부동산에 한정된 후행분석입니다. 광범위한 선행분석은 지역분석입니다.'},
+    {a:3,e:'인근지역은 대상 부동산이 속하고 지역요인을 공유하는 지역입니다(ㄱ,ㄴ). 유사지역과 지리적 인접은 필수가 아닙니다.'},
+    {a:4,e:'적합의 원칙 위반은 경제적 감가를 발생시킵니다. 균형의 원칙 위반은 기능적 감가입니다.'},
+    {a:2,e:'주거지 동일수급권은 통근 가능 범위가 기준이나, 지역적 선호도에 따라 달라집니다. 선호도와 무관하게 확대된다는 설명은 틀립니다.'},
+    {a:3,e:'구체적 가격 확정은 개별분석의 목적입니다. 지역분석의 필요성 설명으로는 적절하지 않습니다.'},
+    {a:4,e:'유사지역은 대상 부동산이 속하지 않는 지역입니다. 대상이 속한 지역은 인근지역입니다.'},
+    {a:2,e:'개별분석은 지역분석에서 얻은 표준적 이용 지표를 토대로 최유효이용을 판정합니다.'},
+    {a:5,e:'전환 속도가 매우 빠른 후보지는 전환 후의 토지 종별 동일수급권과 일치합니다. 전환 전과 일치한다는 설명은 틀립니다.'},
+    {a:4,e:'가치형성요인은 가치발생요인과 다릅니다. 가치형성요인은 일반적·지역적·개별적 요인(일·지·개)입니다.'},
+    {a:5,e:'대상 부동산의 구체적 가격 결정은 개별분석의 역할입니다. 지역분석은 가격 수준을 판정합니다.'}
+  ],
+  '감정평가의 3방식':[
+    {a:5,e:'수익분석법은 수익방식에 속합니다. 비교방식은 거래사례비교법·임대사례비교법·공시지가기준법입니다.'},
+    {a:4,e:'적산법은 임대료(적산임료)를 산정하는 방법입니다. 원가방식의 가액 산정은 원가법입니다.'},
+    {a:5,e:'수익성 원리에 기초해 미래 편익을 환원하는 것은 수익환원법입니다. 원가법은 비용성에 근거합니다.'},
+    {a:3,e:'수익환원법은 장래 기대 순수익이나 현금흐름을 환원·할인하여 가액을 산정하는 방법입니다.'},
+    {a:2,e:'비교방식은 시장성에 근거합니다. 원가방식은 비용성, 수익방식은 수익성입니다.'},
+    {a:2,e:'시점수정은 거래시점의 가격을 기준시점 수준으로 수정하는 것입니다. 설명이 반대로 되어 있어 틀립니다.'},
+    {a:3,e:'적산법은 임대료를 산정하는 방법으로 가액 산정 방법이 아닙니다.'},
+    {a:2,e:'비교방식에 의한 임대료 산정은 임대사례비교법입니다.'},
+    {a:5,e:'공시지가기준법에는 사정보정 단계가 없습니다. 시점수정·지역요인·개별요인 비교와 그 밖의 요인 보정을 거칩니다.'},
+    {a:3,e:'비교방식은 시장성에 기초하며 실거래를 반영해 가장 실증적인 방식입니다.'}
+  ],
+  '원가방식':[
+    {a:3,e:'원가법은 재조달원가에 감가수정을 하여 대상물건의 가액을 산정하는 방법입니다.'},
+    {a:5,e:'자가건설이라도 수급인의 적정 이윤을 포함하여 재조달원가를 산정합니다(도급기준 원칙).'},
+    {a:3,e:'기능적 감가는 설계 불량·설비 부족·구식화(ㄷ,ㄹ,ㅁ)입니다. 부지 부적응·인근 쇠퇴는 경제적 감가입니다.'},
+    {a:4,e:'경제적 감가는 시장성 감퇴나 인근지역 쇠퇴 등 외부 요인으로 인한 가치 하락이며 적합의 원칙과 관련됩니다.'},
+    {a:3,e:'정액법은 매년 감가액이 일정하나, 감가율은 매년 변동합니다. 감가율도 일정하다는 설명은 틀립니다.'},
+    {a:1,e:'정률법은 매년 감가율은 일정하나 감가액은 초기에 가장 크고 점차 감소합니다(체감감가).'},
+    {a:4,e:'관찰감가법은 평가사의 주관이 개입될 수 있어 객관성이 떨어진다는 단점이 있습니다.'},
+    {a:4,e:'회계상 감가상각은 경제적 감가를 반영하지 않습니다. 감정평가의 감가수정만 반영합니다.'},
+    {a:3,e:'대체원가로 산정하면 기능적 감가가 이미 원가에 반영되어 별도의 기능적 감가를 하지 않습니다.'},
+    {a:4,e:'적산법으로 산정된 임대료는 적산임료입니다. 수익임료가 아닙니다.'}
+  ],
+  '원가방식 문제':[
+    {a:2,e:'재조달원가는 기준시점 현재 대상물건을 재생산하는 데 소요되는 비용입니다.'},
+    {a:3,e:'2억원 × 1.05 × 1.05 = 220,500,000원입니다(매년 5% 복리 상승).'},
+    {a:4,e:'정률법은 매년 감가액이 초기에 크고 점차 줄어듭니다. 감가액이 항상 일정한 것은 정액법입니다.'},
+    {a:5,e:'경제적 감가는 적합의 원칙과 관련됩니다. 기능적 감가는 균형의 원칙입니다.'},
+    {a:2,e:'상환기금법은 복리이자를 고려해 감가누계액이 가장 작게 산정됩니다. 정액법보다 크다는 설명은 틀립니다.'},
+    {a:4,e:'적산가액 = 1억 - (1억×0.9÷50×5) = 1억 - 900만 = 91,000,000원입니다.'},
+    {a:5,e:'감정평가의 내용연수는 경제적 내용연수가 원칙입니다. 법정 내용연수가 원칙이라는 설명은 틀립니다.'},
+    {a:5,e:'인근 지역 상권 쇠퇴는 경제적 감가입니다. 기능적 감가가 아닙니다.'},
+    {a:1,e:'감가수정은 재조달원가, 감가상각은 취득원가를 기초로 합니다.'},
+    {a:4,e:'원가법으로 산출된 가액은 적산가액입니다. 수익가액은 수익환원법의 결과입니다.'}
+  ],
+  '임대사례비교법':[
+    {a:4,e:'임대사례비교법은 임대사례와 비교해 사정보정 등을 거쳐 임대료를 산정하는 방법입니다.'},
+    {a:3,e:'사례 임대료가 반드시 기준시점 현재일 필요는 없습니다. 시점수정이 가능한 범위면 됩니다.'},
+    {a:5,e:'임대사례비교법의 결과물은 비준임료입니다. 수익임료가 아닙니다.'},
+    {a:4,e:'지역 환경 변화로 인한 가치 변동은 지역요인 비교에서 반영합니다. 시점수정은 시간 경과에 따른 가격수준 조정입니다.'},
+    {a:5,e:'적산법과 임대사례비교법은 모두 임대료를 산정하는 것이 목적이라는 공통점이 있습니다.'},
+    {a:2,e:'당사자 간 친분으로 시세보다 현저히 낮게 임대된 경우 사정보정이 필요합니다.'},
+    {a:4,e:'임대사례비교법은 시장 데이터가 없는 특수목적 부동산 평가에는 부적합합니다.'},
+    {a:1,e:'사례 부동산이 인근지역 내에 있으면 지역요인 비교를 생략할 수 있습니다.'},
+    {a:2,e:'비교치는 대상물건(분자) ÷ 사례물건(분모)으로 계산합니다.'},
+    {a:4,e:'임대사례비교법의 결과물은 비준임료입니다. 수익가액이 아닙니다.'}
+  ],
+  '부동산 가격공시제도':[
+    {a:5,e:'개별토지의 취득세·재산세 부과 기준은 개별공시지가입니다. 표준지공시지가가 직접 기준이 되는 것은 아닙니다.'},
+    {a:4,e:'조세나 부담금 부과 대상이 아닌 토지는 개별공시지가를 결정·공시하지 않을 수 있습니다.'},
+    {a:3,e:'표준주택으로 선정된 단독주택은 개별주택가격을 결정·공시하지 않습니다(표준주택가격을 개별주택가격으로 봄).'},
+    {a:4,e:'개별공시지가 이의신청은 시장·군수·구청장에게 합니다. 국토교통부장관이 아닙니다.'},
+    {a:4,e:'공동주택가격은 국토교통부장관이 공시합니다. 시장·군수·구청장이 아닙니다.'},
+    {a:5,e:'표준지공시지가 공시사항에 소유자 성명·주민등록번호는 포함되지 않습니다.'},
+    {a:3,e:'비주거용 개별부동산가격은 지방세 등 과세 기준으로 활용될 수 있습니다.'},
+    {a:4,e:'표준지로 선정된 토지, 조세·부담금 부과 대상이 아닌 토지(ㄱ,ㄴ,ㄹ)는 개별공시지가를 생략할 수 있습니다.'},
+    {a:2,e:'적정가격은 통상적인 시장에서 정상적 거래가 이루어질 때 성립 가능성이 가장 높은 가격입니다.'},
+    {a:2,e:'공동주택가격은 국토교통부장관이 공시하므로 모든 주택의 공시주체가 시군구청장으로 일원화된 것은 아닙니다.'}
+  ],
+};
+
+// 차시 제목으로 내장 정답 찾기 (더 구체적인=긴 키를 우선 매칭)
+function _lessonAnswers(title){
+  if(!title)return null;
+  var keys=Object.keys(LESSON_ANSWERS).sort(function(a,b){return b.length-a.length;});
+  for(var i=0;i<keys.length;i++){
+    if(title.indexOf(keys[i])>=0)return LESSON_ANSWERS[keys[i]];
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════
 //  ★ 문제 파싱 (완전 재작성 v2)
 // ══════════════════════════════════════════
 function parseQs(text){
@@ -613,12 +727,21 @@ function parseQs(text){
       }).join(' ').replace(/\s+/g,' ').trim();
     }
     if(!qtext||qtext.length<4)return;
-    var am=blk.match(/\uC815\uB2F5\s*[:\uFF1A]?\s*([\u2460\u2461\u2462\u2463\u2464])/);
-    var correct=am?am[1]:null;
+    // 정답 추출: "정답: ④", "실제 정답: 4번", "정답: 4번" 모두 인식
+    var labels5=['\u2460','\u2461','\u2462','\u2463','\u2464'];
+    var correct=null, am=null;
+    // (1) 원문자 형식: 정답: ④ / 실제 정답: ④
+    am=blk.match(/(?:\uC2E4\uC81C\s*)?\uC815\uB2F5\s*[:\uFF1A]?\s*([\u2460\u2461\u2462\u2463\u2464])/);
+    if(am){correct=am[1];}
+    else{
+      // (2) 숫자 형식: 정답: 4번 / 실제 정답: 4번
+      am=blk.match(/(?:\uC2E4\uC81C\s*)?\uC815\uB2F5\s*[:\uFF1A]?\s*([1-5])\s*\uBC88/);
+      if(am){correct=labels5[parseInt(am[1],10)-1];}
+    }
     var expl='';
     if(am){
       var ai=blk.indexOf(am[0])+am[0].length;
-      var raw=blk.slice(ai,ai+600).replace(/\n/g,' ').replace(/\s+/g,' ').trim();
+      var raw=blk.slice(ai,ai+700).replace(/\n/g,' ').replace(/\s+/g,' ').trim();
       if(raw.length>3)expl=raw;
     }
     var aLines=lines.filter(isAnalysis).map(function(l){return l.replace(/^[\u2460\u2461\u2462\u2463\u2464]\s*/,'').trim();});
@@ -1108,6 +1231,92 @@ function goWrong(){showView('wrong');renderAllWrong();}
 // ══════════════════════════════════════════
 var MOCK={sub:null,qs:[],answers:{},submitted:false};
 
+// ── 과목별 실제 시험 출제 경향 (40문제 기준 단원별 배분)
+var MOCK_BLUEPRINT={
+  '부동산학개론':[['부동산학총론',4],['부동산수요·공급',6],['부동산시장',2],['입지 및 공간구조론',3],['부동산정책',6],['부동산투자론',6],['부동산금융론',6],['부동산마케팅',1],['감정평가론',6]],
+  '민법':[['민법총칙',10],['물권법',14],['계약법총론',6],['계약법각론(매매·교환·임대차)',6],['민사특별법(주임법·상임법·집합건물·가담법·실명법)',4]],
+  '공법':[['국토계획법',12],['도시개발법',6],['도시정비법',6],['건축법',7],['주택법',5],['농지법',4]],
+  '세법':[['조세총론',3],['취득세',8],['등록면허세',3],['재산세',8],['종합부동산세',4],['양도소득세',10],['종합소득세(부동산임대)',4]],
+  '공시법':[['지적(공간정보관리법)',20],['부동산등기법',20]],
+  '중개사법':[['공인중개사법령',24],['부동산거래신고법',8],['중개실무(경매·명의신탁·분묘기지권 등)',8]]
+};
+
+// ── 과목별 내장 예상문제 (AI fetch 실패 시 폴백, 2026 대비)
+var MOCK_BANK={
+'부동산학개론':[
+{q:'부동산의 자연적 특성 중 부동성에 관한 설명으로 옳은 것은?',choices:['부동산 활동을 국지화시킨다','감가상각의 근거가 된다','대량생산을 가능하게 한다','부동산을 동산과 같게 만든다','용도의 다양성을 제공한다'],answer:1,expl:'부동성(위치의 고정성)은 부동산 시장을 지역적·국지적 시장으로 만드는 근거가 됩니다.'},
+{q:'부동산 가치발생요인에 해당하지 않는 것은?',choices:['효용','상대적 희소성','유효수요','이전성','가치형성요인'],answer:5,expl:'가치발생요인은 효용, 상대적 희소성, 유효수요, 이전성입니다. 가치형성요인은 별개 개념입니다.'},
+{q:'수요의 가격탄력성에 관한 설명으로 틀린 것은?',choices:['대체재가 많을수록 탄력적이다','측정 기간이 길수록 탄력적이다','필수재는 비탄력적이다','탄력성이 1보다 크면 비탄력적이다','사치재는 탄력적인 경향이 있다'],answer:4,expl:'탄력성이 1보다 크면 탄력적, 1보다 작으면 비탄력적입니다.'},
+{q:'감정평가 3방식 중 원가방식에 해당하는 것은?',choices:['거래사례비교법','수익환원법','원가법','임대사례비교법','공시지가기준법'],answer:3,expl:'원가방식은 원가법(가액)과 적산법(임료)이 있습니다. 비용성의 원리에 기초합니다.'},
+{q:'부동산 경기변동의 특징으로 틀린 것은?',choices:['일반 경기보다 후순환적 경향이 있다','확장과 수축 국면이 비대칭적이다','정점과 저점의 차이가 일반경기보다 크다','회복국면에서는 매수자가 주도한다','순환주기가 일반경기보다 길다'],answer:4,expl:'회복국면에서는 매도자가 시장을 주도하며 가격 상승이 시작됩니다.'},
+{q:'지대이론 중 리카도의 차액지대설에 관한 설명으로 옳은 것은?',choices:['위치에 따라 지대가 결정된다','토지 비옥도 차이로 지대가 발생한다','한계지에서도 지대가 발생한다','지대는 생산비에 포함된다','독점이 지대 발생의 원인이다'],answer:2,expl:'차액지대설은 토지 비옥도와 생산성 차이로 지대가 발생하며, 한계지에서는 지대가 없다고 봅니다.'},
+{q:'부동산금융 중 지분금융에 해당하는 것은?',choices:['저당금융','신탁증서금융','부동산투자회사(REITs)','자산유동화증권','주택상환사채'],answer:3,expl:'지분금융은 리츠, 조인트벤처, 신디케이트, 증자 등이며 나머지는 부채금융입니다.'},
+{q:'LTV와 DTI에 관한 설명으로 틀린 것은?',choices:['LTV는 담보가치 대비 대출비율이다','DTI는 소득 대비 부채상환비율이다','LTV가 높으면 대출 가능액이 늘어난다','DTI 규제는 차입자 상환능력과 무관하다','두 규제 모두 가계부채 관리 수단이다'],answer:4,expl:'DTI는 차입자의 소득 대비 상환능력을 측정하는 지표로, 상환능력과 직접 관련됩니다.'},
+{q:'부동산 정책 중 시장실패의 원인이 아닌 것은?',choices:['공공재','외부효과','정보의 비대칭','완전경쟁시장','독과점'],answer:4,expl:'완전경쟁시장은 효율적 자원배분이 이루어지므로 시장실패의 원인이 아닙니다.'},
+{q:'외부효과에 관한 설명으로 옳은 것은?',choices:['정(+)의 외부효과는 과대생산된다','부(-)의 외부효과는 과소생산된다','정의 외부효과 사례로 공해가 있다','부의 외부효과는 사회적비용이 사적비용보다 크다','외부효과는 시장에서 자동 해결된다'],answer:4,expl:'부(-)의 외부효과는 사회적 비용이 사적 비용보다 커서 과대생산되는 경향이 있습니다.'},
+{q:'부동산 투자의 위험 중 사업상 위험이 아닌 것은?',choices:['시장위험','운영위험','위치적 위험','금융위험','수요변동 위험'],answer:4,expl:'금융위험은 부채 사용에서 오는 위험으로 사업상 위험과 구별됩니다.'},
+{q:'화폐의 시간가치에서 일시불의 미래가치계수에 관한 설명으로 옳은 것은?',choices:['미래금액을 현재가치로 환산','현재금액을 미래가치로 환산','매기 일정액의 현재가치','매기 일정액의 미래가치','원리금 균등상환액 계산'],answer:2,expl:'일시불의 미래가치계수는 현재의 일정 금액을 미래 시점의 가치로 환산하는 계수입니다.'},
+{q:'감정평가 원칙 중 균형의 원칙에 관한 설명으로 옳은 것은?',choices:['외부 환경과의 조화를 강조','내부 구성요소의 적정 결합을 강조','대체 부동산과의 관계를 강조','최유효이용을 전제','수익 배분을 강조'],answer:2,expl:'균형의 원칙은 부동산 내부 구성요소의 적정한 결합을 강조하며, 위반 시 기능적 감가가 발생합니다.'},
+{q:'부동산 시장의 특성으로 틀린 것은?',choices:['지역시장성','수급조절의 곤란성','거래의 비공개성','상품의 동질성','시장의 비조직성'],answer:4,expl:'부동산은 개별성으로 인해 상품이 이질적입니다. 동질성은 부동산 시장의 특성이 아닙니다.'},
+{q:'부동산 마케팅 전략 중 STP 전략에 해당하지 않는 것은?',choices:['시장세분화(Segmentation)','표적시장 선정(Targeting)','포지셔닝(Positioning)','가격(Price)','-'],answer:4,expl:'STP는 시장세분화·표적시장선정·포지셔닝입니다. 가격(Price)은 4P 전략에 속합니다.'},
+{q:'수익환원법에서 환원이율에 관한 설명으로 옳은 것은?',choices:['순영업소득을 자본환원한 비율이다','총소득에서 공실을 뺀 값이다','감가상각비를 의미한다','재조달원가를 의미한다','거래사례 가격이다'],answer:1,expl:'환원이율은 순영업소득(NOI)을 부동산 가치로 환원할 때 적용하는 비율입니다.'},
+{q:'부동산학총론에서 부동산의 복합개념에 해당하지 않는 것은?',choices:['법률적 개념','경제적 개념','기술적(물리적) 개념','심리적 개념','-'],answer:4,expl:'부동산의 복합개념은 법률적·경제적·기술적(물리적) 개념으로 구성됩니다.'},
+{q:'입지론 중 튀넨의 위치지대설에 관한 설명으로 옳은 것은?',choices:['수송비 절약분이 지대가 된다','비옥도 차이가 지대를 결정한다','독점이 지대 원인이다','한계지에서 지대가 가장 크다','지대는 항상 일정하다'],answer:1,expl:'튀넨의 위치지대설은 중심지로부터의 거리에 따른 수송비 절약분이 지대로 나타난다고 봅니다.'},
+{q:'부동산 경기의 4국면 중 회복국면의 특징으로 옳은 것은?',choices:['매수자 우위 시장','거래 한산, 공실 증가','매도자 우위로 전환, 거래 증가','가격 급락','건축활동 최저'],answer:3,expl:'회복국면에서는 거래가 늘고 매도자 우위 시장으로 전환되며 가격이 상승하기 시작합니다.'}
+],
+'민법':[
+{q:'법률행위의 무효와 취소에 관한 설명으로 틀린 것은?',choices:['무효는 처음부터 효력이 없다','취소는 취소권 행사로 소급 무효가 된다','무효행위는 추인해도 원칙적으로 효력이 없다','취소할 수 있는 행위는 추인하면 유효로 확정된다','무효는 시간이 지나면 유효가 된다'],answer:5,expl:'무효는 시간이 지나도 유효가 되지 않습니다. 다만 무효행위의 추인 요건을 갖추면 새로운 행위로 봅니다.'},
+{q:'의사표시에 관한 설명으로 옳은 것은?',choices:['비진의표시는 원칙적으로 무효이다','통정허위표시는 당사자 간 유효하다','착오는 중과실이 있어도 취소할 수 있다','사기에 의한 의사표시는 무효이다','강박에 의한 의사표시는 취소할 수 있다'],answer:5,expl:'사기·강박에 의한 의사표시는 취소할 수 있습니다. 비진의표시는 원칙 유효, 통정허위표시는 무효입니다.'},
+{q:'대리에 관한 설명으로 틀린 것은?',choices:['대리행위의 효과는 본인에게 귀속된다','임의대리인은 원칙적으로 복임권이 없다','무권대리는 본인이 추인할 수 있다','표현대리가 성립하면 본인이 책임진다','대리인은 행위능력자여야 한다'],answer:5,expl:'대리인은 행위능력자일 필요가 없습니다(제117조). 제한능력자도 대리인이 될 수 있습니다.'},
+{q:'물권의 효력에 관한 설명으로 옳은 것은?',choices:['채권은 물권에 우선한다','물권 상호간에는 시간 순서와 무관하다','물권은 배타성이 없다','동일 물건에 소유권과 제한물권이 양립할 수 있다','물권은 공시를 요하지 않는다'],answer:4,expl:'하나의 물건에 소유권과 제한물권(저당권 등)은 양립할 수 있습니다.'},
+{q:'점유권에 관한 설명으로 틀린 것은?',choices:['점유는 사실상 지배를 의미한다','간접점유도 점유로 인정된다','점유자는 점유물에 대해 권리적법 추정을 받는다','점유보호청구권이 인정된다','점유권은 상속되지 않는다'],answer:5,expl:'점유권도 상속됩니다(제193조). 점유자가 사망하면 상속인에게 점유가 이전됩니다.'},
+{q:'저당권에 관한 설명으로 옳은 것은?',choices:['저당권자는 목적물을 점유한다','저당권은 부종성이 없다','저당권은 우선변제권이 있다','저당권 설정에는 인도가 필요하다','저당권은 동산에만 설정된다'],answer:3,expl:'저당권은 우선변제권이 있으며, 점유를 이전하지 않고(비점유담보) 부동산에 설정됩니다.'},
+{q:'계약의 해제에 관한 설명으로 틀린 것은?',choices:['해제는 소급효가 있다','해제 시 원상회복 의무가 발생한다','해제권은 형성권이다','해제와 손해배상은 양립할 수 없다','이행지체는 해제 사유가 된다'],answer:4,expl:'계약 해제와 손해배상 청구는 양립할 수 있습니다(제551조).'},
+{q:'임대차에 관한 설명으로 옳은 것은?',choices:['임차권은 물권이다','임차인은 비용상환청구권이 없다','주택임대차보호법상 대항력은 인도+전입신고로 발생한다','임대차 최단기간 제한은 없다','임차인은 항상 갱신요구권이 있다'],answer:3,expl:'주택임대차보호법상 대항력은 주택의 인도와 전입신고(주민등록)를 마친 다음 날부터 발생합니다.'}
+],
+'공법':[
+{q:'국토계획법상 용도지역에 관한 설명으로 틀린 것은?',choices:['도시지역은 주거·상업·공업·녹지지역으로 구분된다','용도지역은 중복 지정할 수 없다','관리지역은 보전·생산·계획관리지역으로 구분된다','용도지역 미지정 지역은 보전녹지에 준한다','용도지역은 건폐율·용적률의 기준이 된다'],answer:4,expl:'용도지역 미지정·미세분 지역은 가장 엄격한 보전관리(자연환경보전지역)에 준하여 적용합니다.'},
+{q:'개발행위허가에 관한 설명으로 옳은 것은?',choices:['모든 토지형질변경은 허가가 필요하다','경작을 위한 형질변경도 허가 대상이다','허가 없이 건축물 건축이 가능하다','용도지역별 개발행위 규모 제한이 있다','녹지지역은 개발행위가 금지된다'],answer:4,expl:'개발행위허가는 용도지역별로 허용 규모가 제한됩니다. 경작을 위한 형질변경은 허가 대상이 아닙니다.'},
+{q:'건축법상 건폐율에 관한 설명으로 옳은 것은?',choices:['대지면적에 대한 연면적의 비율이다','대지면적에 대한 건축면적의 비율이다','건축면적에 대한 대지면적의 비율이다','층수를 결정하는 기준이다','용적률과 같은 개념이다'],answer:2,expl:'건폐율은 대지면적에 대한 건축면적(바닥면적)의 비율이고, 용적률은 대지면적에 대한 연면적의 비율입니다.'},
+{q:'2026년 기준 다중주택의 요건으로 옳은 것은?',choices:['연면적 330㎡ 이하','연면적 660㎡ 이하, 3층 이하','연면적 1000㎡ 이하','19세대 이하','5층 이하'],answer:2,expl:'개정된 다중주택 요건은 연면적 660㎡ 이하, 3층 이하입니다(독립된 주거형태 불가).'},
+{q:'도시개발사업의 시행방식에 해당하지 않는 것은?',choices:['수용 또는 사용방식','환지방식','혼용방식','신탁방식','수용·환지 혼용'],answer:4,expl:'도시개발사업은 수용·사용방식, 환지방식, 혼용방식으로 시행합니다. 신탁방식은 해당 없습니다.'},
+{q:'정비사업 중 재건축사업에 관한 설명으로 틀린 것은?',choices:['정비기반시설은 양호하나 노후 건축물이 대상이다','조합설립에 동의가 필요하다','안전진단을 거친다','토지등소유자가 시행할 수 있다','반드시 공공이 시행한다'],answer:5,expl:'재건축사업은 조합이 시행하는 것이 원칙이며, 반드시 공공이 시행하는 것은 아닙니다.'},
+{q:'주택법상 주택의 분류로 옳은 것은?',choices:['아파트는 단독주택이다','다세대주택은 공동주택이다','연립주택은 단독주택이다','다가구주택은 공동주택이다','기숙사는 단독주택이다'],answer:2,expl:'공동주택은 아파트·연립주택·다세대주택입니다. 다가구주택은 단독주택으로 분류됩니다.'},
+{q:'국토계획법상 기반시설에 해당하지 않는 것은?',choices:['도로','공원','학교','상업용 빌딩','하수도'],answer:4,expl:'기반시설은 도로·공원·학교·하수도 등 공공시설이며, 상업용 빌딩은 해당하지 않습니다.'}
+],
+'세법':[
+{q:'취득세 납세의무자에 관한 설명으로 옳은 것은?',choices:['부동산을 양도한 자','부동산을 취득한 자','부동산을 임차한 자','부동산 중개인','부동산 소재지 시장'],answer:2,expl:'취득세는 부동산 등을 취득한 자가 납세의무자입니다.'},
+{q:'재산세 과세기준일로 옳은 것은?',choices:['매년 1월 1일','매년 6월 1일','매년 7월 1일','매년 9월 1일','매년 12월 31일'],answer:2,expl:'재산세 과세기준일은 매년 6월 1일이며, 이 날 현재 소유자가 납세의무자입니다.'},
+{q:'양도소득세에 관한 설명으로 틀린 것은?',choices:['양도차익에 대해 과세한다','1세대1주택 비과세 특례가 있다','장기보유특별공제가 있다','미등기양도자산은 중과세된다','모든 부동산 양도는 비과세이다'],answer:5,expl:'부동산 양도는 원칙적으로 과세 대상이며, 요건을 갖춘 1세대1주택 등만 비과세됩니다.'},
+{q:'1세대1주택 양도세 비과세 요건으로 옳은 것은?',choices:['1년 이상 보유','2년 이상 보유(조정지역 2년 거주)','3년 이상 보유','보유기간 제한 없음','5년 이상 거주'],answer:2,expl:'1세대1주택 비과세는 2년 이상 보유가 원칙이며, 취득 당시 조정대상지역은 2년 거주 요건이 추가됩니다.'},
+{q:'종합부동산세에 관한 설명으로 틀린 것은?',choices:['국세이다','인별 과세가 원칙이다','주택과 토지가 과세대상이다','재산세와 이중과세 조정이 있다','취득 시 부과되는 세금이다'],answer:5,expl:'종합부동산세는 보유세로 매년 부과되며, 취득 시 부과되는 것은 취득세입니다.'},
+{q:'취득세 과세표준에 관한 설명으로 옳은 것은?',choices:['항상 시가표준액이다','원칙적으로 취득 당시의 가액이다','공시지가로만 산정한다','임대료를 기준으로 한다','취득자가 임의로 정한다'],answer:2,expl:'취득세 과세표준은 원칙적으로 취득 당시의 가액(사실상 취득가격)입니다.'},
+{q:'등록면허세에 관한 설명으로 틀린 것은?',choices:['등기·등록에 대해 부과된다','지방세이다','권리의 설정·이전 시 부과된다','취득세와 별개의 세목이다','양도차익에 대해 과세한다'],answer:5,expl:'등록면허세는 등기·등록 행위에 부과되며, 양도차익 과세는 양도소득세입니다.'},
+{q:'2026년 다주택자 양도세 중과 유예에 관한 설명으로 옳은 것은?',choices:['중과가 영구 폐지되었다','2026.5.9까지 양도 시 중과 배제','모든 주택에 중과 적용','유예 제도가 없다','1주택자에게만 적용'],answer:2,expl:'다주택자 양도세 중과 유예는 2026년 5월 9일까지 양도하는 경우 적용됩니다(최신 개정 기준).'}
+],
+'공시법':[
+{q:'부동산등기의 효력에 관한 설명으로 틀린 것은?',choices:['등기에는 권리변동적 효력이 있다','등기에는 대항력이 있다','등기에는 추정력이 있다','등기에는 공신력이 인정된다','등기에는 순위확정적 효력이 있다'],answer:4,expl:'우리 부동산등기에는 공신력이 인정되지 않습니다. 추정력은 있으나 공신력은 없습니다.'},
+{q:'등기신청에 관한 설명으로 옳은 것은?',choices:['단독신청이 원칙이다','공동신청이 원칙이다','등기관이 직권으로만 한다','채권자만 신청한다','법원이 신청한다'],answer:2,expl:'등기신청은 등기권리자와 등기의무자의 공동신청이 원칙입니다(공동신청주의).'},
+{q:'소유권보존등기에 관한 설명으로 옳은 것은?',choices:['공동신청한다','단독신청한다','반드시 판결이 필요하다','등기관이 직권으로 한다','채권자가 신청한다'],answer:2,expl:'소유권보존등기는 미등기 부동산에 최초로 하는 등기로 단독신청합니다.'},
+{q:'지적공부에 해당하지 않는 것은?',choices:['토지대장','임야대장','지적도','건축물대장','경계점좌표등록부'],answer:4,expl:'지적공부는 토지대장·임야대장·지적도·임야도·공유지연명부·대지권등록부·경계점좌표등록부입니다. 건축물대장은 해당 없습니다.'},
+{q:'지목에 관한 설명으로 틀린 것은?',choices:['1필지에 1지목이 원칙이다','전·답·과수원 등 28종이 있다','지목은 주된 용도에 따라 정한다','하나의 필지에 여러 지목을 둘 수 있다','지목은 지적공부에 등록한다'],answer:4,expl:'1필지 1지목의 원칙에 따라 하나의 필지에는 하나의 지목만 설정합니다.'},
+{q:'토지의 면적에 관한 설명으로 옳은 것은?',choices:['항상 ㎡ 단위로 등록한다','평 단위로 등록한다','면적 측정은 하지 않는다','지적도에는 면적을 표시하지 않는다','면적은 등기부에만 기재한다'],answer:1,expl:'토지의 면적은 제곱미터(㎡) 단위로 지적공부에 등록합니다.'},
+{q:'등기의 종류 중 가등기에 관한 설명으로 옳은 것은?',choices:['종국등기이다','본등기 순위를 보전한다','권리변동 효력이 즉시 발생한다','말소할 수 없다','공동신청만 가능하다'],answer:2,expl:'가등기는 장래 본등기의 순위를 보전하기 위한 예비등기입니다. 본등기 시 순위가 가등기 시로 소급합니다.'},
+{q:'지적측량을 실시해야 하는 경우가 아닌 것은?',choices:['신규등록','분할','합병','등록전환','단순 소유권 이전'],answer:5,expl:'단순한 소유권 이전은 토지의 형상 변화가 없어 지적측량 대상이 아닙니다.'}
+],
+'중개사법':[
+{q:'공인중개사법상 중개대상물에 해당하지 않는 것은?',choices:['토지','건축물','입목','자동차','광업재단'],answer:4,expl:'중개대상물은 토지, 건축물, 입목, 광업재단, 공장재단입니다. 자동차는 해당하지 않습니다.'},
+{q:'개업공인중개사의 금지행위에 해당하는 것은?',choices:['정당한 중개보수 수령','중개대상물 확인·설명','직접거래','거래계약서 작성','전속중개계약 체결'],answer:3,expl:'개업공인중개사가 중개의뢰인과 직접거래하는 것은 금지행위입니다(제33조).'},
+{q:'중개보수에 관한 설명으로 틀린 것은?',choices:['거래금액에 따라 상한요율이 정해진다','한도를 초과해 받을 수 없다','지방자치단체 조례로 정한다','당사자가 합의하면 무제한 받을 수 있다','주택과 비주택 요율이 다르다'],answer:4,expl:'중개보수는 법정 상한이 있어 합의해도 한도를 초과해 받을 수 없습니다.'},
+{q:'공인중개사 등록의 결격사유에 해당하는 것은?',choices:['만 20세 이상','파산선고 후 복권된 자','금고 이상 실형 후 3년 미경과자','중개사무소 개설','공인중개사 자격 취득'],answer:3,expl:'금고 이상의 실형을 선고받고 집행 종료 후 3년이 지나지 않은 자는 결격사유에 해당합니다.'},
+{q:'전속중개계약에 관한 설명으로 옳은 것은?',choices:['유효기간은 제한이 없다','특정 개업공인중개사에게만 의뢰한다','계약서 작성이 불필요하다','정보공개 의무가 없다','구두로 체결한다'],answer:2,expl:'전속중개계약은 특정 개업공인중개사에게만 중개를 의뢰하는 계약으로, 서면 체결과 정보공개 의무가 있습니다.'},
+{q:'부동산거래신고에 관한 설명으로 틀린 것은?',choices:['실거래가를 신고한다','계약 체결일부터 30일 이내 신고한다','관할 시군구청장에게 신고한다','신고 의무는 없다','거짓신고 시 과태료가 부과된다'],answer:4,expl:'부동산 거래 시 실거래가 신고는 법적 의무이며, 계약일로부터 30일 이내에 해야 합니다.'},
+{q:'토지거래허가구역에 관한 설명으로 옳은 것은?',choices:['허가 없이 거래할 수 있다','허가구역 내 일정규모 이상 거래는 허가가 필요하다','모든 토지가 허가 대상이다','허가권자는 국토부장관뿐이다','허가는 사후에 받는다'],answer:2,expl:'토지거래허가구역 내에서 일정 규모 이상의 토지 거래는 사전에 허가를 받아야 합니다.'},
+{q:'개업공인중개사의 손해배상책임에 관한 설명으로 틀린 것은?',choices:['고의·과실로 인한 손해를 배상한다','업무보증을 설정해야 한다','보증보험에 가입할 수 있다','공제에 가입할 수 있다','손해배상책임이 면제된다'],answer:5,expl:'개업공인중개사는 중개행위 시 고의·과실로 인한 손해를 배상할 책임이 있으며, 이를 위해 업무보증을 설정해야 합니다.'}
+]
+};
+
+
 function goMock(){
   showView('mock');
   document.getElementById('mock-pick').style.display='block';
@@ -1138,16 +1347,17 @@ async function startMock(sub){
   ltxt.textContent=sub.name+' 학습 내용을 불러오는 중...';
 
   try{
-    // 1) 과목 차시 목록 + 본문 수집
-    var data=await fetchLabel(sub.id,100);
-    var entries=(data&&data.feed&&data.feed.entry)||[];
+    // 1) 과목 차시 목록 + 본문 수집 (실패해도 진행)
     var corpus='';
-    for(var i=0;i<entries.length && corpus.length<6000;i++){
-      var c=(entries[i].content&&entries[i].content.$t)||'';
-      corpus+=h2t(c).slice(0,800)+'\n';
-    }
+    try{
+      var data=await fetchLabel(sub.id,100);
+      var entries=(data&&data.feed&&data.feed.entry)||[];
+      for(var i=0;i<entries.length && corpus.length<6000;i++){
+        var c=(entries[i].content&&entries[i].content.$t)||'';
+        corpus+=h2t(c).slice(0,800)+'\n';
+      }
+    }catch(fetchErr){ corpus=''; }
     if(corpus.length<100){
-      // 본문이 부족하면 과목 가이드만으로 생성
       corpus=(typeof SUB_GUIDE!=='undefined'&&SUB_GUIDE[sub.id])||sub.name;
     }
 
@@ -1155,33 +1365,94 @@ async function startMock(sub){
 
     // 2) AI에 40문제 요청 (분할: 한 번에 많으면 토큰 초과 → 2회 20문제씩)
     var all=[];
-    for(var batch=0; batch<2; batch++){
-      ltxt.textContent='AI 모의고사 생성 중... ('+(batch*20)+'/40문제)';
-      var part=await _mockGen(sub, corpus, 20, batch);
-      all=all.concat(part);
+    try{
+      for(var batch=0; batch<2; batch++){
+        ltxt.textContent='AI 모의고사 생성 중... ('+(batch*20)+'/40문제)';
+        var part=await _mockGen(sub, corpus, 20, batch);
+        all=all.concat(part);
+      }
+    }catch(aiErr){
+      // AI 호출 실패(Failed to fetch 등) → 내장 문제로 폴백
+      all=[];
     }
+
+    // AI 생성이 부족하면 내장 문제로 채우기
+    if(all.length<5){
+      all=_buildBankQuiz(sub);
+      if(typeof showToast==='function')showToast('📚 내장 예상문제로 모의고사를 구성했습니다');
+    }
+
     // 번호 재정렬
     all=all.map(function(q,idx){return Object.assign({},q,{id:'m'+idx,num:idx+1});});
-    if(all.length===0)throw new Error('문제 생성 실패');
+    if(all.length===0)throw new Error('문제 구성 실패');
 
     MOCK.qs=all;
     renderMock();
   }catch(e){
-    document.getElementById('mock-loading').style.display='none';
-    document.getElementById('mock-pick').style.display='block';
-    if(typeof showToast==='function')showToast('⚠️ 생성 실패: '+e.message);
+    // 최후 폴백: 내장 문제라도 표시
+    var fb=_buildBankQuiz(sub).map(function(q,idx){return Object.assign({},q,{id:'m'+idx,num:idx+1});});
+    if(fb.length>0){
+      MOCK.qs=fb;
+      renderMock();
+      if(typeof showToast==='function')showToast('📚 내장 예상문제로 모의고사를 구성했습니다');
+    }else{
+      document.getElementById('mock-loading').style.display='none';
+      document.getElementById('mock-pick').style.display='block';
+      if(typeof showToast==='function')showToast('⚠️ 생성 실패: '+e.message);
+    }
   }
+}
+
+// 내장 문제 은행에서 40문제 모의고사 구성 (선택지 셔플로 변형)
+function _buildBankQuiz(sub){
+  var bank=MOCK_BANK[sub.id]||[];
+  var labels=['①','②','③','④','⑤'];
+  if(bank.length===0)return [];
+
+  function makeQ(src,variant){
+    // 선택지 순서를 섞어 같은 문제도 다르게 보이게 (정답 추적)
+    var idxArr=src.choices.map(function(_,i){return i;});
+    if(variant>0){
+      for(var i=idxArr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=idxArr[i];idxArr[i]=idxArr[j];idxArr[j]=t;}
+    }
+    var correctOrig=(src.answer||1)-1;
+    var newChoices=[], newCorrectIdx=0;
+    idxArr.forEach(function(origIdx,newIdx){
+      newChoices.push({label:labels[newIdx],text:String(src.choices[origIdx]).trim()});
+      if(origIdx===correctOrig)newCorrectIdx=newIdx;
+    });
+    return{question:src.q,choices:newChoices,correct:labels[newCorrectIdx],expl:src.expl||''};
+  }
+
+  // 40문제 구성: 은행 문제를 반복하며 변형
+  var out=[];
+  var pool=bank.slice();
+  // 셔플
+  for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t;}
+  var variant=0;
+  while(out.length<40){
+    for(var k=0;k<pool.length && out.length<40;k++){
+      out.push(makeQ(pool[k], variant));
+    }
+    variant++;
+    if(variant>10)break; // 안전장치
+  }
+  return out.slice(0,40);
 }
 
 async function _mockGen(sub, corpus, count, batch){
   var topics=(typeof SUB_GUIDE!=='undefined'&&SUB_GUIDE[sub.id])||'';
+  var bp=MOCK_BLUEPRINT[sub.id]||[];
+  // 이번 배치가 담당할 단원 배분 (전체 40문제를 2배치로 → 각 20문제)
+  var bpText=bp.map(function(x){return x[0]+' '+Math.round(x[1]/2)+'문제';}).join(', ');
   var prompt='당신은 공인중개사 시험 출제위원입니다. "'+sub.name+'" 과목의 실전 모의고사 '+count+'문제를 만드세요.\n'
-    +'난이도는 실제 시험 수준이며, 다양한 주제를 골고루 출제하세요'+(batch>0?' (앞서 낸 문제와 겹치지 않게 다른 주제로).':'.')+'\n'
-    +'과목 핵심 영역: '+topics+'\n'
+    +'실제 시험 출제 경향에 맞춰 다음 단원별 비중으로 골고루 출제하세요: '+bpText+'.\n'
+    +(batch>0?'앞 배치와 겹치지 않게 다른 지문·주제로 출제하세요.\n':'')
+    +'난이도는 실제 시험 수준(중상)이며, 박스형·사례형 문제도 일부 포함하세요.\n'
     +'2026년 개정 법령 기준으로 작성하세요.\n'
     +'반드시 아래 JSON 형식으로만 출력 (다른 텍스트 절대 금지):\n'
     +'{"questions":[{"q":"문제","choices":["선택지1","선택지2","선택지3","선택지4","선택지5"],"answer":1,"expl":"해설"}]}\n'
-    +'answer는 정답 번호(1~5). 해설은 1~2문장.\n\n[학습 참고 내용]\n'+corpus.slice(0,4000);
+    +'answer는 정답 번호(1~5). 해설은 1~2문장.\n\n[학습 참고 내용]\n'+corpus.slice(0,3500);
 
   var resp=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',headers:{'Content-Type':'application/json'},
@@ -1407,6 +1678,18 @@ function openLesson(post){
   const text=h2t(post.content||'');
   ST.text=text;ST.qs=parseQs(text);
 
+  // 차시 제목으로 내장 정답·해설 매칭 (블로그에 정답이 숨김처리된 경우 보완)
+  const _la=_lessonAnswers(cleanT(post.title));
+  if(_la){
+    const labels=['①','②','③','④','⑤'];
+    ST.qs.forEach((q,qi)=>{
+      if(qi<_la.length){
+        if(!q.correct && _la[qi].a)q.correct=labels[_la[qi].a-1];
+        if((!q.expl||q.expl.length<15) && _la[qi].e)q.expl=_la[qi].e;
+      }
+    });
+  }
+
   const hdr=document.getElementById('les-hdr');
   hdr.style.background=`linear-gradient(135deg,${sub.color} 0%,${sub.color}AA 100%)`;
   document.getElementById('les-title').textContent=cleanT(post.title);
@@ -1427,8 +1710,66 @@ function openLesson(post){
   switchTab('study');
   showView('les');
 
+  // ②-A 정답이 없는 문제 → AI로 정답+해설 일괄 생성
+  const needAnswer=ST.qs.filter(q=>!q.correct || !(q.expl&&q.expl.replace(/\s/g,'').length>=20));
+  if(needAnswer.length>0){
+    setTimeout(()=>_fillAnswers(sub),300);
+  }
+
   // ② AI 향상 시도 (성공하면 더 풍부한 내용으로 업데이트, 실패해도 ①이 표시됨)
   setTimeout(()=>tryAIEnhance(sub),500);
+}
+
+// 정답/해설이 없는 문제를 AI로 일괄 보충
+async function _fillAnswers(sub){
+  const targets=ST.qs.filter(q=>!q.correct || !(q.expl&&q.expl.replace(/\s/g,'').length>=20));
+  if(targets.length===0)return;
+  const meta=document.getElementById('les-meta');
+  const origMeta=meta?meta.textContent:'';
+  if(meta)meta.textContent=sub.icon+' '+sub.name+' · 🤖 정답·해설 준비 중...';
+
+  // 문제를 5개씩 나눠 처리 (토큰 관리)
+  const labels=['①','②','③','④','⑤'];
+  try{
+    for(let b=0; b<targets.length; b+=5){
+      const batch=targets.slice(b,b+5);
+      const qList=batch.map((q,i)=>{
+        return '문제'+(i+1)+'. '+q.question+'\n'+q.choices.map(c=>c.label+' '+c.text).join('\n');
+      }).join('\n\n');
+      const prompt='당신은 공인중개사 시험 전문 강사입니다. 아래 문제들의 정답과 해설을 작성하세요.\n'
+        +'각 문제마다 정답 번호(1~5)와 2~3문장 해설을 제공하세요.\n'
+        +'반드시 JSON만 출력 (다른 텍스트 금지):\n'
+        +'{"answers":[{"num":1,"answer":3,"expl":"해설"},...]}\n\n'+qList;
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})
+      });
+      if(!resp.ok)throw new Error('HTTP '+resp.status);
+      const d=await resp.json();
+      if(d.error)throw new Error(d.error.message);
+      const raw=(d.content||[]).map(c=>c.text||'').join('');
+      const m=raw.match(/\{[\s\S]+\}/);
+      if(!m)continue;
+      const parsed=JSON.parse(m[0]);
+      (parsed.answers||[]).forEach(a=>{
+        const idx=(a.num||0)-1;
+        if(idx>=0&&idx<batch.length){
+          const q=batch[idx];
+          const ai=Math.max(1,Math.min(5,a.answer||1))-1;
+          if(!q.correct)q.correct=labels[ai];
+          if(a.expl&&(!q.expl||q.expl.length<20))q.expl=String(a.expl).trim();
+        }
+      });
+    }
+    if(meta)meta.textContent=sub.icon+' '+sub.name+' · '+ST.qs.length+'문제';
+    // 아직 답 안 한 상태면 다시 렌더 (정답 반영)
+    if(Object.keys(ST.answers).length===0 && !ST.submitted){
+      renderQuiz();
+      if(typeof showToast==='function')showToast('🤖 정답·해설이 준비되었습니다');
+    }
+  }catch(e){
+    if(meta)meta.textContent=origMeta;
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1553,6 +1894,26 @@ function pickAns(qid,ci){
 
   const sub=ST.sub;
   const userLabel=q.choices[ci]?.label;
+
+  // 정답이 없는 문제: 채점 보류하고 AI로 정답+해설 즉시 생성
+  if(!q.correct){
+    // 선택 표시만 (정오 판정은 보류)
+    q.choices.forEach((c,i)=>{
+      const btn=document.getElementById('ch-'+qid+'-'+i);
+      if(!btn)return;
+      btn.disabled=true; btn.style.cursor='default';
+      if(i===ci){btn.style.borderColor='#3B82F6';btn.style.background='#EFF6FF';}
+    });
+    const resEl0=document.getElementById('res-'+qid);
+    if(resEl0){
+      resEl0.style.display='block';
+      resEl0.innerHTML='<div id="aiexp-'+qid+'" style="font-size:13px;color:#888;line-height:1.75">💭 정답·해설을 불러오는 중...</div>';
+    }
+    _genAnswerExpl(q, qid, ci);
+    updateSubBtn();
+    return;
+  }
+
   const isCorrect=!!(q.correct && userLabel===q.correct);
 
   // 선택지 버튼 잠금 + 정오 색상
@@ -1604,6 +1965,71 @@ function pickAns(qid,ci){
     }
   }
 
+  updateSubBtn();
+}
+
+// ── 정답 없는 문제: AI로 정답+해설 받아서 채점
+function _genAnswerExpl(q, qid, pickedCi){
+  const labels=['①','②','③','④','⑤'];
+  const prompt='당신은 공인중개사 시험 전문 강사입니다. 아래 문제의 정답 번호와 해설을 알려주세요.\n'
+    +'반드시 JSON만 출력 (다른 텍스트 금지): {"answer":정답번호(1~5),"expl":"2~3문장 해설"}\n\n'
+    +'[문제] '+q.question+'\n[선택지]\n'+q.choices.map((c,i)=>(i+1)+') '+c.text).join('\n');
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.error)throw new Error(d.error.message);
+    const raw=(d.content||[]).map(c=>c.text||'').join('');
+    const m=raw.match(/\{[\s\S]+\}/);
+    if(!m)throw new Error('형식 오류');
+    const parsed=JSON.parse(m[0]);
+    const ai=Math.max(1,Math.min(5,parsed.answer||1))-1;
+    q.correct=labels[ai];
+    q.expl=String(parsed.expl||'').trim();
+    _applyGrade(q, qid, pickedCi);
+  })
+  .catch(e=>{
+    const resEl=document.getElementById('res-'+qid);
+    if(resEl){
+      resEl.innerHTML='<div style="color:#1D4ED8;font-weight:700;margin-bottom:6px">📘 선택 완료</div>'
+        +'<div style="font-size:13px;color:#4B5563;line-height:1.7">이 문제는 정답이 별도 제공되지 않은 차시입니다. '
+        +'각 선택지를 학습 자료와 비교하며 스스로 정답을 판단해 보세요. '
+        +'(인터넷 연결 시 AI가 정답·해설을 제공합니다.)</div>';
+    }
+    updateSubBtn();
+  });
+}
+
+// 채점 결과를 화면에 반영 (정답 확정 후)
+function _applyGrade(q, qid, ci){
+  const userLabel=q.choices[ci]?.label;
+  const isCorrect=!!(q.correct && userLabel===q.correct);
+  q.choices.forEach((c,i)=>{
+    const btn=document.getElementById('ch-'+qid+'-'+i);
+    if(!btn)return;
+    btn.disabled=true; btn.style.cursor='default';
+    const isAns=!!(q.correct && c.label===q.correct);
+    const mk=document.getElementById('mk-'+qid+'-'+i);
+    if(isAns){btn.style.borderColor='#43A047';btn.style.background='#E8F5E9';if(mk)mk.textContent='✅';}
+    else if(i===ci && !isAns){btn.style.borderColor='#E53935';btn.style.background='#FFEBEE';if(mk)mk.textContent='❌';}
+  });
+  const card=document.getElementById('qc-'+qid);
+  if(card)card.style.borderColor=isCorrect?'#43A047':'#E53935';
+  const resEl=document.getElementById('res-'+qid);
+  if(resEl){
+    let html=isCorrect
+      ?'<div style="color:#2E7D32;font-weight:700;margin-bottom:6px">✅ 정답입니다!</div>'
+      :'<div style="color:#C62828;font-weight:700;margin-bottom:6px">❌ 오답 — 정답: <b>'+esc(q.correct)+'</b></div>';
+    const ce=_explClean(q.expl||'');
+    if(ce&&ce.replace(/\s/g,'').length>=10){
+      html+='<div style="font-size:13px;color:#4B5563;line-height:1.75">💡 '+esc(ce)+' <span style="font-size:11px;color:#AAA">(AI)</span></div>';
+    }
+    resEl.innerHTML=html;
+    resEl.style.display='block';
+  }
   updateSubBtn();
 }
 
