@@ -495,11 +495,11 @@ function parseQs(text){
     t=t.replace(/\s*(정답\s*[:\uFF1A])/g,'\n$1');
     return t.replace(/[ \t]{2,}/g,' ').replace(/\n{2,}/g,'\n').trim();
   }
-  var splitRe=/(?=\n?(?:\uBB38\uC81C|Q)\s*\d{1,2}[^\d])/i;
-  var blocks=text.split(splitRe).filter(function(b){return /(?:\uBB38\uC81C|Q)\s*\d/i.test(b);});
+  var splitRe=/(?=\n?(?:\uBB38\uC81C|\uBB38|Q)\s*\d{1,2}[^\d])/i;
+  var blocks=text.split(splitRe).filter(function(b){return /(?:\uBB38\uC81C|\uBB38|Q)\s*\d/i.test(b);});
   blocks.forEach(function(blk,idx){
     blk=preclean(blk);
-    var nm=blk.match(/(?:\uBB38\uC81C|Q)\s*(\d{1,2})/i);
+    var nm=blk.match(/(?:\uBB38\uC81C|\uBB38|Q)\s*(\d{1,2})/i);
     if(!nm)return;
     var num=+nm[1];
     var lines=blk.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
@@ -529,7 +529,7 @@ function parseQs(text){
           if(t.length>=1){choices.push({label:m[1],text:t});seen[m[1]]=1;firstChoiceFound=true;}
         }
       } else if(firstChoiceFound && choices.length>0 && !isAnalysis(L)
-                && !/^(?:\uBB38\uC81C|Q)\s*\d/i.test(L)
+                && !/^(?:\uBB38\uC81C|\uBB38|Q)\s*\d/i.test(L)
                 && !/^(?:style|display|width|padding|margin|cursor)/.test(L)){
         // 원문자 없는 줄 → 직전 선택지의 이어지는 내용
         var prev=choices[choices.length-1];
@@ -545,7 +545,7 @@ function parseQs(text){
     var qtext='';
     if(fci>0){
       qtext=lines.slice(0,fci).map(function(l){
-        return l.replace(/^(?:\uBB38\uC81C|Q)\s*\d{1,2}\s*/i,'')
+        return l.replace(/^(?:\uBB38\uC81C|\uBB38|Q)\s*\d{1,2}\s*[.)]?\s*/i,'')
           .replace(/style\s*=\s*"[^"]*"/gi,'').replace(/">[^"]{0,5}$/,'').replace(/>\s*$/,'').trim();
       }).filter(function(l){
         return l.length>2&&!/^(?:\uC815\uB2F5|\uD574\uC124|\uD480\uC774)/.test(l)&&!isAnalysis(l)
@@ -613,12 +613,12 @@ function buildStudyData(text){
   const allLines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
 
   // 문제 시작 인덱스
-  const firstQIdx=allLines.findIndex(l=>/^(?:문제|Q)\s*\d/i.test(l));
+  const firstQIdx=allLines.findIndex(l=>/^(?:문제|문|Q)\s*\d/i.test(l));
 
   // ★ 학습 자료: 문제 영역 이전만 (선택지 절대 포함 안 됨)
   const studyLines=firstQIdx>0
     ?allLines.slice(0,firstQIdx)
-    :allLines.filter(l=>!/^[①②③④⑤]/.test(l)&&!/^(?:문제|Q)\s*\d/i.test(l)&&!/^(?:정답|해설)/i.test(l));
+    :allLines.filter(l=>!/^[①②③④⑤]/.test(l)&&!/^(?:문제|문|Q)\s*\d/i.test(l)&&!/^(?:정답|해설)/i.test(l));
 
   const bullets=studyLines.filter(l=>/^[-•·]/.test(l)).map(l=>l.replace(/^[-•·]\s*/,'').trim()).filter(l=>l.length>10);
   const sentences=studyLines.filter(l=>!/^[-•·]/.test(l)&&l.length>15&&!/^(?:제\d+차시|핵심|총정리|##|라벨|작성자)/.test(l));
@@ -1183,6 +1183,59 @@ function openLesson(post){
 // ══════════════════════════════════════════
 //  문제 렌더링 — 선택지 5개만 표시
 // ══════════════════════════════════════════
+// 차시 내용으로 AI가 5지선다 문제 생성
+async function genAIQuiz(){
+  const sub=ST.sub;
+  const statusEl=document.getElementById('aiquiz-status');
+  const content=(ST.text||'').slice(0,3000);
+  if(content.length<50){
+    if(statusEl)statusEl.textContent='⚠️ 학습 내용이 부족해 문제를 만들 수 없습니다.';
+    return;
+  }
+  if(statusEl)statusEl.innerHTML='<span style="color:'+sub.color+'">🤖 AI가 문제를 만들고 있습니다... (10~20초)</span>';
+
+  const prompt='당신은 공인중개사 시험 출제위원입니다. 아래 "'+sub.name+'" 과목 학습 내용을 바탕으로 '
+    +'실제 시험 수준의 5지선다 객관식 문제 5개를 만드세요. 각 문제는 4~5개 선택지, 명확한 정답 1개, 간단한 해설을 포함합니다.\n'
+    +'반드시 아래 JSON 형식으로만 출력 (다른 텍스트 없이):\n'
+    +'{"questions":[{"q":"문제 질문","choices":["선택지1","선택지2","선택지3","선택지4","선택지5"],"answer":1,"expl":"해설"}]}\n'
+    +'answer는 정답 선택지의 번호(1~5). 2026년 개정 법령 기준으로 작성.\n\n'
+    +'[학습 내용]\n'+content;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2500,messages:[{role:'user',content:prompt}]})
+    });
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const d=await resp.json();
+    if(d.error)throw new Error(d.error.message);
+    const raw=(d.content||[]).map(c=>c.text||'').join('');
+    const m=raw.match(/\{[\s\S]+\}/);
+    if(!m)throw new Error('형식 오류');
+    const parsed=JSON.parse(m[0]);
+    const labels=['①','②','③','④','⑤'];
+    const newQs=(parsed.questions||[]).map((q,i)=>{
+      const choices=(q.choices||[]).slice(0,5).map((t,ci)=>({label:labels[ci],text:String(t).trim()}));
+      const ansIdx=Math.max(1,Math.min(5,q.answer||1))-1;
+      return{
+        id:'aq'+i,num:i+1,question:String(q.q||'').trim(),
+        choices:choices,correct:labels[ansIdx]||'①',
+        expl:String(q.expl||'').trim(),aiGen:true
+      };
+    }).filter(q=>q.question&&q.choices.length>=4);
+
+    if(newQs.length===0)throw new Error('생성된 문제 없음');
+    ST.qs=newQs;
+    const lm=document.getElementById('les-meta');
+    if(lm)lm.textContent=sub.icon+' '+sub.name+' · '+ST.qs.length+'문제 (AI 생성)';
+    renderQuiz();
+    buildTabs();
+    if(typeof showToast==='function')showToast('🤖 AI가 '+newQs.length+'개 문제를 생성했습니다!');
+  }catch(e){
+    if(statusEl)statusEl.innerHTML='<span style="color:#C62828">⚠️ 생성 실패: '+e.message+'<br>잠시 후 다시 시도해 주세요.</span>';
+  }
+}
+
 function renderQuiz(){
   const sub=ST.sub;
   const qlist=document.getElementById('qlist');
@@ -1190,7 +1243,12 @@ function renderQuiz(){
   document.getElementById('res-card').classList.remove('show');
 
   if(!ST.qs.length){
-    qlist.innerHTML='<div class="empty"><div class="empty-ico">📭</div>문제를 찾을 수 없습니다</div>';
+    qlist.innerHTML='<div class="empty" style="padding:30px 20px;text-align:center">'
+      +'<div class="empty-ico" style="font-size:42px">📝</div>'
+      +'<div style="margin:12px 0;color:var(--tx2);font-size:15px">이 차시에는 등록된 문제가 없습니다.<br>학습 내용을 바탕으로 AI가 문제를 만들어 드릴까요?</div>'
+      +'<button onclick="genAIQuiz()" style="margin-top:8px;padding:12px 24px;border-radius:11px;border:none;background:linear-gradient(135deg,'+sub.color+','+sub.color+'CC);color:#fff;font-weight:800;font-size:15px;cursor:pointer">🤖 AI 문제 생성하기</button>'
+      +'<div id="aiquiz-status" style="margin-top:12px;font-size:13px;color:var(--tx3)"></div>'
+      +'</div>';
     sBtn.style.display='none';
     return;
   }
