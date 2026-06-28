@@ -664,7 +664,38 @@ function parseQs(text){
       .replace(/상세\s*해설\s*및\s*오답\s*분석\s*[:：]?/g,'')
       .replace(/각\s*지문을\s*클릭[^\n.]*/g,'')
       .replace(/(?:display|width|text-align|padding|margin|cursor|font|color|background)\s*:[^;,\n]{0,80}[;,]/g,'')
-      .replace(/'\s*\)\s*"/g,'').replace(/'\s*\)/g,'').replace(/"\s*\)/g,'');
+      .replace(/'\s*\)\s*"/g,'').replace(/'\s*\)/g,'').replace(/"\s*\)/g,'')
+      // ★ 블로그 마무리 문구 제거 (Q10 마지막 선택지에 끼어드는 것 방지)
+      .replace(/오늘\s*공부하시느라[^\n]*/g,'')
+      .replace(/고생\s*많으셨습니다[^\n]*/g,'')
+      .replace(/수고\s*(?:하셨습니다|많으셨습니다)[^\n]*/g,'')
+      .replace(/합격[^\n]*주인공[^\n]*/g,'')
+      .replace(/우리가\s*주인공[^\n]*/g,'')
+      .replace(/끝까지\s*함께[^\n]*/g,'')
+      .replace(/끝까지\s*응원[^\n]*/g,'')
+      .replace(/합격\s*핵심\s*[0-9]\s*문장[^\n]*/g,'')
+      .replace(/2026년\s*37회[^\n]*/g,'')
+      .replace(/저\s*Gemini[^\n]*/g,'')
+      // 학습 조언 · 마무리 학습 안내 제거
+      .replace(/[^\n]*짝궁만[^\n]*/g,'')
+      .replace(/[^\n]*만\s*잘\s*외워도\s*(?:반은|합격|성공)[^\n]*/g,'')
+      .replace(/[^\n]*만\s*정확히\s*외워도[^\n]*/g,'')
+      .replace(/[^\n]*만\s*잡아도\s*성공[^\n]*/g,'')
+      .replace(/[^\n]*두\s*가지만\s*잡[^\n]*/g,'')
+      .replace(/[^\n]*이\s*두\s*가지만[^\n]*/g,'')
+      .replace(/[^\n]*에\s*주의하세요[^\n]*/g,'')
+      .replace(/[^\n]*를\s*주의하세요[^\n]*/g,'')
+      .replace(/[^\n]*꼬아내는\s*지문[^\n]*/g,'')
+      .replace(/[^\n]*헷갈리지\s*않게[^\n]*/g,'')
+      .replace(/[^\n]*눈에\s*익혀[^\n]*/g,'')
+      .replace(/[^\n]*손으로\s*직접\s*써[^\n]*/g,'')
+      .replace(/[^\n]*합격의\s*지름길[^\n]*/g,'')
+      .replace(/[^\n]*오늘\s*틀린\s*지문[^\n]*/g,'')
+      .replace(/[^\n]*오답노트를\s*통해[^\n]*/g,'')
+      .replace(/[^\n]*내일\s*다시\s*한번[^\n]*/g,'')
+      .replace(/[^\n]*이\s*차시에서는[^\n]*/g,'')
+      .replace(/[^\n]*이\s*차시만\s*공부[^\n]*/g,'')
+      .replace(/[^\n]*특히\s*[^\n]*(?:외워|주의|주목)[^\n]*/g,'');
     t=t.replace(/\s*([\u2460\u2461\u2462\u2463\u2464])/g,'\n$1');
     t=t.replace(/\s*(정답\s*[:\uFF1A])/g,'\n$1');
     return t.replace(/[ \t]{2,}/g,' ').replace(/\n{2,}/g,'\n').trim();
@@ -702,10 +733,10 @@ function parseQs(text){
           var t=m[2].replace(/style\s*=\s*"[^"]*"/gi,'').replace(/^[-\u2022>]\s*/,'').replace(/\s+/g,' ').trim();
           if(t.length>=1){choices.push({label:m[1],text:t});seen[m[1]]=1;firstChoiceFound=true;}
         }
-      } else if(firstChoiceFound && choices.length>0 && !isAnalysis(L)
+      } else if(firstChoiceFound && choices.length>0 && choices.length<5 && !isAnalysis(L)
                 && !/^(?:\uBB38\uC81C|\uBB38|Q)\s*\d/i.test(L)
                 && !/^(?:style|display|width|padding|margin|cursor)/.test(L)){
-        // 원문자 없는 줄 → 직전 선택지의 이어지는 내용
+        // 원문자 없는 줄 → 직전 선택지의 이어지는 내용 (⑤번 수집 전까지만)
         var prev=choices[choices.length-1];
         var add=L.replace(/style\s*=\s*"[^"]*"/gi,'').replace(/\s+/g,' ').trim();
         if(add.length>0 && prev.text.length<500){
