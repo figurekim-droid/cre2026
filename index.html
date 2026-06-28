@@ -379,15 +379,25 @@ button:active{opacity:.75;transform:scale(.97);}
 <!-- ALL WRONG -->
 <div id="v-wrong" class="view">
   <div class="wrap">
+    <!-- 오답노트 헤더 -->
     <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px">
-      <button style="background:#F3F4F6;border-radius:9px;padding:7px 11px;font-size:14px;color:var(--tx2)" onclick="goHome()">←</button>
+      <button id="wrong-back-btn" style="background:#F3F4F6;border-radius:9px;padding:7px 11px;font-size:14px;color:var(--tx2)" onclick="wrongBack()">←</button>
       <div style="flex:1">
-        <div style="font-weight:900;font-size:17px;color:var(--red)">❌ 전체 오답노트</div>
-        <div id="aw-cnt" style="font-size:11px;color:var(--tx3)">총 0문제</div>
+        <div style="font-weight:900;font-size:17px;color:var(--red)" id="wrong-title">❌ 오답노트</div>
+        <div id="aw-cnt" style="font-size:11px;color:var(--tx3)">과목을 선택하세요</div>
       </div>
       <button onclick="clearWrongs()" style="background:#F3F4F6;border-radius:9px;padding:7px 11px;font-size:11px;color:var(--tx3)">초기화</button>
     </div>
-    <div id="aw-body"></div>
+
+    <!-- 과목 선택 화면 -->
+    <div id="wrong-pick">
+      <div class="sgrid" id="wrong-grid"></div>
+    </div>
+
+    <!-- 과목별 오답 목록 -->
+    <div id="wrong-detail" style="display:none">
+      <div id="aw-body"></div>
+    </div>
   </div>
 </div>
 
@@ -2225,39 +2235,136 @@ function renderWrongTab(){
 // ══════════════════════════════════════════
 //  ALL WRONG
 // ══════════════════════════════════════════
-function renderAllWrong(){
-  document.getElementById('aw-cnt').textContent='총 '+WRONGS.length+'문제';
-  const body=document.getElementById('aw-body');
-  if(!WRONGS.length){
-    body.innerHTML='<div style="text-align:center;padding:60px 0"><div style="font-size:50px;margin-bottom:10px">🏆</div><div style="font-weight:800;font-size:17px;color:#1B5E20">오답이 없습니다!</div><div style="color:var(--tx3);margin-top:4px">꾸준히 학습하고 있습니다</div></div>';
+// ══════════════════════════════════════════
+//  오답노트 (과목별 선택)
+// ══════════════════════════════════════════
+var _wrongSub=null; // 현재 선택된 과목 (null=과목선택화면)
+
+function goWrong(){
+  _wrongSub=null;
+  showView('wrong');
+  renderWrongPick();
+}
+
+function wrongBack(){
+  if(_wrongSub){
+    // 과목 상세 → 과목 선택 화면으로
+    _wrongSub=null;
+    renderWrongPick();
+  } else {
+    // 과목 선택 → 홈으로
+    goHome();
+  }
+}
+
+// 과목 선택 화면
+function renderWrongPick(){
+  _wrongSub=null;
+  document.getElementById('wrong-pick').style.display='block';
+  document.getElementById('wrong-detail').style.display='none';
+  document.getElementById('wrong-title').textContent='❌ 오답노트';
+  document.getElementById('wrong-back-btn').onclick=function(){goHome();};
+
+  const total=WRONGS.length;
+  document.getElementById('aw-cnt').textContent='총 '+total+'문제 · 과목을 선택하세요';
+
+  const grid=document.getElementById('wrong-grid');
+  grid.innerHTML='';
+
+  if(total===0){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:60px 0">'
+      +'<div style="font-size:50px;margin-bottom:10px">🏆</div>'
+      +'<div style="font-weight:800;font-size:17px;color:#1B5E20">오답이 없습니다!</div>'
+      +'<div style="color:var(--tx3);margin-top:4px">꾸준히 학습하고 있습니다</div></div>';
     return;
   }
-  body.innerHTML='';
-  SUBS.forEach(sub=>{
-    const items=WRONGS.filter(w=>w.subject===sub.name);if(!items.length)return;
-    const g=document.createElement('div');g.style.marginBottom='18px';
-    g.innerHTML=`<div style="font-weight:800;font-size:13px;color:${sub.color};margin-bottom:9px;display:flex;align-items:center;gap:7px">
-      <span>${sub.icon}</span><span>${sub.name}</span>
-      <span style="background:${sub.light};color:${sub.color};border-radius:5px;padding:2px 7px;font-size:10px;font-weight:800">${items.length}문제</span>
-    </div>`;
-    items.forEach(w=>{
-      const d=document.createElement('div');d.className='aw-item';
-      d.innerHTML=`<div class="aw-sub">${esc(cleanT(w.lesson||''))}</div>
-        <div class="aw-q">Q${w.num}. ${esc(w.question)}</div>
-        <div style="display:flex;gap:12px;font-size:12px;margin-bottom:${w.expl?'6px':'0'}">
-          <span style="color:#E53935">내 답: ${esc(w.userLabel||'')}</span>
-          ${w.correct?`<span style="color:#1B5E20">✅ ${w.correct}</span>`:''}
-        </div>
-        ${w.expl?`<div class="aw-expl">💡 ${esc(w.expl)}</div>`:''}`;
-      g.appendChild(d);
-    });
-    body.appendChild(g);
+
+  SUBS.forEach(function(sub){
+    const items=WRONGS.filter(function(w){return w.subject===sub.name||w.sub===sub.id;});
+    const card=document.createElement('button');
+    card.className='scard';
+    card.style.borderColor=sub.light;
+    card.style.opacity=items.length?'1':'0.45';
+    card.innerHTML='<div class="scard-top">'
+      +'<span style="font-size:24px">'+sub.icon+'</span>'
+      +'<span style="font-size:11px;font-weight:700;color:'+(items.length?sub.color:'#999')+';background:'+(items.length?sub.light:'#F3F4F6')+';padding:3px 8px;border-radius:6px">'
+      +(items.length?items.length+'문제':'없음')+'</span></div>'
+      +'<div><div class="scard-name">'+sub.name+'</div>'
+      +'<div class="scard-meta">'+(items.length?'틀린 문제 확인':'오답 없음')+'</div></div>';
+    if(items.length){
+      card.onclick=function(){renderWrongDetail(sub);};
+    }
+    grid.appendChild(card);
   });
 }
-function clearWrongs(){
-  if(!confirm('오답노트를 모두 초기화할까요?'))return;
-  WRONGS=[];lsSave(WK,WRONGS);updateNavWrong();renderAllWrong();
+
+// 과목별 오답 목록
+function renderWrongDetail(sub){
+  _wrongSub=sub;
+  document.getElementById('wrong-pick').style.display='none';
+  document.getElementById('wrong-detail').style.display='block';
+  document.getElementById('wrong-title').innerHTML=sub.icon+' '+sub.name+' 오답노트';
+  document.getElementById('wrong-back-btn').onclick=function(){renderWrongPick();};
+
+  const items=WRONGS.filter(function(w){return w.subject===sub.name||w.sub===sub.id;});
+  document.getElementById('aw-cnt').textContent=items.length+'문제 틀림';
+
+  const body=document.getElementById('aw-body');
+  if(!items.length){
+    body.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--tx3)">이 과목의 오답이 없습니다</div>';
+    return;
+  }
+
+  // 차시별로 묶기
+  const byLesson={};
+  items.forEach(function(w){
+    const k=w.lesson||'기타';
+    if(!byLesson[k])byLesson[k]=[];
+    byLesson[k].push(w);
+  });
+
+  body.innerHTML='';
+  Object.keys(byLesson).forEach(function(lesson){
+    const ws=byLesson[lesson];
+    const sec=document.createElement('div');
+    sec.style.marginBottom='18px';
+    sec.innerHTML='<div style="font-size:12px;font-weight:800;color:'+sub.color
+      +';background:'+sub.light+';border-radius:8px;padding:7px 11px;margin-bottom:9px;display:flex;align-items:center;gap:7px">'
+      +'<span>📂</span><span>'+esc(cleanT(lesson))+'</span>'
+      +'<span style="margin-left:auto;font-size:10px;opacity:.8">'+ws.length+'문제</span></div>';
+    ws.forEach(function(w){
+      const d=document.createElement('div');
+      d.className='aw-item';
+      d.innerHTML='<div class="aw-q">Q'+w.num+'. '+esc(w.question||'')+'</div>'
+        +'<div style="display:flex;gap:12px;font-size:12px;margin:5px 0">'
+        +(w.userLabel?'<span style="color:#E53935">내 답: '+esc(w.userLabel)+'</span>':'')
+        +(w.correct?'<span style="color:#1B5E20">✅ 정답: '+esc(w.correct)+'</span>':'')
+        +'</div>'
+        +(w.expl?'<div class="aw-expl">💡 '+esc(_explClean?_explClean(w.expl):w.expl)+'</div>':'');
+      sec.appendChild(d);
+    });
+    body.appendChild(sec);
+  });
 }
+
+function renderAllWrong(){renderWrongPick();}
+
+function clearWrongs(){
+  const msg=_wrongSub
+    ?(_wrongSub.name+' 오답노트를 초기화할까요?')
+    :'전체 오답노트를 모두 초기화할까요?';
+  if(!confirm(msg))return;
+  if(_wrongSub){
+    WRONGS=WRONGS.filter(function(w){return w.subject!==_wrongSub.name&&w.sub!==_wrongSub.id;});
+  } else {
+    WRONGS=[];
+  }
+  lsSave(WK,WRONGS);
+  updateNavWrong();
+  if(_wrongSub)renderWrongDetail(_wrongSub);
+  else renderWrongPick();
+}
+
 
 // ══════════════════════════════════════════
 //  NAV
