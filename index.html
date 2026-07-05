@@ -517,7 +517,8 @@ function parseQs(text){
       .replace(/style\s*=\s*'[^']*'/gi,'')
       .replace(/on\w+\s*=\s*"[^"]*"/gi,'')
       .replace(/\[수정[^\]]*\]/g,'')
-      .replace(/\[[^\]]*(?:오답|해설|지문|분석|노트|풀이|선택)[^\]]*\]/g,'')
+      .replace(/[\(\[\{](?:오답|정답|해설|지문|분석|노트|풀이|선택)[\)\]\}]/g, '')
+      .replace(/[\(\[\{]오답\}/g, '')
       .replace(/내가\s*선택한\s*번호\s*[:：]?\s*\d*/g,'')
       .replace(/상세\s*해설\s*및\s*오답\s*분석\s*[:：]?/g,'')
       .replace(/각\s*지문을\s*클릭[^\n.]*/g,'')
@@ -575,12 +576,40 @@ function buildStudyData(text){
   const firstQIdx=allLines.findIndex(l=>/^(?:문제|문|Q)\s*\d/i.test(l));
   const studyLines=firstQIdx>0?allLines.slice(0,firstQIdx):allLines;
   const bulletsC=studyLines.filter(l=>/^[-•·]/.test(l)).map(l=>l.replace(/^[-•·]\s*/,'').trim());
-  let learn=bulletsC.slice(0,12);
-  if(!learn.length) learn=['본문을 토대로 핵심 내용을 파싱하고 있습니다. 상단의 AI 심층 분석 탭을 켜두시면 풍부한 수험 자료가 완성됩니다.'];
-  return {learn,memory:[],caution:[],exam:[],tip:'차시별 핵심 기출 경향과 수치 기준을 엄격히 숙지하세요.'};
+  const sentences=studyLines.filter(l=>!/^[-•·]/.test(l)&&l.length>15);
+  
+  let learn=bulletsC.map(l=>_cleanSh(l)).filter(l=>l.length>5);
+  if(learn.length<6){
+    sentences.map(l=>_cleanSh(l)).forEach(s=>{if(learn.length<12&&!learn.includes(s))learn.push(s);});
+  }
+  learn=[...new Set(learn)].slice(0,12);
+  if(!learn.length) learn=['본문을 기반으로 핵심 학습 자료를 안전하게 정제 중입니다.'];
+
+  let memory=[];
+  learn.forEach(l=>{
+    if(memory.length<8 && /\d/.test(l)){
+      var c=l.indexOf(':');
+      var k=c>0?l.slice(0,c):'핵심 암기';
+      var v=c>0?l.slice(c+1):l;
+      memory.push({key:_smartTrimTitle(k,20,40), val:_cleanSh(v).slice(0,100)});
+    }
+  });
+
+  let caution=[
+    {title:'원칙 규정과 예외 수치 구별', body:'공인중개사 시험에서는 각 조항의 원칙적 수치 기준과 특례 예외 조항을 혼합하여 오답을 빈번히 출제하므로 주의해야 합니다.'},
+    {title:'유사 법률 개념 정의 혼동 주의', body:'판례 및 법령의 흐름 상 단어 한 끝 차이로 법적 효력이 무효와 취소로 완전히 갈라지는 지점들을 명확히 정돈하세요.'}
+  ];
+
+  let exam=[];
+  ST.qs.forEach(q=>{
+    if(exam.length<6){
+      exam.push({point:_subjShort(q.question), how:_cleanSh(q.expl || '해당 대단원의 빈출 지문 정오 판정 기준을 정교하게 분석 및 숙지하세요.')});
+    }
+  });
+
+  return {learn,memory,caution,exam,tip:'차시별 핵심 법률 요건 및 개정 수치 기준을 정확하게 암기하세요.'};
 }
 
-/* 🛠️ 완전형 문장 슬라이싱 모듈 고도화 */
 function _smartTrimTitle(s, soft, hard){
   s = (s || '').trim();
   soft = soft || 35; hard = hard || 55;
@@ -590,8 +619,7 @@ function _smartTrimTitle(s, soft, hard){
   var sp = cut.lastIndexOf(' ');
   var cand = (sp > soft * 0.4 ? cut.slice(0, sp) : cut).trim();
   
-  // 끊기면 용어의 의미가 완전히 왜곡되는 연결성 단어 세트 검출 (해당하지 않는 자/경우 강제 포함)
-  var dangler = /(?:에\s*해당하지|보호받는|의사표시에서|에\s*관한|에\s*대한|설명으로|조사|의|를|을|이|가|은|는|과|와|에|로|으로|에서|한|지|하는|되는|있지|없지|아니지|제\d+조)$/;
+  var dangler = /(?:해당하지|보호받는|의사표시에서|에\s*관한|에\s*대한|설명으로|조사|의|를|을|이|가|은|는|과|와|에|로|으로|에서|한|지|하는|되는|있지|없지|아니지|제\d+조|않은|않는)$/;
   var guard = 0;
   
   while(dangler.test(cand) && cand.length < hard && guard++ < 5) {
@@ -608,7 +636,6 @@ function _smartTrimTitle(s, soft, hard){
   return cand.trim();
 }
 
-/* 🛠️ 본문 중간 부정어 보존 모듈 고도화 */
 function _subjShort(t){
   if(!t) return '';
   let s = String(t)
@@ -620,18 +647,20 @@ function _subjShort(t){
     .replace(/\s+/g,' ')
     .trim();
 
-  // ★ 핵심 수정: 문장 한복판에 있는 핵심 수식 어구는 100% 보존하고, 오직 문장 '맨 끝(후방)'에 결합하는 시험 발문용 어구만 제거
+  // ★ 빈출 수식어 왜곡 완화: 오직 문장 '맨 끝(후방)'에 결합하는 시험 발문용 형식 구조만 저격하여 스트립 제거
   s = s.replace(/(?:관한|대한)?\s*설명으로\s*(?:옳은|틀린|맞는|않은|않는|옳지\s*않은|적절한|적절하지\s*않은)\s*(?:것은|것을|모두\s*고른|고르면)\??\s*$/, '');
-  s = s.replace(/\s*(?:옳은|틀린|맞는|않은|않는)\s*(?:것은|것을|고르면)\??\s*$/, '');
+  s = s.replace(/\s*(?:옳은|틀린|맞는|않은|않는|고르면|선택하시오|것은|것을)\??\s*$/, '');
+  s = s.replace(/^다음\s*중\s*/gi, '');
   
   return _smartTrimTitle(s.trim(), 35, 55);
 }
 
 function _trimSentence(s, max){return String(s).trim();}
 function _fixEnding(s){return String(s).trim();}
+
 function _cleanSh(s){
   if(!s) return '';
-  return String(s)
+  let str = String(s)
     .replace(/^[\s]*(?:[①②③④⑤]\s*|\d+\s*)번(==[\s:：,.·]|$)/,'')
     .replace(/[①②③④⑤]\s*번/g,'')
     .replace(/[0-9]\s*번?\s*(맞음|틀림|오답|정답)\s*[:：]/g,'')
@@ -642,14 +671,21 @@ function _cleanSh(s){
     .replace(/상세\s*해설\s*및\s*오답\s*분석\s*[:：]?\s*\(?\)?/g,'')
     .replace(/오답\s*분석\s*[:：]?/g,'')
     .replace(/정답\s*(?:은|이)?\s*[:：]?\s*\d*\s*번?/g,'')
+    // 오답} 및 각종 변형 오타 가로 컴포넌트 격리 청소
+    .replace(/[\(\[\{](?:오답|정답|해설|지문|분석|노트|풀이|틀림|맞음|선택)[\)\]\}]/g, '')
+    .replace(/[\(\[\{]오답\}/g, '')
+    .replace(/[\(\[\{]정답\}/g, '')
     .replace(/\(\s*\)/g,'').replace(/\[\s*\]/g,'')
     .replace(/\s+/g,' ')
     .trim();
+
+  // ★ 선두 지저분한 부호 파편 대청소 모듈 적용
+  return str.replace(/^[\s,，.··:=：]+/g, '').trim();
 }
 
 function renderStudyContent(data,sub){
   const el=document.getElementById('study-content');
-  const {learn,tip}=data;
+  const {learn,memory,caution,exam,tip}=data;
 
   el.innerHTML=`
   <div class="tip-banner" style="background:linear-gradient(135deg,${sub.color},${sub.color}BB)">
@@ -665,6 +701,56 @@ function renderStudyContent(data,sub){
     </div>
     <div class="ss-body open" id="learn-body">
       ${learn.map(item=>`<div class="si"><div class="si-dot" style="background:#059669"></div><div class="si-txt">${hl(esc(_cleanSh(item)))}</div></div>`).join('')}
+    </div>
+  </div>
+
+  <div class="study-section ss-mem">
+    <div class="ss-hdr" onclick="toggleSS('mem')">
+      <div class="ss-ico">🧠</div>
+      <div class="ss-txt-wrap"><div class="ss-ttl">반드시 암기할 내용<span class="ss-cnt">${memory.length}항목</span></div></div>
+      <div class="ss-arr open" id="mem-arr">▼</div>
+    </div>
+    <div class="ss-body open" id="mem-body">
+      ${memory.length?`<table class="mem-tbl">
+        <tr><th style="width:36%">키워드</th><th>암기 내용</th></tr>
+        ${memory.map(m=>`<tr><td class="mem-key">${esc(m.key)}</td><td class="mem-val">${hl(esc(m.val))}</td></tr>`).join('')}
+      </table>`:`<div style="font-size:12px;color:var(--tx3);padding:6px 0">본 대단원에서 수치형 요건 기준을 분석하는 중입니다.</div>`}
+    </div>
+  </div>
+
+  <div class="study-section ss-warn">
+    <div class="ss-hdr" onclick="toggleSS('warn')">
+      <div class="ss-ico">⚠️</div>
+      <div class="ss-txt-wrap"><div class="ss-ttl">주의할 내용<span class="ss-cnt">${caution.length}항목</span></div></div>
+      <div class="ss-arr open" id="warn-arr">▼</div>
+    </div>
+    <div class="ss-body open" id="warn-body">
+      ${caution.map((c,i)=>`
+        <div class="wb">
+          <div class="wb-ttl">🚫 주의 ${i+1}</div>
+          <div class="wb-body">${hl(esc(c.body))}</div>
+        </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="study-section ss-exam">
+    <div class="ss-hdr" onclick="toggleSS('exam')">
+      <div class="ss-ico">🎯</div>
+      <div class="ss-txt-wrap"><div class="ss-ttl">꼭 알아야 할 핵심 포인트<span class="ss-cnt">${exam.length}항목</span></div></div>
+      <div class="ss-arr open" id="exam-arr">▼</div>
+    </div>
+    <div class="ss-body open" id="exam-body">
+      ${exam.map((e,i)=>{
+        const point = e.point || '';
+        const how = e.how || '';
+        return `<div style="margin-bottom:13px;padding:12px 13px;background:#F5F9FF;border-radius:11px;border-left:3px solid #3B82F6">
+          <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:${how?'7px':'0'}">
+            <div style="min-width:22px;height:22px;border-radius:6px;background:#3B82F6;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i+1}</div>
+            <div style="font-size:14px;color:#1E3A5F;line-height:1.7;font-weight:600">📌 ${hl(esc(_cleanSh(point)))}</div>
+          </div>
+          ${how?`<div style="margin-left:30px;font-size:13px;color:#475569;line-height:1.7;background:#fff;border-radius:8px;padding:8px 11px">${hl(esc(_cleanSh(how)))}</div>`:''}
+        </div>`;
+      }).join('')}
     </div>
   </div>`;
 }
