@@ -449,7 +449,7 @@ function fetchLabel(id,max=100){
 function fetchPostFull(postUrl){return Promise.resolve(null);}
 
 // ══════════════════════════════════════════
-//  RING
+//  RING GRAPH
 // ══════════════════════════════════════════
 function ring(el,pct,color,sz,sw){
   if(!el)return;
@@ -464,9 +464,10 @@ function ring(el,pct,color,sz,sw){
 }
 
 // ══════════════════════════════════════════
-//  UTILS
+//  UTILS & TEXT PARSING
 // ══════════════════════════════════════════
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escRe(s){return String(s||'').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');}
 
 function h2t(h){
   if(!h)return'';
@@ -501,7 +502,7 @@ function h2t(h){
     .replace(/\n{3,}/g,'\n\n')
     .trim();
 }
-function cleanT(t){return t.replace(/\[2026\s*공인중개사\]\s*/i,'').replace(/\s*\d+\s*차시\.\s*/,'').trim();}
+const cleanT = t => String(t || '').replace(/\[2026\s*공인중개사\]\s*/i,'').replace(/\s*\d+\s*차시\.\s*/,'').trim();
 function dday(){return Math.ceil((EXAM-new Date())/86400000);}
 function subStats(){
   const o={};
@@ -515,9 +516,6 @@ function subStats(){
   return o;
 }
 
-// ══════════════════════════════════════════
-//  텍스트 강조 처리
-// ══════════════════════════════════════════
 function hl(s){
   s=s.replace(/(\d+(?:\.\d+)?)\s*(㎡|m²|미터|m|층|년|월|일|개|명|만원|억|%|퍼센트|이상|이하|초과|미만|이내)/g,
     '<span class="hl">$1$2</span>');
@@ -525,9 +523,6 @@ function hl(s){
   return s;
 }
 
-// ══════════════════════════════════════════
-//  차시별 정답·해설 내장 보완
-// ══════════════════════════════════════════
 var LESSON_ANSWERS={
   '감정평가의 기초이론':[
     {a:4,e:'가치는 일정 시점에 여러 개가 존재할 수 있고, 가격은 하나만 존재합니다. 설명이 반대로 되어 있어 틀립니다.'},
@@ -584,16 +579,13 @@ var LESSON_ANSWERS={
     {a:4,e:'경제적 감가는 시장성 감퇴나 인근지역 쇠퇴 등 외부 요인으로 인한 가치 하락이며 적합의 원칙과 관련됩니다.'},
     {a:3,e:'정액법은 매년 감가액이 일정하나, 감가율은 매년 변동합니다. 감가율도 일정하다는 설명은 틀립니다.'},
     {a:1,e:'정률법은 매년 감가율은 일정하나 감가액은 초기에 가장 크고 점차 감소합니다(체감감가).'},
-    {a:4,e:'관찰감가법은 평가사의 주관이 개입될 수 있어 객관성이 떨어진다는 단점이 있습니다.'},
+    {a:4,e:'관찰감가법은 평가사의 주관이 개입될 수 있어 객관성이 떨어가 장점입니다.'},
     {a:4,e:'회계상 감가상각은 경제적 감가를 반영하지 않습니다. 감정평가의 감가수정만 반영합니다.'},
     {a:3,e:'대체원가로 산정하면 기능적 감가가 이미 원가에 반영되어 별도의 기능적 감가를 하지 않습니다.'},
     {a:4,e:'적산법으로 산정된 임대료는 적산임료입니다. 수익임료가 아닙니다.'}
   ]
 };
 
-// ══════════════════════════════════════════
-//  문제 파싱 모듈
-// ══════════════════════════════════════════
 function parseQs(text){
   var qs=[];
   function preclean(t){
@@ -612,8 +604,8 @@ function parseQs(text){
       .replace(/[\u2460\u2461\u2462\u2463\u2464]/g, function(m){return '\n'+m;});
     return t.trim();
   }
-  var splitRe=/(?=\n?(?:\uBB38\uC81C|\uBB38|Q)\s*\d{1,2}[^\d])/i;
-  var blocks=text.split(splitRe).filter(function(b){return /(?:\uBB38\uC81C|\uBB38|Q)\s*\d/i.test(b);});
+  var splitRe=/(?=\n?(?:문제|문|Q)\s*\d{1,2}[^\d])/i;
+  var blocks=text.split(splitRe).filter(function(b){return /(?:문제|문|Q)\s*\d/i.test(b);});
   blocks.forEach(function(blk,idx){
     blk=preclean(blk);
     var nm=blk.match(/(?:문제|문|Q)\s*(\d{1,2})/i);
@@ -635,7 +627,7 @@ function parseQs(text){
     var firstChoiceFound=false, answerReached=false;
     for(var li=0; li<lines.length; li++){
       var L=lines[li];
-      if(/^(?:\uC815\uB2F5|\uD574\uC124|\uD480\uC774)\s*[:\uFF1A Orient]/.test(L)){answerReached=true;}
+      if(/^(?:\uC815\uB2F5|\uD574\uC124|\uD480\uC774)\s*[:\uFF1A]/.test(L)){answerReached=true;}
       if(answerReached)continue;
       if(isChoice(L)){
         var m=L.match(/^([\u2460\u2461\u2462\u2463\u2464])\s*([\s\S]+)/);
@@ -701,11 +693,9 @@ function _explClean(s){
     .replace(/내가\s*선택한\s*번호\s*[:：]?\s*[\u2460\u2461\u2462\u2463\u2464\d]*/g,'')
     .replace(/내가\s*선택한\s*보기\s*[:：]?\s*/g,'')
     .replace(/상세\s*해설\s*및\s*오답\s*분석\s*[:：]?\s*\(?\)?/g,'')
-    .replace(/오답\s*노트\s*및\s*지문\s*분석\s*[:：]?/g,'')
-    .replace(/지문\s*분석\s*[:：]?/g,'')
     .replace(/오답\s*분석\s*[:：]?/g,'')
-    .replace(/정답\s*확인\s*[:：]?/g,'') // ★ 대오타 전면 교정 완료 (g 단독 표기에서 정규식 정상 봉인)
-    .replace(/해설\s*보기\s*[:：]?g,'')
+    .replace(/정답\s*확인\s*[:：]?/g,'')
+    .replace(/해설\s*보기\s*[:：]?/g,'') // ★ 완벽 패치: 누락되었던 슬래시 마감 기호 복구 완료!
     .replace(/보기를\s*클릭[^\n.가-힣]{0,30}[^\n.]*/g,'')
     .replace(/[\u2460\u2461\u2462\u2463\u2464]?\s*\d*\s*번?\s*(맞음|틀림|옳음|오답|정답)\s*[:：]\s*/g,'')
     .replace(/\(\s*오답\s*\)/g,'')
@@ -721,65 +711,7 @@ function _explClean(s){
 }
 
 // ══════════════════════════════════════════
-//  학습용 데이터 구조 가공 빌더
-// ══════════════════════════════════════════
-function buildStudyData(text){
-  const allLines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
-  const firstQIdx=allLines.findIndex(l=>/^(?:문제|문|Q)\s*\d/i.test(l));
-  const studyLines=firstQIdx>0
-    ?allLines.slice(0,firstQIdx)
-    :allLines.filter(l=>!/^[①②③④⑤]/.test(l)&&!/^(?:문제|문|Q)\s*\d/i.test(l)&&!/^(?:정답|해설)/i.test(l));
-
-  const bullets=studyLines.filter(l=>/^[-•·]/.test(l)).map(l=>l.replace(/^[-•·]\s*/,'').trim()).filter(l=>l.length>10);
-  const sentences=studyLines.filter(l=>!/^[-•·]/.test(l)&&l.length>15&&!/^(?:제\d+차시|핵심|총정리|##|라벨|작성자)/.test(l));
-
-  const _dirtyLine=/내가\s*선택한|오답\s*분석|지문\s*분석|보기를\s*클릭|각\s*지문을\s*클릭|\(\s*오답\s*\)|\(\s*정답\s*\)/;
-  const cleanLine=l=>_cleanSh(l);
-  const bulletsC=bullets.map(cleanLine).filter(l=>l.length>8&&!_dirtyLine.test(l));
-  const sentencesC=sentences.map(cleanLine).filter(l=>l.length>8&&!_dirtyLine.test(l));
-
-  let learn=[...bulletsC];
-  if(learn.length<6)sentencesC.forEach(s=>{if(learn.length<14&&!learn.includes(s))learn.push(s);});
-  learn=[...new Set(learn)].filter(l=>l.length>10&&!/^\d+$/.test(l)).slice(0,12);
-
-  const hasNum=s=>/\d+\s*(?:㎡|m²|미터|층|년|개월|일|명|만원|억원|%|이상|이하|초과|미만|이내)/.test(s);
-  const memItems=[];
-  [...bulletsC,...sentencesC].forEach(s=>{
-    if(memItems.length>=10||!hasNum(s))return;
-    const c=s.indexOf(':');
-    const key=c>0&&c<35?s.slice(0,c).trim():s.split(/\s+/).slice(0,4).join(' ');
-    const val=c>0?s.slice(c+1).trim():s;
-    if(key&&val)memItems.push({key:_subjShort(key)||key.slice(0,40),val:_trimSentence(val,160)});
-  });
-  const memory=[...new Map(memItems.map(m=>[m.key,m])).values()].slice(0,10);
-  if(memory.length===0){
-    learn.filter(hasNum).slice(0,5).forEach((l,i)=>{
-      const c=l.indexOf(':');
-      memory.push({key:_subjShort(c>0?l.slice(0,c).trim():('핵심 '+(i+1)))||('핵심 '+(i+1)),val:_trimSentence(c>0?l.slice(c+1).trim():l,160)});
-    });
-  }
-
-  const negPat=/(?:아니다|없다|안\s*된다|불가|제외|예외|주의|절대|반드시\s*(?:아님|아니)|혼동)/;
-  const cautionRaw=[];
-  [...bulletsC,...sentencesC].forEach(s=>{if(cautionRaw.length<6&&negPat.test(s))cautionRaw.push(s);});
-  const caution=[...new Set(cautionRaw)].slice(0,6).map((c,i)=>({title:'주의 '+(i+1),body:_trimSentence(c,220)}));
-  if(caution.length===0){
-    caution.push({title:'원칙과 예외 구분',body:'원칙적 기준과 예외 규정을 명확히 구분하여 학습하세요.'});
-    caution.push({title:'숫자 기준 혼동 주의',body:'면적·기간·층수 등 숫자 기준을 정확히 암기하고 혼동하지 않도록 주의하세요.'});
-  }
-
-  const examPoints=[];
-  ST.qs.forEach(q=>{
-    if(examPoints.length<6){
-      examPoints.push({point:_subjShort(q.question), how:_cleanSh(q.expl || '기출 정오 판정 기준을 정교하게 분석 및 숙지하세요.')});
-    }
-  });
-
-  return {learn,memory,caution,exam:examPoints,tip:'차시별 핵심 법률 요건 및 개정 수치 기준을 정확하게 암기하세요.'};
-}
-
-// ══════════════════════════════════════════
-//  완전 문장 파싱 및 자동 복구 코어 엔진
+//  완전 문장 정제 코어 가공 시스템
 // ══════════════════════════════════════════
 function _fixUnfinishedSentence(s) {
   s = (s || '').trim();
@@ -857,7 +789,7 @@ function _fixEnding(s){
   if(!s)return '';
   s=s.trim().replace(/[\s,·\-]+$/,'');
   var guard=0;
-  while(guard++<5 && /(으로|로|에서|에게|에|와|과|의|를|을|이|가|은|는|및|또는|하여|되어|이며|하며|하고|이고|있는|없는|같은|위한|따라|관한|대한|보다|처럼|만큼|부터|까지|보는|되는|하는|라는|하지|되지|있지|없지|아니지|말아야|停|해야|이어야)$/.test(s)){
+  while(guard++<5 && /(으로|로|에서|에게|에|와|과|의|를|을|이|가|은|는|및|또는|하여|되어|이며|하며|하고|이고|있는|없는|같은|위한|따라|관한|대한|보다|처럼|만큼|부터|까지|보는|되는|하는|라는|하지|되지|있지|없지|아니지|말아야|해야|이어야)$/.test(s)){
     var w=s.split(' ');
     if(w.length<=2)break;
     w.pop();
@@ -894,7 +826,7 @@ function _cleanSh(s){
 }
 
 // ══════════════════════════════════════════
-//  콘텐츠 화면 렌더링
+//  화면 렌더링 엔진
 // ══════════════════════════════════════════
 function renderStudyContent(data,sub){
   const el=document.getElementById('study-content');
@@ -981,6 +913,34 @@ function toggleSS(id){
   arr.classList.toggle('open',!open);
 }
 
+// ══════════════════════════════════════════
+//  AI 분석 모듈 가이드라인
+// ══════════════════════════════════════════
+const SUB_GUIDE={
+  '공법':'국토계획법(용도지역·지구·구역·개발행위허가), 건축법(허가·신고·용도변경·주택종류), 주택법, 도시정비법. 숫자·면적·기간 기준 암기 필수.',
+  '민법':'민법총칙(법률행위·의사표시·대리·무효취소), 물권법(물권변동·소유권·담보물권), 계약법(매매·임대차), 민사특별법(주임법·상임법·집합건물법). 판례 다수.',
+  '세법':'취득세·재산세·종합부동산세·양도소득세·부가가치세. 2026 개정사항 반영. 세율·공제·납부기한·비과세 요건, 계산형 대비.',
+  '공시법':'부동산등기법(절차·신청인·효력), 공간정보관리법(지적공부·지목·면적). 추정력·공신력 구별, 절차와 기간.',
+  '부동산학개론':'부동산 개념·특성, 수요·공급론, 감정평가 3방식, 투자론(수익률·레버리지). 계산형 대비.',
+  '중개사법':'공인중개사법(의무·금지행위·중개보수), 거래신고법, 실명법. 결격사유·등록취소·과태료 암기.'
+};
+const LAW_2026={
+  '공법':'다중주택 연면적 660㎡ 이하(구 330㎡), 다가구주택 660㎡·19세대·3층 이하, 다세대 660㎡·4층 이하',
+  '세법':'다주택 양도세 중과 유예 2026.5.9까지, 생애최초 취득세 100% 감면 연장, 인구감소지역 감면한도 300만원',
+  '중개사법':'공인중개사법 개정 2026.8.28 시행 예정'
+};
+
+const AI_PROMPT=(sub,title,content,qs)=>{
+  const guide=SUB_GUIDE[sub.id]||'';
+  const law=LAW_2026[sub.id]||'';
+  const qSummary=(qs||[]).slice(0,10).map((q,i)=>{
+    const ans=(q.choices||[]).find(c=>c.label===q.correct);
+    return (i+1)+'. '+(q.question||'').slice(0,80)+' [정답:'+(q.correct||'')+(ans?' '+ans.text.slice(0,40):'')+']';
+  }).join('\n');
+
+  return `당신은 공인중개사 전문 강사입니다.\n[과목] ${sub.name}\n[차시] ${title}\n[이론]\n${content.slice(0,1500)}\n[문제]\n${qSummary}`;
+};
+
 async function tryAIEnhance(sub){
   const bar=document.getElementById('abar');
   const dot=document.getElementById('adot');
@@ -1018,27 +978,20 @@ async function tryAIEnhance(sub){
 function retryAI(){if(ST.sub)tryAIEnhance(ST.sub);}
 
 // ══════════════════════════════════════════
-//  VIEW ROUTING
+//  VIEW ROUTING & CONTROLLERS
 // ══════════════════════════════════════════
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));const el=document.getElementById('v-'+id);if(el){el.classList.add('active');window.scrollTo(0,0);}}
 function goHome(){showView('home');renderHome();}
 function goWrong(){showView('wrong');renderAllWrong();}
 
 function openSub(sub){
-  const sameSubReload = ST.sub && ST.sub.id===sub.id && ST.posts && ST.posts.length>0;
   ST.sub=sub;
   const hdr=document.getElementById('sub-hdr');
   hdr.style.background=`linear-gradient(135deg,${sub.color} 0%,${sub.color}CC 100%)`;
   document.getElementById('sub-icon').textContent=sub.icon;
   document.getElementById('sub-name').textContent=sub.name;
   showView('sub');
-  if(sameSubReload){
-    renderLessonList({feed:{entry:ST.posts.map(p=>({
-      title:{$t:p.title}, link:[{rel:'alternate',href:p.link}],
-      content:{$t:p.content}, published:{$t:p.pub}
-    }))}}, sub);
-    return;
-  }
+  
   document.getElementById('sub-meta').textContent='로딩 중...';
   document.getElementById('llist').innerHTML='<div class="spin-wrap"><div class="spin"></div></div>';
   fetchLabel(sub.id)
@@ -1075,12 +1028,13 @@ function renderLessonList(data,sub){
     const mt=pct!==null?`정답률 ${pct}% (${s.correct}/${s.total})`:'미학습';
     const card=document.createElement('button');card.className='lcard';
     card.style.borderColor=s.total?sub.light:'var(--bdr)';
-    card.innerHTML=`<div class="lnum">${lbl}</div>
+    card.innerHTML=`<div class="lnum" style="${s.total ? 'background:'+sub.light+';color:'+sub.color : ''}">${lbl}</div>
       <div class="linfo"><div class="ltitle">${esc(cleanT(post.title))}</div>
       <div class="lmeta ${mc}">${mt}</div></div>
       ${pct!==null?`<svg width="36" height="36"></svg>`:`<span style="font-size:15px;color:#D1D5DB">›</span>`}`;
+    list.appendChild(card);
     if(pct!==null)ring(card.querySelector('svg'),pct,pc,36,3.5);
-    card.onclick=()=>openLesson(post);list.appendChild(card);
+    card.onclick=()=>openLesson(post);
   });
 }
 
@@ -1235,7 +1189,7 @@ function renderHome(){
   updateNavWrong();
 }
 
-document.addEventListener('DOMContentLoaded',function(){updateNavWrong();renderHome();buildTabs();});
+document.addEventListener('DOMContentLoaded',function(){updateNavWrong();renderHome();});
 </script>
 
 <!-- 파이어베이스 및 클라우드 서비스 동기화 코어 -->
@@ -1267,7 +1221,6 @@ function skipLogin(){_cloud=false;localStorage.setItem(_FSKIP,"1");_hm();showToa
 function showUserMenu(){if(_user&&confirm("로그아웃 하시겠습니까?")){_auth.signOut();_user=null;_cloud=false;_syncDone=false;localStorage.removeItem(_FLOG);_nb(null);showToast("로그아웃 되었습니다");}else if(!_user){_om();}}
 function _su(){if(!_cloud||!_user||!_db||_syncing)return;_db.ref("u/"+_user.uid).set({s:JSON.stringify(STATS),w:JSON.stringify(WRONGS),t:Date.now()}).then(function(){showToast("☁️ 클라우드 백업 완료");}).catch(function(e){});}
 
-/* 🛠️ 클라우드 동기화 모듈 예외 가드 전면 보강 */
 function _sd(){
   if(!_user||!_db)return;
   _syncing=true;
@@ -1303,7 +1256,6 @@ function _sd(){
       updateNavWrong();
       showToast("☁️ 동기화 완료!");
     }else{
-      // 신규 계정 대응: 로컬에 데이터가 있다면 백업, 없다면 신규 초기화 완료
       if(Object.keys(STATS).length>0||WRONGS.length>0){
         _syncing=false;
         _su();
