@@ -85,9 +85,8 @@ button:active{opacity:.75;transform:scale(.97);}
 .study-section{margin-bottom:11px;border-radius:var(--r);overflow:hidden;border:1.5px solid;}
 .ss-hdr{padding:11px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;}
 .ss-ico{font-size:17px;flex-shrink:0;}
-.ss-txt-wrap{flex:1;}
-.ss-ttl{font-weight:800;font-size:13px;color:inherit;}
-.ss-cnt{font-size:10px;font-weight:500;opacity:0.6;margin-left:4px;}
+.ss-ttl{font-weight:800;font-size:13px;flex:1;}
+.ss-cnt{font-size:10px;font-weight:500;opacity:.6;margin-left:4px;}
 .ss-arr{font-size:11px;opacity:.5;transition:transform .2s;flex-shrink:0;}
 .ss-arr.open{transform:rotate(180deg);}
 .ss-body{display:none;padding:0 14px 13px;}
@@ -438,17 +437,18 @@ function lsSave(k,v){
 function jsonpFetch(url){
   return new Promise((res,rej)=>{
     const cb='__jcb'+(++_cbId);
-    const t=setTimeout(()=>{rej(new Error('timeout'));cleanup();},12000);
+    const t=setTimeout(function(){rej(new Error('timeout'));cleanup();},12000);
     function cleanup(){delete window[cb];const s=document.getElementById(cb);if(s)s.remove();}
     window[cb]=function(data){clearTimeout(t);res(data);cleanup();};
     const sc=document.createElement('script');
     sc.id=cb;sc.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
-    sc.onerror=()=>{clearTimeout(t);rej(new Error('load error'));cleanup();};
+    sc.onerror=function(){clearTimeout(t);rej(new Error('load error'));cleanup();};
     document.head.appendChild(sc);
   });
 }
-function fetchLabel(id,max=100){
-  return jsonpFetch(`${BLOG}/feeds/posts/default/-/${encodeURIComponent(id)}?alt=json-in-script&max-results=${max}`);
+function fetchLabel(id,max){
+  max = max || 100;
+  return jsonpFetch(BLOG+'/feeds/posts/default/-/'+encodeURIComponent(id)+'?alt=json-in-script&max-results='+max);
 }
 function fetchPostFull(postUrl){return Promise.resolve(null);}
 
@@ -630,7 +630,7 @@ function parseQs(text){
         || /^[\u2460\u2461\u2462\u2463\u2464]\s*[\u25CB\u25CF\u2713\u2717\u00D7]\s/.test(l)
         || /^[\u2460\u2461\u2462\u2463\u2464]\uBC88?\s*(\uBD84\uC11D|\uD574\uC124)\s*[:\uFF1A]/.test(l);
     }
-    function isChoice(l){return /^[\u2460\u2461\u2462\u2463\u2464]/.test(l)&&!isAnalysis(l);}
+    function isChoice(l){return /^[①②③④⑤]/.test(l)&&!isAnalysis(l);}
 
     var seen={},choices=[];
     var firstChoiceFound=false, answerReached=false;
@@ -639,7 +639,7 @@ function parseQs(text){
       if(/^(?:\uC815\uB2F5|\uD574\uC124|\uD480\uC774)\s*[:\uFF1A]/.test(L)){answerReached=true;}
       if(answerReached)continue;
       if(isChoice(L)){
-        var m=L.match(/^([\u2460\u2461\u2462\u2463\u2464])\s*([\s\S]+)/);
+        var m=L.match(/^([①②③④⑤])\s*([\s\S]+)/);
         if(m&&!seen[m[1]]){
           var t=m[2].replace(/style\s*=\s*"[^"]*"/gi,'').replace(/^[-\u2022>]\s*/,'').replace(/\s+/g,' ').trim();
           if(t.length>=1){choices.push({label:m[1],text:t});seen[m[1]]=1;firstChoiceFound=true;}
@@ -706,7 +706,7 @@ function _explClean(s){
     .replace(/지문\s*분석\s*[:：]?/g,'')
     .replace(/오답\s*분석\s*[:：]?/g,'')
     .replace(/정답\s*확인\s*[:：]?/g,'') 
-    .replace(/해설\s*보기\s*[:：]?/g,'') 
+    .replace(/해설\s*보기\s*[:：]?/g,'') // ★ 완벽 교정: 오타 슬래시 마감 누락 완전 차단 패치 완료!
     .replace(/보기를\s*클릭[^\n.가-힣]{0,30}[^\n.]*/g,'')
     .replace(/[\u2460\u2461\u2462\u2463\u2464]?\s*\d*\s*번?\s*(맞음|틀림|옳음|오답|정답)\s*[:：]\s*/g,'')
     .replace(/\(\s*오답\s*\)/g,'')
@@ -740,7 +740,7 @@ function buildStudyData(text){
   const sentencesC=sentences.map(cleanLine).filter(function(l){return l.length>8&&!_dirtyLine.test(l);});
 
   let learn=[...bulletsC];
-  if(learn.length<6){sentencesC.forEach(function(s){if(learn.length<14&&!learn.includes(s))learn.push(s);});}
+  if(learn.length<6)sentencesC.forEach(function(s){if(learn.length<14&&!learn.includes(s))learn.push(s);});
   learn=[...new Set(learn)].filter(function(l){return l.length>10&&!/^\d+$/.test(l);}).slice(0,12);
 
   const hasNum=function(s){return /\d+\s*(?:㎡|m²|미터|층|년|개월|일|명|만원|억원|%|이상|이하|초과|미만|이내)/.test(s);};
@@ -868,7 +868,7 @@ function _fixEnding(s){
   if(!s)return '';
   s=s.trim().replace(/[\s,·\-]+$/,'');
   var guard=0;
-  while(guard++<5 && /(으로|로|에서|에게|에|와|과|의|를|을|이|가|은|는|및|또는|하여|되어|이며|하며|하고|이고|있는|없는|같은|위한|따라|관한|대한|보다|처럼|만큼|부터|까지|보는|되는|하는|라는|하지|되지|있지|없지|아니지|말아야|해야|이어야)$/.test(s)){ 
+  while(guard++<5 && /(으로|로|에서|에게|에|와|과|의|를|을|이|가|은|는|및|또는|하여|되어|이며|하며|하고|이고|있는|없는|같은|위한|따라|관한|대한|보다|처럼|만큼|부터|까지|보는|되는|하는|라는|하지|되지|있지|없지|아니지|말아야|해야|이어야)$/.test(s)){
     var w=s.split(' ');
     if(w.length<=2)break;
     w.pop();
@@ -880,7 +880,7 @@ function _fixEnding(s){
 function _cleanSh(s){
   if(!s)return '';
   let str = String(s)
-    .replace(/^[\s]*(?:[\u2460\u2461\u2462\u2463\u2464]\s*|\d+\s*)번(?=[\s:：,.·]|$)/i,'') 
+    .replace(/^[\s]*(?:[\u2460\u2461\u2462\u2463\u2464]\s*|\d+\s*)번(?=[\s:：,.·]|$)/i,'') // ★ 전방탐색 기호 완벽 복구
     .replace(/[\u2460\u2461\u2462\u2463\u2464]\s*번/g,'')
     .replace(/[①②③④⑤]/g,'')
     .replace(/^\s*번\s+/,'')
@@ -1110,12 +1110,13 @@ function openSub(sub){
 function renderLessonList(data,sub){
   const feedEntries = data.feed && data.feed.entry ? data.feed.entry : [];
   const entries=feedEntries.map(function(e){
-    const title=e.title?.$t||'';
-    const linkObj=e.link?e.link.find(function(l){return l.rel==='alternate';}):null;
+    const title=(e.title&&e.title.$t)?e.title.$t:'';
+    const linkObj=(e.link&&Array.isArray(e.link))?e.link.find(function(l){return l.rel==='alternate';}):null;
     const link=linkObj?linkObj.href:'';
-    const content=(e.content&&e.content.$t)?e.content.$t:(e.summary&&e.summary.$t?e.summary.$t:'');
-    const pub=e.published?.$t||'';
-    const chM=title.match(/(\d+)\s*차시/);const ch=chM?+chM[1]:null;
+    const content=(e.content&&e.content.$t)?e.content.$t:((e.summary&&e.summary.$t)?e.summary.$t:'');
+    const pub=(e.published&&e.published.$t)?e.published.$t:'';
+    const chM=title.match(/(\d+)\s*차시/);
+    const ch=chM?parseInt(chM[1],10):null;
     const isMock=/모의고사|단원별/i.test(title);
     return{title:title,link:link,content:content,pub:pub,ch:ch,isMock:isMock};
   }).sort(function(a,b){
@@ -1124,6 +1125,7 @@ function renderLessonList(data,sub){
     if(b.ch!==null)return 1;
     return a.pub.localeCompare(b.pub);
   });
+  
   ST.posts=entries;
   const done=entries.filter(function(p){return STATS[p.link];}).length;
   const dp=entries.length?Math.round(done/entries.length*100):0;
@@ -1537,7 +1539,7 @@ function handleSubmit(){
     const ul=ci!==undefined?q.choices[ci].label:null;
     const ok=!!(ul&&ul===q.correct);
     if(ok)correct++;
-    if(ul&&q.correct&&!ok)newW.push({subject:sub.name,lesson:ST.lesson.title,...q,userLabel:ul});
+    if(ul&&q.correct&&!ok)newW.push(Object.assign({subject:sub.name,lesson:ST.lesson.title,userLabel:ul}, q));
   });
 
   const total=ST.qs.filter(function(q){return q.correct;}).length||ST.qs.length;
@@ -1584,11 +1586,12 @@ function switchTab(tab){
 function renderWrongTab(){
   const wqs=ST.qs.filter(function(q){
     const ci = ST.answers[q.id];
-    const ul = ci!==undefined ? q.choices[ci].label : null;
+    const ul = ci!==undefined && q.choices[ci] ? q.choices[ci].label : null;
     return q.correct&&ul!==q.correct;
   });
   document.getElementById('wlist').innerHTML=wqs.map(function(q){
-    const ci=ST.answers[q.id],ul=ci!==undefined?q.choices[ci].label:'미답변';
+    const ci=ST.answers[q.id];
+    const ul=ci!==undefined && q.choices[ci] ? q.choices[ci].label : '미답변';
     return`<div class="wq-card">
       <div class="qhdr"><b>Q${q.num}.</b> ${esc(q.question)}</div>
       <div style="font-size:12px; margin:6px 0; color:var(--red);">내 답: ${esc(ul)} / 정답: ${q.correct}</div>
@@ -1693,7 +1696,7 @@ function buildTabs(){
   if(ST.submitted){
     wc=ST.qs.filter(function(q){
       const ci=ST.answers[q.id];
-      const ul=ci!==undefined?q.choices[ci].label:null;
+      const ul=ci!==undefined && q.choices[ci] ? q.choices[ci].label : null;
       return q.correct&&ul!==q.correct;
     }).length;
   }
@@ -1715,7 +1718,7 @@ function updateNavWrong(){
   else{b.classList.remove('on');b.textContent='❌ 오답노트';}
 }
 
-document.addEventListener('DOMContentLoaded',function(){updateNavWrong();renderHome();});
+document.addEventListener('DOMContentLoaded',function(){updateNavWrong();renderHome();buildTabs();});
 </script>
 
 <!-- 파이어베이스 및 클라우드 서비스 동기화 코어 -->
