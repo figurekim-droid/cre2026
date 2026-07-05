@@ -419,7 +419,15 @@ let ST={sub:null,lesson:null,posts:[],qs:[],answers:{},submitted:false,tab:'stud
 let STATS=lsGet(SK,{}), WRONGS=lsGet(WK,[]);
 let _cbId=0;
 
-function lsGet(k,d){try{return JSON.parse(localStorage.getItem(k))||d;}catch{return d;}}
+function lsGet(k,d){
+  try{
+    var v=JSON.parse(localStorage.getItem(k));
+    if(v===null)return d;
+    if(k===SK&&typeof v!=='object')return d;
+    if(k===WK&&!Array.isArray(v))return d;
+    return v;
+  }catch(e){return d;}
+}
 var _syncing=false;
 function lsSave(k,v){
   try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}
@@ -464,10 +472,9 @@ function ring(el,pct,color,sz,sw){
 }
 
 // ══════════════════════════════════════════
-//  UTILS & TEXT PARSING
+//  UTILS
 // ══════════════════════════════════════════
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function escRe(s){return String(s||'').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');}
 
 function h2t(h){
   if(!h)return'';
@@ -523,12 +530,15 @@ function hl(s){
   return s;
 }
 
+// ══════════════════════════════════════════
+//  차시별 정답·해설 내장 보완
+// ══════════════════════════════════════════
 var LESSON_ANSWERS={
   '감정평가의 기초이론':[
     {a:4,e:'가치는 일정 시점에 여러 개가 존재할 수 있고, 가격은 하나만 존재합니다. 설명이 반대로 되어 있어 틀립니다.'},
     {a:5,e:'이전성은 가치발생요인(효용·상대적희소성·유효수요·이전성)에 해당합니다. 가치형성요인이 아닙니다.'},
     {a:2,e:'균형의 원칙 위반은 기능적 감가, 적합의 원칙 위반은 경제적 감가와 관련됩니다.'},
-    {a:3,e:'기준시점은 감정평가서 작성 완료일이 아니라 대상물건의 가격조사를 완료한 날짜입니다.'},
+    {a:3,e:'기준시점은 가격조사를 완료한 날짜입니다. 감정평가 의뢰를 받은 날이 아닙니다.'},
     {a:4,e:'대상 부동산의 구체적 가치는 개별분석으로 판정합니다. 지역분석은 표준적 이용과 가격수준을 판정합니다.'},
     {a:1,e:'기여의 원칙은 부동산 전체 가치가 각 구성부분의 기여도 합으로 결정된다는 원칙입니다.'},
     {a:5,e:'내부 구성요소의 적정 결합을 강조하는 것은 균형의 원칙입니다. 대체의 원칙은 대체관계에 있는 부동산 간 가격 상호작용을 설명합니다.'},
@@ -538,7 +548,7 @@ var LESSON_ANSWERS={
   ],
   '감정평가의 기타 분류':[
     {a:5,e:'시장가치는 통상적인 시장에서 충분한 기간 공개된 후 정통한 당사자 간 자발적으로 성립될 가능성이 가장 높은 가액입니다.'},
-    {a:2,e:'법령·의뢰인 요청·사회통념상 필요 시에는 시장가치 외의 가치를 기준으로 평가할 수 있습니다. "할 수 없다"는 틀립니다.'},
+    {a:2,e:'법령·의뢰인 요청·사회통념상 필요 시에는 시장가치 외의 가치를 기준으로 평가할 수 있습니다. 할 수 없다는 틀립니다.'},
     {a:4,e:'의뢰 조건의 적법성이 결여된 경우 감정평가를 하지 않거나 수정해야 합니다. 그대로 완료한다는 설명은 틀립니다.'},
     {a:2,e:'기준시점은 가격조사를 완료한 날짜가 원칙입니다. 감정평가 의뢰를 받은 날이 아닙니다.'},
     {a:1,e:'둘 이상의 물건이 일체로 거래되거나 용도상 불가분 관계에 있으면 일괄평가합니다.'},
@@ -579,139 +589,15 @@ var LESSON_ANSWERS={
     {a:4,e:'경제적 감가는 시장성 감퇴나 인근지역 쇠퇴 등 외부 요인으로 인한 가치 하락이며 적합의 원칙과 관련됩니다.'},
     {a:3,e:'정액법은 매년 감가액이 일정하나, 감가율은 매년 변동합니다. 감가율도 일정하다는 설명은 틀립니다.'},
     {a:1,e:'정률법은 매년 감가율은 일정하나 감가액은 초기에 가장 크고 점차 감소합니다(체감감가).'},
-    {a:4,e:'관찰감가법은 평가사의 주관이 개입될 수 있어 객관성이 떨어가 장점입니다.'},
+    {a:4,e:'관찰감가법은 평가사의 주관이 개입될 수 있어 객관성이 떨어집니다.'},
     {a:4,e:'회계상 감가상각은 경제적 감가를 반영하지 않습니다. 감정평가의 감가수정만 반영합니다.'},
     {a:3,e:'대체원가로 산정하면 기능적 감가가 이미 원가에 반영되어 별도의 기능적 감가를 하지 않습니다.'},
-    {a:4,e:'적산법으로 산정된 임대료는 적산임료입니다. 수익임료가 아닙니다.'}
+    {a:4,e:'적산법으로 산정된 임대료는적산임료입니다. 수익임료가 아닙니다.'}
   ]
 };
 
-function parseQs(text){
-  var qs=[];
-  function preclean(t){
-    t=t.replace(/style\s*=\s*"[^"]*"/gi,'')
-      .replace(/style\s*=\s*'[^']*'/gi,'')
-      .replace(/on\w+\s*=\s*"[^"]*"/gi,'')
-      .replace(/\[수정[^\]]*\]/g,'')
-      .replace(/[\(\[\{\s]+(?:오답|정답|해설|지문|분석|노트|풀이|틀림|맞음|선택)[\s\}\)\]]+/g, '')
-      .replace(/[\(\[\{\s]*오답[\s\}\)\]]+/g, '')
-      .replace(/[\(\[\{\s]*정답[\s\}\)\]]+/g, '')
-      .replace(/내가\s*선택한\s*번호\s*[:：]?\s*\d*/g,'')
-      .replace(/상세\s*해설\s*및\s*오답\s*분석\s*[:：]?/g,'')
-      .replace(/각\s*지문을\s*클릭[^\n.]*/g,'')
-      .replace(/(?:display|width|text-align|padding|margin|cursor|font|color|background)\s*:[^;,\n]{0,80}[;,]/g,'')
-      .replace(/'\s*\)\s*"/g,'').replace(/'\s*\)/g,'').replace(/"\s*\)/g,'')
-      .replace(/[\u2460\u2461\u2462\u2463\u2464]/g, function(m){return '\n'+m;});
-    return t.trim();
-  }
-  var splitRe=/(?=\n?(?:문제|문|Q)\s*\d{1,2}[^\d])/i;
-  var blocks=text.split(splitRe).filter(function(b){return /(?:문제|문|Q)\s*\d/i.test(b);});
-  blocks.forEach(function(blk,idx){
-    blk=preclean(blk);
-    var nm=blk.match(/(?:문제|문|Q)\s*(\d{1,2})/i);
-    if(!nm)return;
-    var num=+nm[1];
-    var lines=blk.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
-    function isAnalysis(l){
-      if(!/^[\u2460\u2461\u2462\u2463\u2464]/.test(l))return false;
-      return /\(\uC815\uB2F5\)|\(\uC624\uB2F5\)|\(\uC639\uC74C\)|\(\uD2C0\uB9BC\)|\(\uB9DE\uC74C\)/.test(l)
-        || /^[\u2460\u2461\u2462\u2463\u2464]\s*(\uB9DE\uC74C|\uD2C0\uB9BC|\uC639\uC74C|\uC624\uB2F5)\s*[:\uFF1A\-]/.test(l)
-        || /\uB9DE\uC74C\s*[:\uFF1A]|\uD2C0\uB9BC\s*[:\uFF1A]|\uC639\uC74C\s*[:\uFF1A]|\uC624\uB2F5\s*[:\uFF1A]/.test(l)
-        || /^[\u2460\u2461\u2462\u2463\u2464]\s*(\uC815\uB2F5|\uD574\uC124|\uD480\uC774)\s*[:\uFF1A]/.test(l)
-        || /^[\u2460\u2461\u2462\u2463\u2464]\s*[\u25CB\u25CF\u2713\u2717\u00D7]\s/.test(l)
-        || /^[\u2460\u2461\u2462\u2463\u2464]\uBC88?\s*(\uBD84\uC11D|\uD574\uC124)\s*[:\uFF1A]/.test(l);
-    }
-    function isChoice(l){return /^[\u2460\u2461\u2462\u2463\u2464]/.test(l)&&!isAnalysis(l);}
-
-    var seen={},choices=[];
-    var firstChoiceFound=false, answerReached=false;
-    for(var li=0; li<lines.length; li++){
-      var L=lines[li];
-      if(/^(?:\uC815\uB2F5|\uD574\uC124|\uD480\uC774)\s*[:\uFF1A]/.test(L)){answerReached=true;}
-      if(answerReached)continue;
-      if(isChoice(L)){
-        var m=L.match(/^([\u2460\u2461\u2462\u2463\u2464])\s*([\s\S]+)/);
-        if(m&&!seen[m[1]]){
-          var t=m[2].replace(/style\s*=\s*"[^"]*"/gi,'').replace(/^[-\u2022>]\s*/,'').replace(/\s+/g,' ').trim();
-          if(t.length>=1){choices.push({label:m[1],text:t});seen[m[1]]=1;firstChoiceFound=true;}
-        }
-      } else if(firstChoiceFound && choices.length>0 && choices.length<5 && !isAnalysis(L)
-                && !/^(?:\uBB38\uC81C|\uBB38|Q)\s*\d/i.test(L)
-                && !/^(?:style|display|width|padding|margin|cursor)/.test(L)){
-        var prev=choices[choices.length-1];
-        var add=L.replace(/style\s*=\s*"[^"]*"/gi,'').replace(/\s+/g,' ').trim();
-        if(add.length>0 && prev.text.length<500){
-          prev.text=(prev.text+' '+add).trim();
-        }
-      }
-    }
-    if(choices.length<2)return;
-    var fci=-1;
-    for(var k=0;k<lines.length;k++){if(isChoice(lines[k])){fci=k;break;}}
-    var qtext='';
-    if(fci>0){
-      qtext=lines.slice(0,fci).map(function(l){
-        return l.replace(/^(?:\uBB38\uC81C|\uBB38|Q)\s*\d{1,2}\s*[.)]?\s*/i,'')
-          .replace(/style\s*=\s*"[^"]*"/gi,'').replace(/">[^"]{0,5}$/,'').replace(/>\s*$/,'').trim();
-      }).filter(function(l){
-        return l.length>2&&!/^(?:\uC815\uB2F5|\uD574\uC124|\uD480\uC774)/.test(l)&&!isAnalysis(l)
-          &&!/^(?:style|display|width|padding|margin|cursor)/.test(l);
-      }).join(' ').replace(/\s+/g,' ').trim();
-    }
-    if(!qtext||qtext.length<4)return;
-    var labels5=['①','②','③','④','⑤'];
-    var correct=null, am=null;
-    am=blk.match(/(?:\uC2E4\uC81C\s*)?\uC815\uB2F5\s*[:\uFF1A]?\s*([\u2460\u2461\u2462\u2463\u2464])/);
-    if(am){correct=am[1];}
-    else{
-      am=blk.match(/(?:\uC2E4\uC81C\s*)?\uC815\uB2F5\s*[:\uFF1A]?\s*([1-5])\s*\uBC88/);
-      if(am){correct=labels5[parseInt(am[1],10)-1];}
-    }
-    var expl='';
-    if(am){
-      var ai=blk.indexOf(am[0])+am[0].length;
-      var raw=blk.slice(ai,ai+700).replace(/\n/g,' ').replace(/\s+/g,' ').trim();
-      if(raw.length>3)expl=raw;
-    }
-    var aLines=lines.filter(isAnalysis).map(function(l){return l.replace(/^[\u2460\u2461\u2462\u2463\u2464]\s*/,'').trim();});
-    if(!expl&&aLines.length>0)expl=aLines.join(' | ').slice(0,700);
-    expl=_fixEnding(_explClean(expl));
-    qs.push({id:'q'+idx,num:num,question:qtext,choices:choices,correct:correct,expl:expl});
-  });
-  return qs;
-}
-
-function _explClean(s){
-  if(!s)return '';
-  return s
-    .replace(/^[\s]*(?:[\u2460\u2461\u2462\u2463\u2464]\s*|\d+\s*)번\s+/,'')
-    .replace(/[\u2460\u2461\u2462\u2463\u2464]\s*번/g,'')
-    .replace(/[\(\[\{\s]+(?:오답|정답|해설|지문|분석|노트|풀이|틀림|맞음|선택)[\s\}\)\]]+/g, '')
-    .replace(/[\(\[\{\s]*오답[\s\}\)\]]+/g, '')
-    .replace(/[\(\[\{\s]*정답[\s\}\)\]]+/g, '')
-    .replace(/\[[^\]]*(?:오답|해설|정답|지문|분석|노트|풀이|선택)[^\]]*\]/g,'')
-    .replace(/내가\s*선택한\s*번호\s*[:：]?\s*[\u2460\u2461\u2462\u2463\u2464\d]*/g,'')
-    .replace(/내가\s*선택한\s*보기\s*[:：]?\s*/g,'')
-    .replace(/상세\s*해설\s*및\s*오답\s*분석\s*[:：]?\s*\(?\)?/g,'')
-    .replace(/오답\s*분석\s*[:：]?/g,'')
-    .replace(/정답\s*확인\s*[:：]?/g,'')
-    .replace(/해설\s*보기\s*[:：]?/g,'') // ★ 완벽 패치: 누락되었던 슬래시 마감 기호 복구 완료!
-    .replace(/보기를\s*클릭[^\n.가-힣]{0,30}[^\n.]*/g,'')
-    .replace(/[\u2460\u2461\u2462\u2463\u2464]?\s*\d*\s*번?\s*(맞음|틀림|옳음|오답|정답)\s*[:：]\s*/g,'')
-    .replace(/\(\s*오답\s*\)/g,'')
-    .replace(/\(\s*정답\s*\)/g,'')
-    .replace(/[\u2460\u2461\u2462\u2463\u2464\u2465\u2466\u2467\u2468\u2469]/g,'')
-    .replace(/^\s*번\s+/,'')
-    .replace(/각\s*지문을\s*클릭[^.]*\.?/g,'')
-    .replace(/,\s*,+/g,',')
-    .replace(/\(\s*\)/g,'').replace(/\[\s*\]/g,'')
-    .replace(/\s*\|\s*/g,' / ')
-    .replace(/\/\s*\//g,'/')
-    .trim();
-}
-
 // ══════════════════════════════════════════
-//  완전 문장 정제 코어 가공 시스템
+//  완전 문장 보정 및 가공 알고리즘 코어
 // ══════════════════════════════════════════
 function _fixUnfinishedSentence(s) {
   s = (s || '').trim();
@@ -897,7 +783,7 @@ function renderStudyContent(data,sub){
             <div style="min-width:22px;height:22px;border-radius:6px;background:#3B82F6;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i+1}</div>
             <div style="font-size:14px;color:#1E3A5F;line-height:1.7;font-weight:600">📌 ${hl(esc(point))}</div>
           </div>
-          ${how?`<div style="margin-left:30px;font-size:13px;color:#475569;line-height:1.7;background:#fff;border-radius:8px;padding:8px 11px">${hl(esc(how))}</div>`:''}
+          ${how?`<div style="margin-left:30px;font-size:14px;color:#475569;line-height:1.7;background:#fff;border-radius:8px;padding:8px 11px">${hl(esc(how))}</div>`:''}
         </div>`;
       }).join('')}
     </div>
@@ -1189,6 +1075,23 @@ function renderHome(){
   updateNavWrong();
 }
 
+function buildTabs(){
+  const sub=ST.sub;
+  const el=document.getElementById('tabs');
+  if(!el) return;
+  el.innerHTML='';
+  if(!sub) return; 
+  const wc=ST.submitted?ST.qs.filter(q=>{const ul=q.choices[ST.answers[q.id]]?.label;return q.correct&&ul!==q.correct;}).length:0;
+  const tabs=[{key:'study',label:'📖 학습정리'},{key:'quiz',label:`📝 문제(${ST.qs.length})`},...(ST.submitted&&wc>0?[{key:'wrong',label:`❌ 오답(${wc})`}]:[])];
+  tabs.forEach(t=>{
+    const b=document.createElement('button');b.className='tab'+(ST.tab===t.key?' on':'');
+    if(ST.tab===t.key)b.style.background=sub.color;
+    b.textContent=t.label;
+    b.onclick=()=>{switchTab(t.key);if(t.key==='wrong')renderWrongTab();};
+    el.appendChild(b);
+  });
+}
+
 document.addEventListener('DOMContentLoaded',function(){updateNavWrong();renderHome();});
 </script>
 
@@ -1221,7 +1124,8 @@ function skipLogin(){_cloud=false;localStorage.setItem(_FSKIP,"1");_hm();showToa
 function showUserMenu(){if(_user&&confirm("로그아웃 하시겠습니까?")){_auth.signOut();_user=null;_cloud=false;_syncDone=false;localStorage.removeItem(_FLOG);_nb(null);showToast("로그아웃 되었습니다");}else if(!_user){_om();}}
 function _su(){if(!_cloud||!_user||!_db||_syncing)return;_db.ref("u/"+_user.uid).set({s:JSON.stringify(STATS),w:JSON.stringify(WRONGS),t:Date.now()}).then(function(){showToast("☁️ 클라우드 백업 완료");}).catch(function(e){});}
 
-function _sd(){
+/* 🛠️ 클라우드 동기화 모듈 초기 레이스 컨디션 완벽 방어 */
+function _sd(isRetry){
   if(!_user||!_db)return;
   _syncing=true;
   _db.ref("u/"+_user.uid).once("value").then(function(snap){
@@ -1267,9 +1171,17 @@ function _sd(){
     }
   }).catch(function(e){
     console.error(e);
-    showToast("⚠️ 동기화 실패");
+    // 첫 초기 구동 레이스 컨디션 시 무소음 1초 뒤 1회 자동 재시도 가드 작동
+    if(!isRetry){
+      setTimeout(function(){ _sd(true); }, 1000);
+    } else {
+      _syncing=false;
+      renderHome();
+      updateNavWrong();
+      showToast("⚠️ 동기화 실패 (네트워크 상태 확인)");
+    }
   }).finally(function(){
-    _syncing=false;
+    if(!isRetry) _syncing=false;
   });
 }
 var _syncUp=_su;
