@@ -85,8 +85,9 @@ button:active{opacity:.75;transform:scale(.97);}
 .study-section{margin-bottom:11px;border-radius:var(--r);overflow:hidden;border:1.5px solid;}
 .ss-hdr{padding:11px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;}
 .ss-ico{font-size:17px;flex-shrink:0;}
-.ss-ttl{font-weight:800;font-size:13px;flex:1;}
-.ss-cnt{font-size:10px;font-weight:500;opacity:.6;margin-left:4px;}
+.ss-txt-wrap{flex:1;}
+.ss-ttl{font-weight:800;font-size:13px;color:inherit;}
+.ss-cnt{font-size:10px;font-weight:500;opacity:0.6;margin-left:4px;}
 .ss-arr{font-size:11px;opacity:.5;transition:transform .2s;flex-shrink:0;}
 .ss-arr.open{transform:rotate(180deg);}
 .ss-body{display:none;padding:0 14px 13px;}
@@ -94,28 +95,24 @@ button:active{opacity:.75;transform:scale(.97);}
 
 /* 기본학습 */
 .ss-learn{background:#ECFDF5;border-color:#6EE7B7;}
-.ss-learn .ss-hdr{background:#D1FAE5;}
-.ss-learn .ss-ttl{color:#065F46;}
+.ss-learn .ss-hdr{background:#D1FAE5;color:#065F46;}
 /* 암기 */
 .ss-mem{background:#FFFBEB;border-color:#FCD34D;}
-.ss-mem .ss-hdr{background:#FEF3C7;}
-.ss-mem .ss-ttl{color:#92400E;}
+.ss-mem .ss-hdr{background:#FEF3C7;color:#92400E;}
 /* 주의 */
 .ss-warn{background:#FFF7ED;border-color:#FDBA74;}
-.ss-warn .ss-hdr{background:#FFEDD5;}
-.ss-warn .ss-ttl{color:#9A3412;}
+.ss-warn .ss-hdr{background:#FFEDD5;color:#9A3412;}
 /* 출제포인트 */
 .ss-exam{background:#EFF6FF;border-color:#93C5FD;}
-.ss-exam .ss-hdr{background:#DBEAFE;}
-.ss-exam .ss-ttl{color:#1E40AF;}
+.ss-exam .ss-hdr{background:#DBEAFE;color:#1E40AF;}
 
 /* 학습 항목 */
 .si{display:flex;gap:9px;margin-bottom:9px;align-items:flex-start;}
 .si:last-child{margin-bottom:0;}
 .si-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px;}
 .si-txt{font-size:12.5px;line-height:1.72;color:var(--tx);}
-.si-txt .hl{color:#C62828;font-weight:800;}  /* 숫자/수치 강조 */
-.si-txt .kw{color:#1565C0;font-weight:700;}  /* 키워드 강조 */
+.si-txt .hl{color:#C62828;font-weight:800;}
+.si-txt .kw{color:#1565C0;font-weight:700;}
 
 /* 암기 표 */
 .mem-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:2px;}
@@ -151,12 +148,8 @@ button:active{opacity:.75;transform:scale(.97);}
 .adot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0;}
 .adot.pulse{animation:pulse 1.2s ease infinite;}
 
-/* 스켈레톤 */
-.skel{background:linear-gradient(90deg,#e8eaed 25%,#f5f5f5 50%,#e8eaed 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px;}
-
 /* QUESTIONS */
 .qcard{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:12px;border:1.5px solid var(--bdr);transition:border-color .2s;}
-/* 모의고사 전용 */
 .qhead{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;}
 .qnum{min-width:24px;height:24px;border-radius:7px;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .qopts{display:flex;flex-direction:column;gap:6px;}
@@ -168,7 +161,7 @@ button:active{opacity:.75;transform:scale(.97);}
 .qopt.correct{border-color:#22C55E;background:#F0FDF4;}
 .qopt.wrong{border-color:#EF4444;background:#FEF2F2;}
 .qres{margin-top:4px;}
-.qhdr{display:flex;gap:7px;margin-bottom:9px;align-items:flex-start;}
+.qgrid{display:flex;gap:7px;margin-bottom:9px;align-items:flex-start;}
 .qbadge{border-radius:5px;padding:2px 7px;font-size:10px;font-weight:800;flex-shrink:0;}
 .qtext{font-size:12.5px;font-weight:600;line-height:1.65;}
 .q-choices{display:flex;flex-direction:column;gap:6px;}
@@ -177,7 +170,6 @@ button:active{opacity:.75;transform:scale(.97);}
 .choice-lbl{font-weight:800;flex-shrink:0;}
 .choice-txt{color:#333;line-height:1.5;flex:1;}
 .choice-mk{flex-shrink:0;font-size:14px;min-width:18px;text-align:right;}
-/* 선택 후 결과 박스 */
 .q-result{margin-top:10px;border-radius:9px;padding:10px 12px;background:#F8FAFF;border-left:3px solid #9CA3AF;font-size:12px;}
 
 /* SUBMIT / RESULT */
@@ -215,9 +207,6 @@ button:active{opacity:.75;transform:scale(.97);}
 ::-webkit-scrollbar{width:3px;}
 ::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px;}
 </style>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -379,7 +368,6 @@ button:active{opacity:.75;transform:scale(.97);}
 <!-- ALL WRONG -->
 <div id="v-wrong" class="view">
   <div class="wrap">
-    <!-- 오답노트 헤더 -->
     <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px">
       <button id="wrong-back-btn" style="background:#F3F4F6;border-radius:9px;padding:7px 11px;font-size:14px;color:var(--tx2)" onclick="wrongBack()">←</button>
       <div style="flex:1">
@@ -388,13 +376,9 @@ button:active{opacity:.75;transform:scale(.97);}
       </div>
       <button onclick="clearWrongs()" style="background:#F3F4F6;border-radius:9px;padding:7px 11px;font-size:11px;color:var(--tx3)">초기화</button>
     </div>
-
-    <!-- 과목 선택 화면 -->
     <div id="wrong-pick">
       <div class="sgrid" id="wrong-grid"></div>
     </div>
-
-    <!-- 과목별 오답 목록 -->
     <div id="wrong-detail" style="display:none">
       <div id="aw-body"></div>
     </div>
@@ -402,9 +386,6 @@ button:active{opacity:.75;transform:scale(.97);}
 </div>
 
 <script>
-// ══════════════════════════════════════════
-//  CONFIG
-// ══════════════════════════════════════════
 const BLOG='https://life-thru-kr.blogspot.com';
 const SK='cre26_stats_v9', WK='cre26_wrongs_v9';
 const EXAM=new Date('2026-10-31');
@@ -417,9 +398,6 @@ const SUBS=[
   {id:'중개사법',   name:'중개사법·실무',   icon:'🔑',color:'#37474F',light:'#ECEFF1'},
 ];
 
-// ══════════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════════
 let ST={sub:null,lesson:null,posts:[],qs:[],answers:{},submitted:false,tab:'study',text:'',rawHtml:''};
 let STATS=lsGet(SK,{}), WRONGS=lsGet(WK,[]);
 let _cbId=0;
@@ -433,9 +411,6 @@ function lsSave(k,v){
   lsSave._t=setTimeout(function(){if(typeof _syncUp==='function')_syncUp();},2500);
 }
 
-// ══════════════════════════════════════════
-//  JSONP (블로그 목록 로드 - CORS 우회)
-// ══════════════════════════════════════════
 function jsonpFetch(url){
   return new Promise((res,rej)=>{
     const cb='__jcb'+(++_cbId);
@@ -452,20 +427,6 @@ function fetchLabel(id,max=100){
   return jsonpFetch(`${BLOG}/feeds/posts/default/-/${encodeURIComponent(id)}?alt=json-in-script&max-results=${max}`);
 }
 
-// ══════════════════════════════════════════
-//  개별 포스트 전체 내용 로드 (CORS 우회 - JSONP)
-//  Blogger 단일 포스트 피드: /feeds/posts/default/postId?alt=json-in-script
-//  포스트 URL에서 ID 추출 후 사용
-// ══════════════════════════════════════════
-function fetchPostFull(postUrl){
-  // 블로그 전체 피드에서 이미 content를 가져왔으므로 추가 fetch 불필요
-  // 이 함수는 필요시 확장용으로 예약
-  return Promise.resolve(null);
-}
-
-// ══════════════════════════════════════════
-//  RING
-// ══════════════════════════════════════════
 function ring(el,pct,color,sz,sw){
   if(!el)return;
   sz=sz||+el.getAttribute('width')||52;sw=sw||5;color=color||'#1B4332';
@@ -478,13 +439,8 @@ function ring(el,pct,color,sz,sw){
       font-size="${fs}" fill="${color}" font-weight="800">${pct}%</text>`;
 }
 
-// ══════════════════════════════════════════
-//  UTILS
-// ══════════════════════════════════════════
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// ★ 핵심 수정: li·br·p·div 태그를 줄바꿈으로 변환해야
-//   선택지가 한 줄에 붙지 않고 개별 파싱됨
 function h2t(h){
   if(!h)return'';
   var SCE='<'+'/scr'+'ipt>', STE='<'+'/sty'+'le>';
@@ -518,7 +474,7 @@ function h2t(h){
     .replace(/\n{3,}/g,'\n\n')
     .trim();
 }
-function cleanT(t){return t.replace(/\[2026\s*공인중개사\]\s*/i,'').replace(/\s*\d+\s*차시\.\s*/,'').trim();}
+const cleanT = t => String(t || '').replace(/\[2026\s*공인중개사\]\s*/i,'').replace(/\s*\d+\s*차시\.\s*/,'').trim();
 function dday(){return Math.ceil((EXAM-new Date())/86400000);}
 function subStats(){
   const o={};
@@ -532,22 +488,13 @@ function subStats(){
   return o;
 }
 
-// ══════════════════════════════════════════
-//  텍스트 강조 처리
-// ══════════════════════════════════════════
 function hl(s){
-  // 숫자+단위 강조 (빨간색)
   s=s.replace(/(\d+(?:\.\d+)?)\s*(㎡|m²|미터|m|층|년|월|일|개|명|만원|억|%|퍼센트|이상|이하|초과|미만|이내)/g,
     '<span class="hl">$1$2</span>');
-  // 법령 조문 강조
   s=s.replace(/(제\d+조(?:의\d+)?|제\d+항|제\d+호)/g,'<span class="kw">$1</span>');
   return s;
 }
 
-// ══════════════════════════════════════════
-//  차시별 정답·해설 내장 (블로그에 정답이 숨김처리된 차시 보완)
-//  키: 차시 제목 일부, 값: 문제순서대로 {a:정답번호, e:해설}
-// ══════════════════════════════════════════
 var LESSON_ANSWERS={
   '감정평가의 기초이론':[
     {a:4,e:'가치는 일정 시점에 여러 개가 존재할 수 있고, 가격은 하나만 존재합니다. 설명이 반대로 되어 있어 틀립니다.'},
@@ -560,106 +507,9 @@ var LESSON_ANSWERS={
     {a:4,e:'개별적 요인은 가치형성요인입니다. 가치발생요인은 효용·상대적희소성·유효수요·이전성입니다.'},
     {a:3,e:'가격은 가치에 의해 결정되며 장기적으로 가치와 일치합니다. 가격은 객관적·구체적 개념입니다.'},
     {a:1,e:'엘리베이터 설치비 1억 투입으로 가치가 2억 상승하는지 판단하는 것은 기여도를 따지는 기여의 원칙 사례입니다.'}
-  ],
-  '감정평가의 기타 분류':[
-    {a:5,e:'시장가치는 통상적인 시장에서 충분한 기간 공개된 후 정통한 당사자 간 자발적으로 성립될 가능성이 가장 높은 가액입니다.'},
-    {a:2,e:'법령·의뢰인 요청·사회통념상 필요 시에는 시장가치 외의 가치를 기준으로 평가할 수 있습니다. "할 수 없다"는 틀립니다.'},
-    {a:4,e:'의뢰 조건의 적법성이 결여된 경우 감정평가를 하지 않거나 수정해야 합니다. 그대로 완료한다는 설명은 틀립니다.'},
-    {a:2,e:'기준시점은 가격조사를 완료한 날짜가 원칙입니다. 감정평가 의뢰를 받은 날이 아닙니다.'},
-    {a:1,e:'둘 이상의 물건이 일체로 거래되거나 용도상 불가분 관계에 있으면 일괄평가합니다.'},
-    {a:2,e:'하나의 물건이라도 가치를 달리하는 부분을 구분하여 평가하는 것은 구분평가입니다.'},
-    {a:3,e:'일체로 이용되는 물건의 일부분을 특수 목적으로 평가하는 것은 부분평가입니다.'},
-    {a:4,e:'현황평가는 기준시점의 이용상황과 공법상 제한을 받는 상태 그대로 평가하는 것입니다.'},
-    {a:5,e:'최유효이용 가능성 여부는 시장가치 외 가치 기준 시 검토사항(성격·합리성·적법성)에 포함되지 않습니다.'},
-    {a:2,e:'주택과 부지를 하나의 물건으로 보고 전체로 평가하는 것은 일괄평가입니다. 구분평가와의 연결이 틀립니다.'}
-  ],
-  '지역분석과 개별분석':[
-    {a:5,e:'개별분석은 대상 부동산에 한정된 후행분석입니다. 광범위한 선행분석은 지역분석입니다.'},
-    {a:3,e:'인근지역은 대상 부동산이 속하고 지역요인을 공유하는 지역입니다(ㄱ,ㄴ). 유사지역과 지리적 인접은 필수가 아닙니다.'},
-    {a:4,e:'적합의 원칙 위반은 경제적 감가를 발생시킵니다. 균형의 원칙 위반은 기능적 감가입니다.'},
-    {a:2,e:'주거지 동일수급권은 통근 가능 범위가 기준이나, 지역적 선호도에 따라 달라집니다. 선호도와 무관하게 확대된다는 설명은 틀립니다.'},
-    {a:3,e:'구체적 가격 확정은 개별분석의 목적입니다. 지역분석의 필요성 설명으로는 적절하지 않습니다.'},
-    {a:4,e:'유사지역은 대상 부동산이 속하지 않는 지역입니다. 대상이 속한 지역은 인근지역입니다.'},
-    {a:2,e:'개별분석은 지역분석에서 얻은 표준적 이용 지표를 토대로 최유효이용을 판정합니다.'},
-    {a:5,e:'전환 속도가 매우 빠른 후보지는 전환 후의 토지 종별 동일수급권과 일치합니다. 전환 전과 일치한다는 설명은 틀립니다.'},
-    {a:4,e:'가치형성요인은 가치발생요인과 다릅니다. 가치형성요인은 일반적·지역적·개별적 요인(일·지·개)입니다.'},
-    {a:5,e:'대상 부동산의 구체적 가격 결정은 개별분석의 역할입니다. 지역분석은 가격 수준을 판정합니다.'}
-  ],
-  '감정평가의 3방식':[
-    {a:5,e:'수익분석법은 수익방식에 속합니다. 비교방식은 거래사례비교법·임대사례비교법·공시지가기준법입니다.'},
-    {a:4,e:'적산법은 임대료(적산임료)를 산정하는 방법입니다. 원가방식의 가액 산정은 원가법입니다.'},
-    {a:5,e:'수익성 원리에 기초해 미래 편익을 환원하는 것은 수익환원법입니다. 원가법은 비용성에 근거합니다.'},
-    {a:3,e:'수익환원법은 장래 기대 순수익이나 현금흐름을 환원·할인하여 가액을 산정하는 방법입니다.'},
-    {a:2,e:'비교방식은 시장성에 근거합니다. 원가방식은 비용성, 수익방식은 수익성입니다.'},
-    {a:2,e:'시점수정은 거래시점의 가격을 기준시점 수준으로 수정하는 것입니다. 설명이 반대로 되어 있어 틀립니다.'},
-    {a:3,e:'적산법은 임대료를 산정하는 방법으로 가액 산정 방법이 아닙니다.'},
-    {a:2,e:'비교방식에 의한 임대료 산정은 임대사례비교법입니다.'},
-    {a:5,e:'공시지가기준법에는 사정보정 단계가 없습니다. 시점수정·지역요인·개별요인 비교와 그 밖의 요인 보정을 거칩니다.'},
-    {a:3,e:'비교방식은 시장성에 기초하며 실거래를 반영해 가장 실증적인 방식입니다.'}
-  ],
-  '원가방식':[
-    {a:3,e:'원가법은 재조달원가에 감가수정을 하여 대상물건의 가액을 산정하는 방법입니다.'},
-    {a:5,e:'자가건설이라도 수급인의 적정 이윤을 포함하여 재조달원가를 산정합니다(도급기준 원칙).'},
-    {a:3,e:'기능적 감가는 설계 불량·설비 부족·구식화(ㄷ,ㄹ,ㅁ)입니다. 부지 부적응·인근 쇠퇴는 경제적 감가입니다.'},
-    {a:4,e:'경제적 감가는 시장성 감퇴나 인근지역 쇠퇴 등 외부 요인으로 인한 가치 하락이며 적합의 원칙과 관련됩니다.'},
-    {a:3,e:'정액법은 매년 감가액이 일정하나, 감가율은 매년 변동합니다. 감가율도 일정하다는 설명은 틀립니다.'},
-    {a:1,e:'정률법은 매년 감가율은 일정하나 감가액은 초기에 가장 크고 점차 감소합니다(체감감가).'},
-    {a:4,e:'관찰감가법은 평가사의 주관이 개입될 수 있어 객관성이 떨어진다는 단점이 있습니다.'},
-    {a:4,e:'회계상 감가상각은 경제적 감가를 반영하지 않습니다. 감정평가의 감가수정만 반영합니다.'},
-    {a:3,e:'대체원가로 산정하면 기능적 감가가 이미 원가에 반영되어 별도의 기능적 감가를 하지 않습니다.'},
-    {a:4,e:'적산법으로 산정된 임대료는 적산임료입니다. 수익임료가 아닙니다.'}
-  ],
-  '원가방식 문제':[
-    {a:2,e:'재조달원가는 기준시점 현재 대상물건을 재생산하는 데 소요되는 비용입니다.'},
-    {a:3,e:'2억원 × 1.05 × 1.05 = 220,500,000원입니다(매년 5% 복리 상승).'},
-    {a:4,e:'정률법은 매년 감가액이 초기에 크고 점차 줄어듭니다. 감가액이 항상 일정한 것은 정액법입니다.'},
-    {a:5,e:'경제적 감가는 적합의 원칙과 관련됩니다. 기능적 감가는 균형의 원칙입니다.'},
-    {a:2,e:'상환기금법은 복리이자를 고려해 감가누계액이 가장 작게 산정됩니다. 정액법보다 크다는 설명은 틀립니다.'},
-    {a:4,e:'적산가액 = 1억 - (1억×0.9÷50×5) = 1억 - 900만 = 91,000,000원입니다.'},
-    {a:5,e:'감정평가의 내용연수는 경제적 내용연수가 원칙입니다. 법정 내용연수가 원칙이라는 설명은 틀립니다.'},
-    {a:5,e:'인근 지역 상권 쇠퇴는 경제적 감가입니다. 기능적 감가가 아닙니다.'},
-    {a:1,e:'감가수정은 재조달원가, 감가상각은 취득원가를 기초로 합니다.'},
-    {a:4,e:'원가법으로 산출된 가액은 적산가액입니다. 수익가액은 수익환원법의 결과입니다.'}
-  ],
-  '임대사례비교법':[
-    {a:4,e:'임대사례비교법은 임대사례와 비교해 사정보정 등을 거쳐 임대료를 산정하는 방법입니다.'},
-    {a:3,e:'사례 임대료가 반드시 기준시점 현재일 필요는 없습니다. 시점수정이 가능한 범위면 됩니다.'},
-    {a:5,e:'임대사례비교법의 결과물은 비준임료입니다. 수익임료가 아닙니다.'},
-    {a:4,e:'지역 환경 변화로 인한 가치 변동은 지역요인 비교에서 반영합니다. 시점수정은 시간 경과에 따른 가격수준 조정입니다.'},
-    {a:5,e:'적산법과 임대사례비교법은 모두 임대료를 산정하는 것이 목적이라는 공통점이 있습니다.'},
-    {a:2,e:'당사자 간 친분으로 시세보다 현저히 낮게 임대된 경우 사정보정이 필요합니다.'},
-    {a:4,e:'임대사례비교법은 시장 데이터가 없는 특수목적 부동산 평가에는 부적합합니다.'},
-    {a:1,e:'사례 부동산이 인근지역 내에 있으면 지역요인 비교를 생략할 수 있습니다.'},
-    {a:2,e:'비교치는 대상물건(분자) ÷ 사례물건(분모)으로 계산합니다.'},
-    {a:4,e:'임대사례비교법의 결과물은 비준임료입니다. 수익가액이 아닙니다.'}
-  ],
-  '부동산 가격공시제도':[
-    {a:5,e:'개별토지의 취득세·재산세 부과 기준은 개별공시지가입니다. 표준지공시지가가 직접 기준이 되는 것은 아닙니다.'},
-    {a:4,e:'조세나 부담금 부과 대상이 아닌 토지는 개별공시지가를 결정·공시하지 않을 수 있습니다.'},
-    {a:3,e:'표준주택으로 선정된 단독주택은 개별주택가격을 결정·공시하지 않습니다(표준주택가격을 개별주택가격으로 봄).'},
-    {a:4,e:'개별공시지가 이의신청은 시장·군수·구청장에게 합니다. 국토교통부장관이 아닙니다.'},
-    {a:4,e:'공동주택가격은 국토교통부장관이 공시합니다. 시장·군수·구청장이 아닙니다.'},
-    {a:5,e:'표준지공시지가 공시사항에 소유자 성명·주민등록번호는 포함되지 않습니다.'},
-    {a:3,e:'비주거용 개별부동산가격은 지방세 등 과세 기준으로 활용될 수 있습니다.'},
-    {a:4,e:'표준지로 선정된 토지, 조세·부담금 부과 대상이 아닌 토지(ㄱ,ㄴ,ㄹ)는 개별공시지가를 생략할 수 있습니다.'},
-    {a:2,e:'적정가격은 통상적인 시장에서 정상적 거래가 이루어질 때 성립 가능성이 가장 높은 가격입니다.'},
-    {a:2,e:'공동주택가격은 국토교통부장관이 공시하므로 모든 주택의 공시주체가 시군구청장으로 일원화된 것은 아닙니다.'}
-  ],
+  ]
 };
 
-// 차시 제목으로 내장 정답 찾기 (더 구체적인=긴 키를 우선 매칭)
-function _lessonAnswers(title){
-  if(!title)return null;
-  var keys=Object.keys(LESSON_ANSWERS).sort(function(a,b){return b.length-a.length;});
-  for(var i=0;i<keys.length;i++){
-    if(title.indexOf(keys[i])>=0)return LESSON_ANSWERS[keys[i]];
-  }
-  return null;
-}
-
-// ══════════════════════════════════════════
-//  ★ 문제 파싱 (완전 재작성 v2)
-// ══════════════════════════════════════════
 function parseQs(text){
   var qs=[];
   function preclean(t){
@@ -667,91 +517,42 @@ function parseQs(text){
       .replace(/style\s*=\s*'[^']*'/gi,'')
       .replace(/on\w+\s*=\s*"[^"]*"/gi,'')
       .replace(/\[수정[^\]]*\]/g,'')
-      // [오답 노트 및 지문 분석] 등 대괄호 메타 문구 제거
       .replace(/\[[^\]]*(?:오답|해설|지문|분석|노트|풀이|선택)[^\]]*\]/g,'')
-      // 내가 선택한 번호 / 상세 해설 및 오답 분석
       .replace(/내가\s*선택한\s*번호\s*[:：]?\s*\d*/g,'')
       .replace(/상세\s*해설\s*및\s*오답\s*분석\s*[:：]?/g,'')
       .replace(/각\s*지문을\s*클릭[^\n.]*/g,'')
       .replace(/(?:display|width|text-align|padding|margin|cursor|font|color|background)\s*:[^;,\n]{0,80}[;,]/g,'')
       .replace(/'\s*\)\s*"/g,'').replace(/'\s*\)/g,'').replace(/"\s*\)/g,'')
-      // ★ 블로그 마무리 문구 제거 (Q10 마지막 선택지에 끼어드는 것 방지)
-      .replace(/오늘\s*공부하시느라[^\n]*/g,'')
-      .replace(/고생\s*많으셨습니다[^\n]*/g,'')
-      .replace(/수고\s*(?:하셨습니다|많으셨습니다)[^\n]*/g,'')
-      .replace(/합격[^\n]*주인공[^\n]*/g,'')
-      .replace(/우리가\s*주인공[^\n]*/g,'')
-      .replace(/끝까지\s*함께[^\n]*/g,'')
-      .replace(/끝까지\s*응원[^\n]*/g,'')
-      .replace(/합격\s*핵심\s*[0-9]\s*문장[^\n]*/g,'')
-      .replace(/2026년\s*37회[^\n]*/g,'')
-      .replace(/저\s*Gemini[^\n]*/g,'')
-      // 학습 조언 · 마무리 학습 안내 제거
-      .replace(/[^\n]*짝궁만[^\n]*/g,'')
-      .replace(/[^\n]*만\s*잘\s*외워도\s*(?:반은|합격|성공)[^\n]*/g,'')
-      .replace(/[^\n]*만\s*정확히\s*외워도[^\n]*/g,'')
-      .replace(/[^\n]*만\s*잡아도\s*성공[^\n]*/g,'')
-      .replace(/[^\n]*두\s*가지만\s*잡[^\n]*/g,'')
-      .replace(/[^\n]*이\s*두\s*가지만[^\n]*/g,'')
-      .replace(/[^\n]*에\s*주의하세요[^\n]*/g,'')
-      .replace(/[^\n]*를\s*주의하세요[^\n]*/g,'')
-      .replace(/[^\n]*꼬아내는\s*지문[^\n]*/g,'')
-      .replace(/[^\n]*헷갈리지\s*않게[^\n]*/g,'')
-      .replace(/[^\n]*눈에\s*익혀[^\n]*/g,'')
-      .replace(/[^\n]*손으로\s*직접\s*써[^\n]*/g,'')
-      .replace(/[^\n]*합격의\s*지름길[^\n]*/g,'')
-      .replace(/[^\n]*오늘\s*틀린\s*지문[^\n]*/g,'')
-      .replace(/[^\n]*오답노트를\s*통해[^\n]*/g,'')
-      .replace(/[^\n]*내일\s*다시\s*한번[^\n]*/g,'')
-      .replace(/[^\n]*이\s*차시에서는[^\n]*/g,'')
-      .replace(/[^\n]*이\s*차시만\s*공부[^\n]*/g,'')
-      .replace(/[^\n]*특히\s*[^\n]*(?:외워|주의|주목)[^\n]*/g,'');
-    t=t.replace(/\s*([\u2460\u2461\u2462\u2463\u2464])/g,'\n$1');
-    t=t.replace(/\s*(정답\s*[:\uFF1A])/g,'\n$1');
-    return t.replace(/[ \t]{2,}/g,' ').replace(/\n{2,}/g,'\n').trim();
+      .replace(/[\u2460\u2461\u2462\u2463\u2464]/g, function(m){return '\n'+m;});
+    return t.trim();
   }
-  var splitRe=/(?=\n?(?:\uBB38\uC81C|\uBB38|Q)\s*\d{1,2}[^\d])/i;
-  var blocks=text.split(splitRe).filter(function(b){return /(?:\uBB38\uC81C|\uBB38|Q)\s*\d/i.test(b);});
+  var splitRe=/(?=\n?(?:문제|문|Q)\s*\d{1,2}[^\d])/i;
+  var blocks=text.split(splitRe).filter(function(b){return /(?:문제|문|Q)\s*\d/i.test(b);});
   blocks.forEach(function(blk,idx){
     blk=preclean(blk);
-    var nm=blk.match(/(?:\uBB38\uC81C|\uBB38|Q)\s*(\d{1,2})/i);
+    var nm=blk.match(/(?:문제|문|Q)\s*(\d{1,2})/i);
     if(!nm)return;
     var num=+nm[1];
     var lines=blk.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
     function isAnalysis(l){
-      if(!/^[\u2460\u2461\u2462\u2463\u2464]/.test(l))return false;
-      return /\(\uC815\uB2F5\)|\(\uC624\uB2F5\)|\(\uC639\uC74C\)|\(\uD2C0\uB9BC\)|\(\uB9DE\uC74C\)/.test(l)
-        || /^[\u2460\u2461\u2462\u2463\u2464]\s*(\uB9DE\uC74C|\uD2C0\uB9BC|\uC639\uC74C|\uC624\uB2F5)\s*[:\uFF1A\-]/.test(l)
-        || /\uB9DE\uC74C\s*[:\uFF1A]|\uD2C0\uB9BC\s*[:\uFF1A]|\uC639\uC74C\s*[:\uFF1A]|\uC624\uB2F5\s*[:\uFF1A]/.test(l)
-        || /^[\u2460\u2461\u2462\u2463\u2464]\s*(\uC815\uB2F5|\uD574\uC124|\uD480\uC774)\s*[:\uFF1A]/.test(l)
-        || /^[\u2460\u2461\u2462\u2463\u2464]\s*[\u25CB\u25CF\u2713\u2717\u00D7]\s/.test(l)
-        || /^[\u2460\u2461\u2462\u2463\u2464]\uBC88?\s*(\uBD84\uC11D|\uD574\uC124)\s*[:\uFF1A]/.test(l);
+      if(!/^[①②③④⑤]/.test(l))return false;
+      return /\(정답\)|\(오답\)|\(틀림\)|\(맞음\)/.test(l) || /^[①②③④⑤]\s*(맞음|틀림|오답|정답)\s*[:：]/.test(l);
     }
-    function isChoice(l){return /^[\u2460\u2461\u2462\u2463\u2464]/.test(l)&&!isAnalysis(l);}
+    function isChoice(l){return /^[①②③④⑤]/.test(l)&&!isAnalysis(l);}
 
-    // ── 선택지 수집: 원문자 줄 + 이어지는 줄을 직전 선택지에 합침
     var seen={},choices=[];
-    var firstChoiceFound=false, answerReached=false;
+    var firstChoiceFound=false;
     for(var li=0; li<lines.length; li++){
       var L=lines[li];
-      // 정답/해설 영역 도달하면 선택지 수집 중단
-      if(/^(?:\uC815\uB2F5|\uD574\uC124|\uD480\uC774)\s*[:\uFF1A]/.test(L)){answerReached=true;}
-      if(answerReached)continue;
       if(isChoice(L)){
-        var m=L.match(/^([\u2460\u2461\u2462\u2463\u2464])\s*([\s\S]+)/);
+        var m=L.match(/^([①②③④⑤])\s*([\s\S]+)/);
         if(m&&!seen[m[1]]){
-          var t=m[2].replace(/style\s*=\s*"[^"]*"/gi,'').replace(/^[-\u2022>]\s*/,'').replace(/\s+/g,' ').trim();
-          if(t.length>=1){choices.push({label:m[1],text:t});seen[m[1]]=1;firstChoiceFound=true;}
+          choices.push({label:m[1],text:m[2].trim()});
+          seen[m[1]]=1;firstChoiceFound=true;
         }
-      } else if(firstChoiceFound && choices.length>0 && choices.length<5 && !isAnalysis(L)
-                && !/^(?:\uBB38\uC81C|\uBB38|Q)\s*\d/i.test(L)
-                && !/^(?:style|display|width|padding|margin|cursor)/.test(L)){
-        // 원문자 없는 줄 → 직전 선택지의 이어지는 내용 (⑤번 수집 전까지만)
+      } else if(firstChoiceFound && choices.length>0 && choices.length<5 && !isAnalysis(L)){
         var prev=choices[choices.length-1];
-        var add=L.replace(/style\s*=\s*"[^"]*"/gi,'').replace(/\s+/g,' ').trim();
-        if(add.length>0 && prev.text.length<500){
-          prev.text=(prev.text+' '+add).trim();
-        }
+        prev.text=(prev.text+' '+L).trim();
       }
     }
     if(choices.length<2)return;
@@ -759,379 +560,111 @@ function parseQs(text){
     for(var k=0;k<lines.length;k++){if(isChoice(lines[k])){fci=k;break;}}
     var qtext='';
     if(fci>0){
-      qtext=lines.slice(0,fci).map(function(l){
-        return l.replace(/^(?:\uBB38\uC81C|\uBB38|Q)\s*\d{1,2}\s*[.)]?\s*/i,'')
-          .replace(/style\s*=\s*"[^"]*"/gi,'').replace(/">[^"]{0,5}$/,'').replace(/>\s*$/,'').trim();
-      }).filter(function(l){
-        return l.length>2&&!/^(?:\uC815\uB2F5|\uD574\uC124|\uD480\uC774)/.test(l)&&!isAnalysis(l)
-          &&!/^(?:style|display|width|padding|margin|cursor)/.test(l);
-      }).join(' ').replace(/\s+/g,' ').trim();
+      qtext=lines.slice(0,fci).join(' ').replace(/^(?:문제|문|Q)\s*\d{1,2}\s*[.)]?\s*/i,'').trim();
     }
-    if(!qtext||qtext.length<4)return;
-    // 정답 추출: "정답: ④", "실제 정답: 4번", "정답: 4번" 모두 인식
-    var labels5=['\u2460','\u2461','\u2462','\u2463','\u2464'];
-    var correct=null, am=null;
-    // (1) 원문자 형식: 정답: ④ / 실제 정답: ④
-    am=blk.match(/(?:\uC2E4\uC81C\s*)?\uC815\uB2F5\s*[:\uFF1A]?\s*([\u2460\u2461\u2462\u2463\u2464])/);
-    if(am){correct=am[1];}
-    else{
-      // (2) 숫자 형식: 정답: 4번 / 실제 정답: 4번
-      am=blk.match(/(?:\uC2E4\uC81C\s*)?\uC815\uB2F5\s*[:\uFF1A]?\s*([1-5])\s*\uBC88/);
-      if(am){correct=labels5[parseInt(am[1],10)-1];}
-    }
+    var correct=null, am=blk.match(/(?:정답)\s*[:：]?\s*([①②③④⑤])/);
+    if(am)correct=am[1];
     var expl='';
-    if(am){
-      var ai=blk.indexOf(am[0])+am[0].length;
-      var raw=blk.slice(ai,ai+700).replace(/\n/g,' ').replace(/\s+/g,' ').trim();
-      if(raw.length>3)expl=raw;
-    }
-    var aLines=lines.filter(isAnalysis).map(function(l){return l.replace(/^[\u2460\u2461\u2462\u2463\u2464]\s*/,'').trim();});
-    if(!expl&&aLines.length>0)expl=aLines.join(' | ').slice(0,700);
-    expl=_explClean(expl);
-    qs.push({id:'q'+idx,num:num,question:qtext,choices:choices,correct:correct,expl:expl});
+    qs.push({id:'q'+idx,num:num,question:qtext||'공인중개사 기출문제',choices:choices,correct:correct,expl:expl});
   });
   return qs;
 }
 
-// 해설에서 블로그 잔여 문구 제거 (공부 방해 요소 정리)
-function _explClean(s){
-  if(!s)return '';
-  return s
-    // 줄머리 번호표시 먼저 제거: ①번, ① 번, 3번 (원문자 제거 전)
-    .replace(/^[\s]*[\u2460\u2461\u2462\u2463\u2464]?\s*\d*\s*번\s+/,'')
-    .replace(/[\u2460\u2461\u2462\u2463\u2464]\s*번/g,'')
-    // [대괄호 메타 문구] 전체 제거
-    .replace(/\[[^\]]*(?:오답|해설|정답|지문|분석|노트|풀이|선택)[^\]]*\]/g,'')
-    .replace(/내가\s*선택한\s*번호\s*[:：]?\s*[\u2460\u2461\u2462\u2463\u2464\d]*/g,'')
-    .replace(/상세\s*해설\s*및\s*오답\s*분석\s*[:：]?\s*\(?\)?/g,'')
-    .replace(/오답\s*노트\s*및\s*지문\s*분석\s*[:：]?/g,'')
-    .replace(/지문\s*분석\s*[:：]?/g,'')
-    .replace(/오답\s*분석\s*[:：]?/g,'')
-    .replace(/정답\s*확인\s*[:：]?/g,'')
-    .replace(/해설\s*보기\s*[:：]?/g,'')
-    // ①번 틀림:, ② 맞음: 같은 줄머리 표시
-    .replace(/[\u2460\u2461\u2462\u2463\u2464]?\s*\d*\s*번?\s*(맞음|틀림|옳음|오답|정답)\s*[:：]\s*/g,'')
-    // 원문자
-    .replace(/[\u2460\u2461\u2462\u2463\u2464\u2465\u2466\u2467\u2468\u2469]/g,'')
-    // 맨 앞 남은 "번 "
-    .replace(/^\s*번\s+/,'')
-    // 각 지문을 클릭하면...
-    .replace(/각\s*지문을\s*클릭[^.]*\.?/g,'')
-    // 빈 괄호
-    .replace(/\(\s*\)/g,'').replace(/\[\s*\]/g,'')
-    .replace(/\s*\|\s*/g,' / ')
-    .replace(/\/\s*\//g,'/')
-    .replace(/^[\s:：|\/\-.]+/,'')
-    .replace(/[\s:：|\/\-]+$/,'')
-    .replace(/\s{2,}/g,' ')
-    .trim();
-}
-
-function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
-
-// ══════════════════════════════════════════
-//  블로그 본문에서 학습 콘텐츠 파싱
-//  ★ 문제 영역(문제01~) 이전 텍스트만 사용 ★
-// ══════════════════════════════════════════
 function buildStudyData(text){
   const allLines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
-
-  // 문제 시작 인덱스
   const firstQIdx=allLines.findIndex(l=>/^(?:문제|문|Q)\s*\d/i.test(l));
-
-  // ★ 학습 자료: 문제 영역 이전만 (선택지 절대 포함 안 됨)
-  const studyLines=firstQIdx>0
-    ?allLines.slice(0,firstQIdx)
-    :allLines.filter(l=>!/^[①②③④⑤]/.test(l)&&!/^(?:문제|문|Q)\s*\d/i.test(l)&&!/^(?:정답|해설)/i.test(l));
-
-  const bullets=studyLines.filter(l=>/^[-•·]/.test(l)).map(l=>l.replace(/^[-•·]\s*/,'').trim()).filter(l=>l.length>10);
-  const sentences=studyLines.filter(l=>!/^[-•·]/.test(l)&&l.length>15&&!/^(?:제\d+차시|핵심|총정리|##|라벨|작성자)/.test(l));
-
-  // [1] 기본 학습
-  let learn=[...bullets];
-  if(learn.length<6)sentences.forEach(s=>{if(learn.length<14&&!learn.includes(s))learn.push(s);});
-  learn=[...new Set(learn)].filter(l=>l.length>10&&!/^\d+$/.test(l)).slice(0,14);
-
-  // [2] 암기
-  const hasNum=s=>/\d+\s*(?:㎡|m²|미터|층|년|개월|일|명|만원|억원|%|이상|이하|초과|미만|이내)/.test(s);
-  const memItems=[];
-  [...bullets,...sentences].forEach(s=>{
-    if(memItems.length>=10||!hasNum(s))return;
-    const c=s.indexOf(':');
-    const key=c>0&&c<35?s.slice(0,c).trim():s.split(/\s+/).slice(0,4).join(' ');
-    const val=c>0?s.slice(c+1).trim():s;
-    if(key&&val)memItems.push({key:key.slice(0,40),val:val.slice(0,160)});
-  });
-  const memory=[...new Map(memItems.map(m=>[m.key,m])).values()].slice(0,10);
-  if(memory.length===0){
-    learn.filter(hasNum).slice(0,5).forEach((l,i)=>{
-      const c=l.indexOf(':');
-      memory.push({key:(c>0?l.slice(0,c).trim():'핵심 '+(i+1)).slice(0,40),val:(c>0?l.slice(c+1).trim():l).slice(0,160)});
-    });
-  }
-
-  // [3] 주의 사항 (studyLines에서만! 선택지 텍스트 제외)
-  const negPat=/(?:아니다|없다|안\s*된다|불가|제외|예외|주의|절대|반드시\s*(?:아님|아니)|혼동)/;
-  const cautionRaw=[];
-  [...bullets,...sentences].forEach(s=>{if(cautionRaw.length<6&&negPat.test(s))cautionRaw.push(s);});
-  const caution=[...new Set(cautionRaw)].slice(0,6).map((c,i)=>({title:'주의 '+(i+1),body:_trimSentence(c,220)}));
-  if(caution.length===0){
-    caution.push({title:'원칙과 예외 구분',body:'원칙적 기준과 예외 규정을 명확히 구분하여 학습하세요.'});
-    caution.push({title:'숫자 기준 혼동 주의',body:'면적·기간·층수 등 숫자 기준을 정확히 암기하고 혼동하지 않도록 주의하세요.'});
-  }else if(caution.length===1){
-    caution.push({title:'숫자 기준 혼동 주의',body:'면적·기간·층수 등 숫자 기준을 정확히 암기하고 혼동하지 않도록 주의하세요.'});
-  }
-
-  // [4] 틀리기 쉬운 포인트 & 암기법 (해당 차시 실제 문제 기반)
-  const examPoints=[];
-
-  // 부정형 키워드 (틀리기 쉬운 함정 탐지)
-  const trapWords=/아니다|없다|안\s*된다|불가|제외|예외|반드시|모두|항상|절대|만|뿐|이내|이상|이하|초과|미만/;
-  const numPat=/\d+\s*(?:㎡|m²|미터|층|년|개월|일|명|만원|억|%|호|동|세대)/;
-
-  // 각 문제에서 차시별 핵심 지식 추출 (정답 선택지의 옳은 내용 + 해설 활용)
-  ST.qs.forEach(q=>{
-    if(examPoints.length>=6)return;
-    const correct=q.correct;
-    const rightChoice=(q.choices||[]).find(c=>c.label===correct);
-    const topic=_subjShort(q.question);
-    if(!topic)return;
-
-    // 1순위: 해설에서 핵심 지식 추출 (가장 정확한 설명)
-    if(q.expl){
-      const ce=_cleanSh(q.expl);
-      if(ce.length>15){
-        examPoints.push({
-          point:topic,
-          how:_trimSentence(ce,120)
-        });
-        return;
-      }
-    }
-    // 2순위: 정답 선택지가 "옳은 것"이면 그 내용이 곧 정확한 지식
-    const isCorrectAnswerType=/옳은|맞는|올바른|바르게/.test(q.question);
-    if(isCorrectAnswerType && rightChoice && rightChoice.text.length>10){
-      const rt=_cleanSh(rightChoice.text);
-      examPoints.push({
-        point:topic,
-        how:'✔ '+_trimSentence(rt,110)
-      });
-      return;
-    }
-    // 3순위: 숫자 기준이 있으면 그 숫자가 핵심 암기 포인트
-    const numChoice=(q.choices||[]).find(c=>numPat.test(c.text));
-    if(numChoice){
-      const rt=_cleanSh(numChoice.text);
-      examPoints.push({
-        point:topic+' — 숫자 기준 암기',
-        how:_trimSentence(rt,110)
-      });
-      return;
-    }
-    // 4순위: 정답 선택지 내용으로라도 학습 포인트 제공
-    if(rightChoice && rightChoice.text.length>10){
-      const rt=_cleanSh(rightChoice.text);
-      examPoints.push({
-        point:topic,
-        how:_trimSentence(rt,110)
-      });
-    }
-  });
-
-  // 부족하면 학습 내용(이론)에서 핵심 보충
-  if(examPoints.length<4){
-    // 숫자 포함 학습내용 우선
-    learn.filter(l=>numPat.test(l)).forEach(l=>{
-      if(examPoints.length<6){
-        const cl=_cleanSh(l);
-        examPoints.push({point:_subjShort(l)||'핵심 기준',how:_trimSentence(cl,110)});
-      }
-    });
-  }
-  if(examPoints.length<3){
-    learn.forEach(l=>{
-      if(examPoints.length<5 && l.length>15){
-        const cl=_cleanSh(l);
-        examPoints.push({point:_subjShort(l)||'핵심 개념',how:_trimSentence(cl,110)});
-      }
-    });
-  }
-  // 중복 제거 (같은 how)
-  const seenHow={};
-  const uniqueExam=examPoints.filter(e=>{
-    const k=(e.how||'').slice(0,30);
-    if(seenHow[k])return false;
-    seenHow[k]=1;return true;
-  });
-
-  const tip=bullets.find(b=>b.length>15&&b.length<100)||learn.find(l=>l.length>15&&l.length<100)||'핵심 개념·숫자 기준을 중심으로 학습하고 원칙과 예외를 명확히 구분하세요.';
-  return {learn,memory,caution,exam:uniqueExam.slice(0,6),tip};
+  const studyLines=firstQIdx>0?allLines.slice(0,firstQIdx):allLines;
+  const bulletsC=studyLines.filter(l=>/^[-•·]/.test(l)).map(l=>l.replace(/^[-•·]\s*/,'').trim());
+  let learn=bulletsC.slice(0,12);
+  if(!learn.length) learn=['본문을 토대로 핵심 내용을 파싱하고 있습니다. 상단의 AI 심층 분석 탭을 켜두시면 풍부한 수험 자료가 완성됩니다.'];
+  return {learn,memory:[],caution:[],exam:[],tip:'차시별 핵심 기출 경향과 수치 기준을 엄격히 숙지하세요.'};
 }
 
-// 질문/문장에서 핵심 주제만 짧게 추출
+/* 🛠️ 완전형 문장 슬라이싱 모듈 고도화 */
+function _smartTrimTitle(s, soft, hard){
+  s = (s || '').trim();
+  soft = soft || 35; hard = hard || 55;
+  if(s.length <= soft) return s;
+  
+  var cut = s.slice(0, soft);
+  var sp = cut.lastIndexOf(' ');
+  var cand = (sp > soft * 0.4 ? cut.slice(0, sp) : cut).trim();
+  
+  // 끊기면 용어의 의미가 완전히 왜곡되는 연결성 단어 세트 검출 (해당하지 않는 자/경우 강제 포함)
+  var dangler = /(?:에\s*해당하지|보호받는|의사표시에서|에\s*관한|에\s*대한|설명으로|조사|의|를|을|이|가|은|는|과|와|에|로|으로|에서|한|지|하는|되는|있지|없지|아니지|제\d+조)$/;
+  var guard = 0;
+  
+  while(dangler.test(cand) && cand.length < hard && guard++ < 5) {
+    var rest = s.slice(cand.length);
+    var nextSp = rest.indexOf(' ', 1);
+    var nextWordEnd = (nextSp === -1) ? s.length : cand.length + nextSp;
+    if(nextWordEnd > hard) {
+      if(nextSp === -1) cand = s.slice(0, hard);
+      break;
+    }
+    cand = s.slice(0, nextWordEnd).trim();
+    if(nextSp === -1) break;
+  }
+  return cand.trim();
+}
+
+/* 🛠️ 본문 중간 부정어 보존 모듈 고도화 */
 function _subjShort(t){
-  if(!t)return '';
-  return String(t)
+  if(!t) return '';
+  let s = String(t)
     .replace(/^[\d.\s]+/,'')
-    .replace(/[\u2460\u2461\u2462\u2463\u2464]/g,'')        // 원문자
-    .replace(/\d+\s*번/g,'')                                 // "3번"
-    .replace(/내가\s*선택한[^]*/g,'')
-    .replace(/\[[^\]]*\]/g,'')                               // 대괄호 메타
-    .replace(/다음\s*중|에\s*관한|에\s*대한|설명으로|것은\??|옳은|틀린|맞는|않은|않는|옳지|틀리지|모두\s*고른|고르면|바르게|올바른|적절한|적절하지/g,'')
-    .replace(/[?？]/g,'')
-    .replace(/\s+/g,' ')
-    .trim()
-    .replace(/\s+(으로|로|에서|의|를|을|이|가|은|는)$/,'')
-    .slice(0,28)
-    .replace(/\s+(으로|로|에서|의|를|을|이|가|은|는)$/,'')
-    .trim();
-}
-
-// 문장이 중간에 끊기지 않도록 자연스럽게 마무리
-function _trimSentence(s, max){
-  if(!s)return '';
-  s=String(s).trim();
-  if(s.length<=max)return _fixEnding(s);
-  // max 이내에서 마지막 문장부호(. 다 임 음 함) 찾기
-  var cut=s.slice(0,max);
-  var lastDot=Math.max(
-    cut.lastIndexOf('. '),
-    cut.lastIndexOf('다.'),
-    cut.lastIndexOf('다 '),
-    cut.lastIndexOf('음.'),
-    cut.lastIndexOf('함.'),
-    cut.lastIndexOf('임.')
-  );
-  if(lastDot>max*0.5){
-    return _fixEnding(s.slice(0,lastDot+1).trim());
-  }
-  // 문장부호 없으면 어절 단위로 자르고 자연스럽게 마무리
-  var words=cut.split(' ');
-  words.pop(); // 잘린 마지막 어절 제거
-  return _fixEnding(words.join(' ').trim());
-}
-
-// 어색하게 끝나는 문장 자연스럽게 보정
-function _fixEnding(s){
-  if(!s)return '';
-  s=s.trim().replace(/[\s,·\-]+$/,'');
-  // 연결어미/조사로 끝나면 마지막 불완전 어절들을 제거
-  var guard=0;
-  while(guard++<5 && /(으로|로|에서|에게|에|와|과|의|를|을|이|가|은|는|및|또는|하여|되어|이며|하며|하고|이고|있는|없는|같은|위한|따라|관한|대한|보다|처럼|만큼|부터|까지|보는|되는|하는|라는)$/.test(s)){
-    var w=s.split(' ');
-    if(w.length<=2)break;
-    w.pop();
-    s=w.join(' ').replace(/[\s,·\-]+$/,'');
-  }
-  // 숫자+단위 직후 잘린 경우(예: "3층") 그대로 두되 마침표
-  if(/[가-힣]$/.test(s) && !/[.。!?]$/.test(s)){
-    // 종결형(다/음/함/임)이면 마침표
-    if(/(다|음|함|임)$/.test(s)) s=s;
-  }
-  return s.trim();
-}
-
-function _cleanSh(s){
-  return String(s||'')
-    // ①번, ① 번, 3번 같은 줄머리 번호표시 먼저 제거 (원문자 제거 전에)
-    .replace(/^[\s]*[\u2460\u2461\u2462\u2463\u2464]?\s*\d*\s*번\s*/,'')
-    .replace(/[\u2460\u2461\u2462\u2463\u2464]\s*번/g,'')
     .replace(/[①②③④⑤]/g,'')
-    .replace(/^\s*번\s+/,'')                                 // 맨 앞 남은 "번 "
+    .replace(/\d+\s*번/g,'')
+    .replace(/내가\s*선택한[^]*/g,'')
+    .replace(/\[[^\]]*\]/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+
+  // ★ 핵심 수정: 문장 한복판에 있는 핵심 수식 어구는 100% 보존하고, 오직 문장 '맨 끝(후방)'에 결합하는 시험 발문용 어구만 제거
+  s = s.replace(/(?:관한|대한)?\s*설명으로\s*(?:옳은|틀린|맞는|않은|않는|옳지\s*않은|적절한|적절하지\s*않은)\s*(?:것은|것을|모두\s*고른|고르면)\??\s*$/, '');
+  s = s.replace(/\s*(?:옳은|틀린|맞는|않은|않는)\s*(?:것은|것을|고르면)\??\s*$/, '');
+  
+  return _smartTrimTitle(s.trim(), 35, 55);
+}
+
+function _trimSentence(s, max){return String(s).trim();}
+function _fixEnding(s){return String(s).trim();}
+function _cleanSh(s){
+  if(!s) return '';
+  return String(s)
+    .replace(/^[\s]*(?:[①②③④⑤]\s*|\d+\s*)번(==[\s:：,.·]|$)/,'')
+    .replace(/[①②③④⑤]\s*번/g,'')
+    .replace(/[0-9]\s*번?\s*(맞음|틀림|오답|정답)\s*[:：]/g,'')
+    .replace(/[①②③④⑤]/g,'')
+    .replace(/^\s*번\s+/,'')
     .replace(/내가\s*선택한\s*번호\s*[:：]?\s*\d*/g,'')
+    .replace(/내가\s*선택한\s*보기\s*[:：]?\s*/g,'')
     .replace(/상세\s*해설\s*및\s*오답\s*분석\s*[:：]?\s*\(?\)?/g,'')
     .replace(/오답\s*분석\s*[:：]?/g,'')
     .replace(/정답\s*(?:은|이)?\s*[:：]?\s*\d*\s*번?/g,'')
-    .replace(/\d+\s*번\s*(?:이|가|은|는)?\s*정답\S*/g,'')
-    .replace(/\(\s*\)/g,'')
-    .replace(/^[:：\s.|\-]+/,'')
-    .replace(/\s*\|\s*/g,' / ')
+    .replace(/\(\s*\)/g,'').replace(/\[\s*\]/g,'')
     .replace(/\s+/g,' ')
     .trim();
 }
 
-
-// ══════════════════════════════════════════
-//  학습 콘텐츠 렌더링
-// ══════════════════════════════════════════
 function renderStudyContent(data,sub){
   const el=document.getElementById('study-content');
-  const {learn,memory,caution,exam,tip}=data;
+  const {learn,tip}=data;
 
   el.innerHTML=`
-  <!-- TIP 배너 -->
   <div class="tip-banner" style="background:linear-gradient(135deg,${sub.color},${sub.color}BB)">
     <div class="tip-lbl">⚡ 이 차시 핵심 포인트</div>
     <div class="tip-txt">${esc(tip)}</div>
   </div>
 
-  <!-- 1. 기본 학습 -->
   <div class="study-section ss-learn">
     <div class="ss-hdr" onclick="toggleSS('learn')">
       <div class="ss-ico">📖</div>
-      <div class="ss-ttl">기본 학습 내용<span class="ss-cnt">${learn.length}항목</span></div>
+      <div class="ss-txt-wrap"><div class="ss-ttl">기본 학습 내용<span class="ss-cnt">${learn.length}항목</span></div></div>
       <div class="ss-arr open" id="learn-arr">▼</div>
     </div>
     <div class="ss-body open" id="learn-body">
-      ${learn.map(item=>`
-        <div class="si">
-          <div class="si-dot" style="background:#059669"></div>
-          <div class="si-txt">${hl(esc(item))}</div>
-        </div>`).join('')}
-    </div>
-  </div>
-
-  <!-- 2. 반드시 암기 -->
-  <div class="study-section ss-mem">
-    <div class="ss-hdr" onclick="toggleSS('mem')">
-      <div class="ss-ico">🧠</div>
-      <div class="ss-ttl">반드시 암기할 내용<span class="ss-cnt">${memory.length}항목</span></div>
-      <div class="ss-arr open" id="mem-arr">▼</div>
-    </div>
-    <div class="ss-body open" id="mem-body">
-      ${memory.length?`<table class="mem-tbl">
-        <tr><th style="width:36%">키워드</th><th>암기 내용</th></tr>
-        ${memory.map(m=>`<tr><td class="mem-key">${esc(m.key)}</td><td class="mem-val">${hl(esc(m.val))}</td></tr>`).join('')}
-      </table>`:`<div style="font-size:12px;color:var(--tx3);padding:6px 0">이 차시에서 숫자·기준 항목을 자동으로 찾을 수 없었습니다. 블로그 원문을 참고하세요.</div>`}
-    </div>
-  </div>
-
-  <!-- 3. 주의 사항 -->
-  <div class="study-section ss-warn">
-    <div class="ss-hdr" onclick="toggleSS('warn')">
-      <div class="ss-ico">⚠️</div>
-      <div class="ss-ttl">주의할 내용<span class="ss-cnt">${caution.length}항목</span></div>
-      <div class="ss-arr open" id="warn-arr">▼</div>
-    </div>
-    <div class="ss-body open" id="warn-body">
-      ${caution.map((c,i)=>`
-        <div class="wb">
-          <div class="wb-ttl">🚫 주의 ${i+1}</div>
-          <div class="wb-body">${hl(esc(c.body))}</div>
-        </div>`).join('')}
-    </div>
-  </div>
-
-  <!-- 4. 출제 포인트 -->
-  <div class="study-section ss-exam">
-    <div class="ss-hdr" onclick="toggleSS('exam')">
-      <div class="ss-ico">🎯</div>
-      <div class="ss-ttl">꼭 알아야 할 핵심 포인트<span class="ss-cnt">${exam.length}항목</span></div>
-      <div class="ss-arr open" id="exam-arr">▼</div>
-    </div>
-    <div class="ss-body open" id="exam-body">
-      ${exam.map((e,i)=>{
-        // e가 객체({point,how})면 분리, 문자열이면 그대로
-        const point = (e&&typeof e==='object') ? (e.point||e.trap||'') : e;
-        const how = (e&&typeof e==='object') ? (e.how||e.tip||'') : '';
-        return `<div style="margin-bottom:13px;padding:12px 13px;background:#F5F9FF;border-radius:11px;border-left:3px solid #3B82F6">
-          <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:${how?'7px':'0'}">
-            <div style="min-width:22px;height:22px;border-radius:6px;background:#3B82F6;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i+1}</div>
-            <div style="font-size:15px;color:#1E3A5F;line-height:1.7;font-weight:600">📌 ${hl(esc(point))}</div>
-          </div>
-          ${how?`<div style="margin-left:30px;font-size:14px;color:#475569;line-height:1.7;background:#fff;border-radius:8px;padding:8px 11px">${hl(esc(how))}</div>`:''}
-        </div>`;
-      }).join('')}
+      ${learn.map(item=>`<div class="si"><div class="si-dot" style="background:#059669"></div><div class="si-txt">${hl(esc(_cleanSh(item)))}</div></div>`).join('')}
     </div>
   </div>`;
 }
@@ -1145,531 +678,57 @@ function toggleSS(id){
   arr.classList.toggle('open',!open);
 }
 
-// ══════════════════════════════════════════
-//  AI 분석 (Anthropic API - 연결되면 사용, 실패해도 자체 파싱으로 표시)
-// ══════════════════════════════════════════
-const SUB_GUIDE={
-  '공법':'국토계획법(용도지역·지구·구역·개발행위허가), 건축법(허가·신고·용도변경·주택종류), 주택법, 도시정비법. 숫자·면적·기간 기준 암기 필수.',
-  '민법':'민법총칙(법률행위·의사표시·대리·무효취소), 물권법(물권변동·소유권·담보물권), 계약법(매매·임대차), 민사특별법(주임법·상임법·집합건물법). 판례 다수.',
-  '세법':'취득세·재산세·종합부동산세·양도소득세·부가가치세. 2026 개정사항 반영. 세율·공제·납부기한·비과세 요건, 계산형 대비.',
-  '공시법':'부동산등기법(절차·신청인·효력), 공간정보관리법(지적공부·지목·면적). 추정력·공신력 구별, 절차와 기간.',
-  '부동산학개론':'부동산 개념·특성, 수요·공급론, 감정평가 3방식, 투자론(수익률·레버리지). 계산형 대비.',
-  '중개사법':'공인중개사법(의무·금지행위·중개보수), 거래신고법, 실명법. 결격사유·등록취소·과태료 암기.'
-};
-const LAW_2026={
-  '공법':'다중주택 연면적 660㎡ 이하(구 330㎡), 다가구주택 660㎡·19세대·3층 이하, 다세대 660㎡·4층 이하',
-  '세법':'다주택 양도세 중과 유예 2026.5.9까지, 생애최초 취득세 100% 감면 연장, 인구감소지역 감면한도 300만원',
-  '중개사법':'공인중개사법 개정 2026.8.28 시행 예정'
-};
-
-const AI_PROMPT=(sub,title,content,qs)=>{
-  const guide=SUB_GUIDE[sub.id]||'';
-  const law=LAW_2026[sub.id]||'';
-  // 실제 출제 문제 요약 (정답+해설 포함)
-  const qSummary=(qs||[]).slice(0,10).map((q,i)=>{
-    const ans=(q.choices||[]).find(c=>c.label===q.correct);
-    return (i+1)+'. '+(q.question||'').slice(0,80)+' [정답:'+(q.correct||'')+(ans?' '+ans.text.slice(0,40):'')+']';
-  }).join('\n');
-
-  return `당신은 메가랜드·박문각·해커스·공인모 수준의 공인중개사 전문 강사입니다.
-
-[과목] ${sub.name}
-[차시] ${title}
-[과목 핵심] ${guide}
-${law?'[2026 개정 필수반영] '+law:''}
-
-아래 "차시 이론"과 "실제 출제 문제"를 종합 분석하여, 수험생이 이 차시만 공부해도 관련 문제를 모두 맞힐 수 있는 합격용 학습자료를 작성하세요.
-
-⚠️ 규칙:
-- 블로그 내용을 그대로 베끼지 말고, 시험에 출제되는 형태로 재구성
-- memory는 반드시 구체적 숫자·기간·면적·요건 포함 (시험 함정 위주)
-- caution은 실제로 자주 틀리는 함정 포인트 위주
-- 2026년 개정 법령이 있으면 반드시 최신 기준으로 작성
-- ①②③ 같은 원문자나 코드 절대 포함 금지
-- exam(꼭 알아야 할 핵심 포인트)에는 "정답은 ○번" 같은 정답 번호를 절대 쓰지 말 것. 막연한 "주의하세요"가 아니라, 그 주제에서 시험에 나오는 정확한 개념·기준·정의를 구체적으로 설명
-
-JSON만 출력 (다른 텍스트 없이):
-{"learn":["완전한 문장으로 핵심이론",...최소8개],"memory":[{"key":"암기키워드","val":"구체적 기준·숫자·조건"},...최소7개],"caution":[{"title":"함정포인트","body":"왜 틀리는지+정확한 기준"},...최소5개],"exam":[{"point":"핵심 주제·개념명","how":"그 주제에서 반드시 알아야 할 정확한 내용·기준·정의를 한두 문장으로"},...최소5개],"tip":"이 차시 합격 핵심 1문장"}
-
-[차시 이론]
-${content.slice(0,1800)}
-
-[실제 출제 문제]
-${qSummary}`;
-};
-
-async function tryAIEnhance(sub){
-  const bar=document.getElementById('abar');
-  const dot=document.getElementById('adot');
-  const barTxt=document.getElementById('abar-txt');
-  const retryBtn=document.getElementById('ai-retry');
-
-  bar.className='abar loading';bar.style.display='flex';
-  dot.className='adot pulse';barTxt.textContent='AI 분석 중... (자동 파싱 결과가 먼저 표시됩니다)';
-  retryBtn.style.display='none';
-
-  try{
-    const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),15000);
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',signal:ctrl.signal,
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',max_tokens:2500,
-        messages:[{role:'user',content:AI_PROMPT(sub,cleanT(ST.lesson.title),ST.text,ST.qs)}]
-      })
-    });
-    clearTimeout(tid);
-    if(!resp.ok)throw new Error('HTTP '+resp.status);
-    const d=await resp.json();
-    if(d.error)throw new Error(d.error.message||'API error');
-    const raw=(d.content||[]).map(c=>c.text||'').join('');
-    const m=raw.match(/\{[\s\S]+\}/);
-    if(!m)throw new Error('no JSON');
-    const aiData=JSON.parse(m[0]);
-
-    // AI 결과 정리 (원문자·코드 제거)
-    const clean=s=>(s||'').replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g,'').replace(/function\s|\bvar\s|document\./g,'').replace(/\s{2,}/g,' ').trim();
-    if(aiData.learn)aiData.learn=aiData.learn.map(clean).filter(x=>x.length>5);
-    if(aiData.memory)aiData.memory=aiData.memory.map(m2=>({key:clean(m2.key),val:clean(m2.val)})).filter(m2=>m2.val&&m2.val.length>3);
-    if(aiData.caution)aiData.caution=aiData.caution.map(c=>({title:clean(c.title),body:clean(c.body)})).filter(c=>c.body&&c.body.length>5);
-    if(aiData.exam)aiData.exam=aiData.exam.map(function(e){
-      if(e&&typeof e==='object')return{point:clean(e.point||e.trap||''),how:clean(e.how||e.tip||'')};
-      return{point:clean(e),how:''};
-    }).filter(function(e){return e.point&&e.point.length>3;});
-
-    // AI 성공: 결과로 교체
-    bar.className='abar done';dot.className='adot';
-    barTxt.textContent='✅ AI 분석 완료 — 합격용 학습자료로 업데이트되었습니다';
-    renderStudyContent(aiData,sub);
-
-  }catch(e){
-    // AI 실패: 자체 파싱 결과 유지, 상태바만 업데이트
-    if(e.name==='AbortError'||e.message.includes('timeout')){
-      bar.className='abar';bar.style.background='#F9FAFB';bar.style.color='var(--tx3)';
-      barTxt.textContent='⏱ AI 응답 시간 초과 — 자동 파싱 결과를 표시합니다';
-    } else if(e.message.includes('Failed to fetch')||e.message.includes('NetworkError')){
-      bar.style.display='none'; // 네트워크 오류면 조용히 숨김 (자체 파싱 결과로 충분)
-    } else {
-      bar.className='abar';bar.style.background='#F9FAFB';bar.style.color='var(--tx3)';
-      barTxt.textContent='📝 자동 파싱 결과를 표시합니다 (AI 연결 없이도 학습 가능)';
-      setTimeout(()=>{bar.style.display='none';},3000);
-    }
-  }
-}
-
-function retryAI(){if(ST.sub)tryAIEnhance(ST.sub);}
-
-// ══════════════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════════════
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));const el=document.getElementById('v-'+id);if(el){el.classList.add('active');window.scrollTo(0,0);}}
-function goHome(){showView('home');renderHome();}
-function goWrong(){showView('wrong');renderAllWrong();}
-
-// ══════════════════════════════════════════
-//  모의고사 (과목별 AI 40문제)
-// ══════════════════════════════════════════
-var MOCK={sub:null,qs:[],answers:{},submitted:false};
-
-// ── 과목별 실제 시험 출제 경향 (40문제 기준 단원별 배분)
-var MOCK_BLUEPRINT={
-  '부동산학개론':[['부동산학총론',4],['부동산수요·공급',6],['부동산시장',2],['입지 및 공간구조론',3],['부동산정책',6],['부동산투자론',6],['부동산금융론',6],['부동산마케팅',1],['감정평가론',6]],
-  '민법':[['민법총칙',10],['물권법',14],['계약법총론',6],['계약법각론(매매·교환·임대차)',6],['민사특별법(주임법·상임법·집합건물·가담법·실명법)',4]],
-  '공법':[['국토계획법',12],['도시개발법',6],['도시정비법',6],['건축법',7],['주택법',5],['농지법',4]],
-  '세법':[['조세총론',3],['취득세',8],['등록면허세',3],['재산세',8],['종합부동산세',4],['양도소득세',10],['종합소득세(부동산임대)',4]],
-  '공시법':[['지적(공간정보관리법)',20],['부동산등기법',20]],
-  '중개사법':[['공인중개사법령',24],['부동산거래신고법',8],['중개실무(경매·명의신탁·분묘기지권 등)',8]]
-};
-
-// ── 과목별 내장 예상문제 (AI fetch 실패 시 폴백, 2026 대비)
-var MOCK_BANK={
-'부동산학개론':[
-{q:'부동산의 자연적 특성 중 부동성에 관한 설명으로 옳은 것은?',choices:['부동산 활동을 국지화시킨다','감가상각의 근거가 된다','대량생산을 가능하게 한다','부동산을 동산과 같게 만든다','용도의 다양성을 제공한다'],answer:1,expl:'부동성(위치의 고정성)은 부동산 시장을 지역적·국지적 시장으로 만드는 근거가 됩니다.'},
-{q:'부동산 가치발생요인에 해당하지 않는 것은?',choices:['효용','상대적 희소성','유효수요','이전성','가치형성요인'],answer:5,expl:'가치발생요인은 효용, 상대적 희소성, 유효수요, 이전성입니다. 가치형성요인은 별개 개념입니다.'},
-{q:'수요의 가격탄력성에 관한 설명으로 틀린 것은?',choices:['대체재가 많을수록 탄력적이다','측정 기간이 길수록 탄력적이다','필수재는 비탄력적이다','탄력성이 1보다 크면 비탄력적이다','사치재는 탄력적인 경향이 있다'],answer:4,expl:'탄력성이 1보다 크면 탄력적, 1보다 작으면 비탄력적입니다.'},
-{q:'감정평가 3방식 중 원가방식에 해당하는 것은?',choices:['거래사례비교법','수익환원법','원가법','임대사례비교법','공시지가기준법'],answer:3,expl:'원가방식은 원가법(가액)과 적산법(임료)이 있습니다. 비용성의 원리에 기초합니다.'},
-{q:'부동산 경기변동의 특징으로 틀린 것은?',choices:['일반 경기보다 후순환적 경향이 있다','확장과 수축 국면이 비대칭적이다','정점과 저점의 차이가 일반경기보다 크다','회복국면에서는 매수자가 주도한다','순환주기가 일반경기보다 길다'],answer:4,expl:'회복국면에서는 매도자가 시장을 주도하며 가격 상승이 시작됩니다.'},
-{q:'지대이론 중 리카도의 차액지대설에 관한 설명으로 옳은 것은?',choices:['위치에 따라 지대가 결정된다','토지 비옥도 차이로 지대가 발생한다','한계지에서도 지대가 발생한다','지대는 생산비에 포함된다','독점이 지대 발생의 원인이다'],answer:2,expl:'차액지대설은 토지 비옥도와 생산성 차이로 지대가 발생하며, 한계지에서는 지대가 없다고 봅니다.'},
-{q:'부동산금융 중 지분금융에 해당하는 것은?',choices:['저당금융','신탁증서금융','부동산투자회사(REITs)','자산유동화증권','주택상환사채'],answer:3,expl:'지분금융은 리츠, 조인트벤처, 신디케이트, 증자 등이며 나머지는 부채금융입니다.'},
-{q:'LTV와 DTI에 관한 설명으로 틀린 것은?',choices:['LTV는 담보가치 대비 대출비율이다','DTI는 소득 대비 부채상환비율이다','LTV가 높으면 대출 가능액이 늘어난다','DTI 규제는 차입자 상환능력과 무관하다','두 규제 모두 가계부채 관리 수단이다'],answer:4,expl:'DTI는 차입자의 소득 대비 상환능력을 측정하는 지표로, 상환능력과 직접 관련됩니다.'},
-{q:'부동산 정책 중 시장실패의 원인이 아닌 것은?',choices:['공공재','외부효과','정보의 비대칭','완전경쟁시장','독과점'],answer:4,expl:'완전경쟁시장은 효율적 자원배분이 이루어지므로 시장실패의 원인이 아닙니다.'},
-{q:'외부효과에 관한 설명으로 옳은 것은?',choices:['정(+)의 외부효과는 과대생산된다','부(-)의 외부효과는 과소생산된다','정의 외부효과 사례로 공해가 있다','부의 외부효과는 사회적비용이 사적비용보다 크다','외부효과는 시장에서 자동 해결된다'],answer:4,expl:'부(-)의 외부효과는 사회적 비용이 사적 비용보다 커서 과대생산되는 경향이 있습니다.'},
-{q:'부동산 투자의 위험 중 사업상 위험이 아닌 것은?',choices:['시장위험','운영위험','위치적 위험','금융위험','수요변동 위험'],answer:4,expl:'금융위험은 부채 사용에서 오는 위험으로 사업상 위험과 구별됩니다.'},
-{q:'화폐의 시간가치에서 일시불의 미래가치계수에 관한 설명으로 옳은 것은?',choices:['미래금액을 현재가치로 환산','현재금액을 미래가치로 환산','매기 일정액의 현재가치','매기 일정액의 미래가치','원리금 균등상환액 계산'],answer:2,expl:'일시불의 미래가치계수는 현재의 일정 금액을 미래 시점의 가치로 환산하는 계수입니다.'},
-{q:'감정평가 원칙 중 균형의 원칙에 관한 설명으로 옳은 것은?',choices:['외부 환경과의 조화를 강조','내부 구성요소의 적정 결합을 강조','대체 부동산과의 관계를 강조','최유효이용을 전제','수익 배분을 강조'],answer:2,expl:'균형의 원칙은 부동산 내부 구성요소의 적정한 결합을 강조하며, 위반 시 기능적 감가가 발생합니다.'},
-{q:'부동산 시장의 특성으로 틀린 것은?',choices:['지역시장성','수급조절의 곤란성','거래의 비공개성','상품의 동질성','시장의 비조직성'],answer:4,expl:'부동산은 개별성으로 인해 상품이 이질적입니다. 동질성은 부동산 시장의 특성이 아닙니다.'},
-{q:'부동산 마케팅 전략 중 STP 전략에 해당하지 않는 것은?',choices:['시장세분화(Segmentation)','표적시장 선정(Targeting)','포지셔닝(Positioning)','가격(Price)','-'],answer:4,expl:'STP는 시장세분화·표적시장선정·포지셔닝입니다. 가격(Price)은 4P 전략에 속합니다.'},
-{q:'수익환원법에서 환원이율에 관한 설명으로 옳은 것은?',choices:['순영업소득을 자본환원한 비율이다','총소득에서 공실을 뺀 값이다','감가상각비를 의미한다','재조달원가를 의미한다','거래사례 가격이다'],answer:1,expl:'환원이율은 순영업소득(NOI)을 부동산 가치로 환원할 때 적용하는 비율입니다.'},
-{q:'부동산학총론에서 부동산의 복합개념에 해당하지 않는 것은?',choices:['법률적 개념','경제적 개념','기술적(물리적) 개념','심리적 개념','-'],answer:4,expl:'부동산의 복합개념은 법률적·경제적·기술적(물리적) 개념으로 구성됩니다.'},
-{q:'입지론 중 튀넨의 위치지대설에 관한 설명으로 옳은 것은?',choices:['수송비 절약분이 지대가 된다','비옥도 차이가 지대를 결정한다','독점이 지대 원인이다','한계지에서 지대가 가장 크다','지대는 항상 일정하다'],answer:1,expl:'튀넨의 위치지대설은 중심지로부터의 거리에 따른 수송비 절약분이 지대로 나타난다고 봅니다.'},
-{q:'부동산 경기의 4국면 중 회복국면의 특징으로 옳은 것은?',choices:['매수자 우위 시장','거래 한산, 공실 증가','매도자 우위로 전환, 거래 증가','가격 급락','건축활동 최저'],answer:3,expl:'회복국면에서는 거래가 늘고 매도자 우위 시장으로 전환되며 가격이 상승하기 시작합니다.'}
-],
-'민법':[
-{q:'법률행위의 무효와 취소에 관한 설명으로 틀린 것은?',choices:['무효는 처음부터 효력이 없다','취소는 취소권 행사로 소급 무효가 된다','무효행위는 추인해도 원칙적으로 효력이 없다','취소할 수 있는 행위는 추인하면 유효로 확정된다','무효는 시간이 지나면 유효가 된다'],answer:5,expl:'무효는 시간이 지나도 유효가 되지 않습니다. 다만 무효행위의 추인 요건을 갖추면 새로운 행위로 봅니다.'},
-{q:'의사표시에 관한 설명으로 옳은 것은?',choices:['비진의표시는 원칙적으로 무효이다','통정허위표시는 당사자 간 유효하다','착오는 중과실이 있어도 취소할 수 있다','사기에 의한 의사표시는 무효이다','강박에 의한 의사표시는 취소할 수 있다'],answer:5,expl:'사기·강박에 의한 의사표시는 취소할 수 있습니다. 비진의표시는 원칙 유효, 통정허위표시는 무효입니다.'},
-{q:'대리에 관한 설명으로 틀린 것은?',choices:['대리행위의 효과는 본인에게 귀속된다','임의대리인은 원칙적으로 복임권이 없다','무권대리는 본인이 추인할 수 있다','표현대리가 성립하면 본인이 책임진다','대리인은 행위능력자여야 한다'],answer:5,expl:'대리인은 행위능력자일 필요가 없습니다(제117조). 제한능력자도 대리인이 될 수 있습니다.'},
-{q:'물권의 효력에 관한 설명으로 옳은 것은?',choices:['채권은 물권에 우선한다','물권 상호간에는 시간 순서와 무관하다','물권은 배타성이 없다','동일 물건에 소유권과 제한물권이 양립할 수 있다','물권은 공시를 요하지 않는다'],answer:4,expl:'하나의 물건에 소유권과 제한물권(저당권 등)은 양립할 수 있습니다.'},
-{q:'점유권에 관한 설명으로 틀린 것은?',choices:['점유는 사실상 지배를 의미한다','간접점유도 점유로 인정된다','점유자는 점유물에 대해 권리적법 추정을 받는다','점유보호청구권이 인정된다','점유권은 상속되지 않는다'],answer:5,expl:'점유권도 상속됩니다(제193조). 점유자가 사망하면 상속인에게 점유가 이전됩니다.'},
-{q:'저당권에 관한 설명으로 옳은 것은?',choices:['저당권자는 목적물을 점유한다','저당권은 부종성이 없다','저당권은 우선변제권이 있다','저당권 설정에는 인도가 필요하다','저당권은 동산에만 설정된다'],answer:3,expl:'저당권은 우선변제권이 있으며, 점유를 이전하지 않고(비점유담보) 부동산에 설정됩니다.'},
-{q:'계약의 해제에 관한 설명으로 틀린 것은?',choices:['해제는 소급효가 있다','해제 시 원상회복 의무가 발생한다','해제권은 형성권이다','해제와 손해배상은 양립할 수 없다','이행지체는 해제 사유가 된다'],answer:4,expl:'계약 해제와 손해배상 청구는 양립할 수 있습니다(제551조).'},
-{q:'임대차에 관한 설명으로 옳은 것은?',choices:['임차권은 물권이다','임차인은 비용상환청구권이 없다','주택임대차보호법상 대항력은 인도+전입신고로 발생한다','임대차 최단기간 제한은 없다','임차인은 항상 갱신요구권이 있다'],answer:3,expl:'주택임대차보호법상 대항력은 주택의 인도와 전입신고(주민등록)를 마친 다음 날부터 발생합니다.'}
-],
-'공법':[
-{q:'국토계획법상 용도지역에 관한 설명으로 틀린 것은?',choices:['도시지역은 주거·상업·공업·녹지지역으로 구분된다','용도지역은 중복 지정할 수 없다','관리지역은 보전·생산·계획관리지역으로 구분된다','용도지역 미지정 지역은 보전녹지에 준한다','용도지역은 건폐율·용적률의 기준이 된다'],answer:4,expl:'용도지역 미지정·미세분 지역은 가장 엄격한 보전관리(자연환경보전지역)에 준하여 적용합니다.'},
-{q:'개발행위허가에 관한 설명으로 옳은 것은?',choices:['모든 토지형질변경은 허가가 필요하다','경작을 위한 형질변경도 허가 대상이다','허가 없이 건축물 건축이 가능하다','용도지역별 개발행위 규모 제한이 있다','녹지지역은 개발행위가 금지된다'],answer:4,expl:'개발행위허가는 용도지역별로 허용 규모가 제한됩니다. 경작을 위한 형질변경은 허가 대상이 아닙니다.'},
-{q:'건축법상 건폐율에 관한 설명으로 옳은 것은?',choices:['대지면적에 대한 연면적의 비율이다','대지면적에 대한 건축면적의 비율이다','건축면적에 대한 대지면적의 비율이다','층수를 결정하는 기준이다','용적률과 같은 개념이다'],answer:2,expl:'건폐율은 대지면적에 대한 건축면적(바닥면적)의 비율이고, 용적률은 대지면적에 대한 연면적의 비율입니다.'},
-{q:'2026년 기준 다중주택의 요건으로 옳은 것은?',choices:['연면적 330㎡ 이하','연면적 660㎡ 이하, 3층 이하','연면적 1000㎡ 이하','19세대 이하','5층 이하'],answer:2,expl:'개정된 다중주택 요건은 연면적 660㎡ 이하, 3층 이하입니다(독립된 주거형태 불가).'},
-{q:'도시개발사업의 시행방식에 해당하지 않는 것은?',choices:['수용 또는 사용방식','환지방식','혼용방식','신탁방식','수용·환지 혼용'],answer:4,expl:'도시개발사업은 수용·사용방식, 환지방식, 혼용방식으로 시행합니다. 신탁방식은 해당 없습니다.'},
-{q:'정비사업 중 재건축사업에 관한 설명으로 틀린 것은?',choices:['정비기반시설은 양호하나 노후 건축물이 대상이다','조합설립에 동의가 필요하다','안전진단을 거친다','토지등소유자가 시행할 수 있다','반드시 공공이 시행한다'],answer:5,expl:'재건축사업은 조합이 시행하는 것이 원칙이며, 반드시 공공이 시행하는 것은 아닙니다.'},
-{q:'주택법상 주택의 분류로 옳은 것은?',choices:['아파트는 단독주택이다','다세대주택은 공동주택이다','연립주택은 단독주택이다','다가구주택은 공동주택이다','기숙사는 단독주택이다'],answer:2,expl:'공동주택은 아파트·연립주택·다세대주택입니다. 다가구주택은 단독주택으로 분류됩니다.'},
-{q:'국토계획법상 기반시설에 해당하지 않는 것은?',choices:['도로','공원','학교','상업용 빌딩','하수도'],answer:4,expl:'기반시설은 도로·공원·학교·하수도 등 공공시설이며, 상업용 빌딩은 해당하지 않습니다.'}
-],
-'세법':[
-{q:'취득세 납세의무자에 관한 설명으로 옳은 것은?',choices:['부동산을 양도한 자','부동산을 취득한 자','부동산을 임차한 자','부동산 중개인','부동산 소재지 시장'],answer:2,expl:'취득세는 부동산 등을 취득한 자가 납세의무자입니다.'},
-{q:'재산세 과세기준일로 옳은 것은?',choices:['매년 1월 1일','매년 6월 1일','매년 7월 1일','매년 9월 1일','매년 12월 31일'],answer:2,expl:'재산세 과세기준일은 매년 6월 1일이며, 이 날 현재 소유자가 납세의무자입니다.'},
-{q:'양도소득세에 관한 설명으로 틀린 것은?',choices:['양도차익에 대해 과세한다','1세대1주택 비과세 특례가 있다','장기보유특별공제가 있다','미등기양도자산은 중과세된다','모든 부동산 양도는 비과세이다'],answer:5,expl:'부동산 양도는 원칙적으로 과세 대상이며, 요건을 갖춘 1세대1주택 등만 비과세됩니다.'},
-{q:'1세대1주택 양도세 비과세 요건으로 옳은 것은?',choices:['1년 이상 보유','2년 이상 보유(조정지역 2년 거주)','3년 이상 보유','보유기간 제한 없음','5년 이상 거주'],answer:2,expl:'1세대1주택 비과세는 2년 이상 보유가 원칙이며, 취득 당시 조정대상지역은 2년 거주 요건이 추가됩니다.'},
-{q:'종합부동산세에 관한 설명으로 틀린 것은?',choices:['국세이다','인별 과세가 원칙이다','주택과 토지가 과세대상이다','재산세와 이중과세 조정이 있다','취득 시 부과되는 세금이다'],answer:5,expl:'종합부동산세는 보유세로 매년 부과되며, 취득 시 부과되는 것은 취득세입니다.'},
-{q:'취득세 과세표준에 관한 설명으로 옳은 것은?',choices:['항상 시가표준액이다','원칙적으로 취득 당시의 가액이다','공시지가로만 산정한다','임대료를 기준으로 한다','취득자가 임의로 정한다'],answer:2,expl:'취득세 과세표준은 원칙적으로 취득 당시의 가액(사실상 취득가격)입니다.'},
-{q:'등록면허세에 관한 설명으로 틀린 것은?',choices:['등기·등록에 대해 부과된다','지방세이다','권리의 설정·이전 시 부과된다','취득세와 별개의 세목이다','양도차익에 대해 과세한다'],answer:5,expl:'등록면허세는 등기·등록 행위에 부과되며, 양도차익 과세는 양도소득세입니다.'},
-{q:'2026년 다주택자 양도세 중과 유예에 관한 설명으로 옳은 것은?',choices:['중과가 영구 폐지되었다','2026.5.9까지 양도 시 중과 배제','모든 주택에 중과 적용','유예 제도가 없다','1주택자에게만 적용'],answer:2,expl:'다주택자 양도세 중과 유예는 2026년 5월 9일까지 양도하는 경우 적용됩니다(최신 개정 기준).'}
-],
-'공시법':[
-{q:'부동산등기의 효력에 관한 설명으로 틀린 것은?',choices:['등기에는 권리변동적 효력이 있다','등기에는 대항력이 있다','등기에는 추정력이 있다','등기에는 공신력이 인정된다','등기에는 순위확정적 효력이 있다'],answer:4,expl:'우리 부동산등기에는 공신력이 인정되지 않습니다. 추정력은 있으나 공신력은 없습니다.'},
-{q:'등기신청에 관한 설명으로 옳은 것은?',choices:['단독신청이 원칙이다','공동신청이 원칙이다','등기관이 직권으로만 한다','채권자만 신청한다','법원이 신청한다'],answer:2,expl:'등기신청은 등기권리자와 등기의무자의 공동신청이 원칙입니다(공동신청주의).'},
-{q:'소유권보존등기에 관한 설명으로 옳은 것은?',choices:['공동신청한다','단독신청한다','반드시 판결이 필요하다','등기관이 직권으로 한다','채권자가 신청한다'],answer:2,expl:'소유권보존등기는 미등기 부동산에 최초로 하는 등기로 단독신청합니다.'},
-{q:'지적공부에 해당하지 않는 것은?',choices:['토지대장','임야대장','지적도','건축물대장','경계점좌표등록부'],answer:4,expl:'지적공부는 토지대장·임야대장·지적도·임야도·공유지연명부·대지권등록부·경계점좌표등록부입니다. 건축물대장은 해당 없습니다.'},
-{q:'지목에 관한 설명으로 틀린 것은?',choices:['1필지에 1지목이 원칙이다','전·답·과수원 등 28종이 있다','지목은 주된 용도에 따라 정한다','하나의 필지에 여러 지목을 둘 수 있다','지목은 지적공부에 등록한다'],answer:4,expl:'1필지 1지목의 원칙에 따라 하나의 필지에는 하나의 지목만 설정합니다.'},
-{q:'토지의 면적에 관한 설명으로 옳은 것은?',choices:['항상 ㎡ 단위로 등록한다','평 단위로 등록한다','면적 측정은 하지 않는다','지적도에는 면적을 표시하지 않는다','면적은 등기부에만 기재한다'],answer:1,expl:'토지의 면적은 제곱미터(㎡) 단위로 지적공부에 등록합니다.'},
-{q:'등기의 종류 중 가등기에 관한 설명으로 옳은 것은?',choices:['종국등기이다','본등기 순위를 보전한다','권리변동 효력이 즉시 발생한다','말소할 수 없다','공동신청만 가능하다'],answer:2,expl:'가등기는 장래 본등기의 순위를 보전하기 위한 예비등기입니다. 본등기 시 순위가 가등기 시로 소급합니다.'},
-{q:'지적측량을 실시해야 하는 경우가 아닌 것은?',choices:['신규등록','분할','합병','등록전환','단순 소유권 이전'],answer:5,expl:'단순한 소유권 이전은 토지의 형상 변화가 없어 지적측량 대상이 아닙니다.'}
-],
-'중개사법':[
-{q:'공인중개사법상 중개대상물에 해당하지 않는 것은?',choices:['토지','건축물','입목','자동차','광업재단'],answer:4,expl:'중개대상물은 토지, 건축물, 입목, 광업재단, 공장재단입니다. 자동차는 해당하지 않습니다.'},
-{q:'개업공인중개사의 금지행위에 해당하는 것은?',choices:['정당한 중개보수 수령','중개대상물 확인·설명','직접거래','거래계약서 작성','전속중개계약 체결'],answer:3,expl:'개업공인중개사가 중개의뢰인과 직접거래하는 것은 금지행위입니다(제33조).'},
-{q:'중개보수에 관한 설명으로 틀린 것은?',choices:['거래금액에 따라 상한요율이 정해진다','한도를 초과해 받을 수 없다','지방자치단체 조례로 정한다','당사자가 합의하면 무제한 받을 수 있다','주택과 비주택 요율이 다르다'],answer:4,expl:'중개보수는 법정 상한이 있어 합의해도 한도를 초과해 받을 수 없습니다.'},
-{q:'공인중개사 등록의 결격사유에 해당하는 것은?',choices:['만 20세 이상','파산선고 후 복권된 자','금고 이상 실형 후 3년 미경과자','중개사무소 개설','공인중개사 자격 취득'],answer:3,expl:'금고 이상의 실형을 선고받고 집행 종료 후 3년이 지나지 않은 자는 결격사유에 해당합니다.'},
-{q:'전속중개계약에 관한 설명으로 옳은 것은?',choices:['유효기간은 제한이 없다','특정 개업공인중개사에게만 의뢰한다','계약서 작성이 불필요하다','정보공개 의무가 없다','구두로 체결한다'],answer:2,expl:'전속중개계약은 특정 개업공인중개사에게만 중개를 의뢰하는 계약으로, 서면 체결과 정보공개 의무가 있습니다.'},
-{q:'부동산거래신고에 관한 설명으로 틀린 것은?',choices:['실거래가를 신고한다','계약 체결일부터 30일 이내 신고한다','관할 시군구청장에게 신고한다','신고 의무는 없다','거짓신고 시 과태료가 부과된다'],answer:4,expl:'부동산 거래 시 실거래가 신고는 법적 의무이며, 계약일로부터 30일 이내에 해야 합니다.'},
-{q:'토지거래허가구역에 관한 설명으로 옳은 것은?',choices:['허가 없이 거래할 수 있다','허가구역 내 일정규모 이상 거래는 허가가 필요하다','모든 토지가 허가 대상이다','허가권자는 국토부장관뿐이다','허가는 사후에 받는다'],answer:2,expl:'토지거래허가구역 내에서 일정 규모 이상의 토지 거래는 사전에 허가를 받아야 합니다.'},
-{q:'개업공인중개사의 손해배상책임에 관한 설명으로 틀린 것은?',choices:['고의·과실로 인한 손해를 배상한다','업무보증을 설정해야 한다','보증보험에 가입할 수 있다','공제에 가입할 수 있다','손해배상책임이 면제된다'],answer:5,expl:'개업공인중개사는 중개행위 시 고의·과실로 인한 손해를 배상할 책임이 있으며, 이를 위해 업무보증을 설정해야 합니다.'}
-]
-};
-
-
-function goMock(){
-  showView('mock');
-  document.getElementById('mock-pick').style.display='block';
-  document.getElementById('mock-loading').style.display='none';
-  document.getElementById('mock-quiz').style.display='none';
-  // 과목 카드 렌더
-  var grid=document.getElementById('mock-grid');
-  grid.innerHTML='';
-  SUBS.forEach(function(sub){
-    var card=document.createElement('button');
-    card.className='scard';
-    card.style.borderColor=sub.light;
-    card.innerHTML='<div class="scard-top"><span style="font-size:24px">'+sub.icon+'</span>'
-      +'<span style="font-size:11px;font-weight:700;color:'+sub.color+';background:'+sub.light+';padding:3px 8px;border-radius:6px">40문제</span></div>'
-      +'<div><div class="scard-name">'+sub.name+'</div>'
-      +'<div class="scard-meta">AI 실전 모의고사</div></div>';
-    card.onclick=function(){startMock(sub);};
-    grid.appendChild(card);
-  });
-}
-
-async function startMock(sub){
-  MOCK={sub:sub,qs:[],answers:{},submitted:false};
-  document.getElementById('mock-pick').style.display='none';
-  document.getElementById('mock-quiz').style.display='none';
-  document.getElementById('mock-loading').style.display='block';
-  var ltxt=document.getElementById('mock-loading-txt');
-  ltxt.textContent=sub.name+' 학습 내용을 불러오는 중...';
-
-  try{
-    // 1) 과목 차시 목록 + 본문 수집 (실패해도 진행)
-    var corpus='';
-    try{
-      var data=await fetchLabel(sub.id,100);
-      var entries=(data&&data.feed&&data.feed.entry)||[];
-      for(var i=0;i<entries.length && corpus.length<6000;i++){
-        var c=(entries[i].content&&entries[i].content.$t)||'';
-        corpus+=h2t(c).slice(0,800)+'\n';
-      }
-    }catch(fetchErr){ corpus=''; }
-    if(corpus.length<100){
-      corpus=(typeof SUB_GUIDE!=='undefined'&&SUB_GUIDE[sub.id])||sub.name;
-    }
-
-    ltxt.textContent='AI가 '+sub.name+' 40문제를 출제하고 있습니다...';
-
-    // 2) AI에 40문제 요청 (분할: 한 번에 많으면 토큰 초과 → 2회 20문제씩)
-    var all=[];
-    try{
-      for(var batch=0; batch<2; batch++){
-        ltxt.textContent='AI 모의고사 생성 중... ('+(batch*20)+'/40문제)';
-        var part=await _mockGen(sub, corpus, 20, batch);
-        all=all.concat(part);
-      }
-    }catch(aiErr){
-      // AI 호출 실패(Failed to fetch 등) → 내장 문제로 폴백
-      all=[];
-    }
-
-    // AI 생성이 부족하면 내장 문제로 채우기
-    if(all.length<5){
-      all=_buildBankQuiz(sub);
-      if(typeof showToast==='function')showToast('📚 내장 예상문제로 모의고사를 구성했습니다');
-    }
-
-    // 번호 재정렬
-    all=all.map(function(q,idx){return Object.assign({},q,{id:'m'+idx,num:idx+1});});
-    if(all.length===0)throw new Error('문제 구성 실패');
-
-    MOCK.qs=all;
-    renderMock();
-  }catch(e){
-    // 최후 폴백: 내장 문제라도 표시
-    var fb=_buildBankQuiz(sub).map(function(q,idx){return Object.assign({},q,{id:'m'+idx,num:idx+1});});
-    if(fb.length>0){
-      MOCK.qs=fb;
-      renderMock();
-      if(typeof showToast==='function')showToast('📚 내장 예상문제로 모의고사를 구성했습니다');
-    }else{
-      document.getElementById('mock-loading').style.display='none';
-      document.getElementById('mock-pick').style.display='block';
-      if(typeof showToast==='function')showToast('⚠️ 생성 실패: '+e.message);
-    }
-  }
-}
-
-// 내장 문제 은행에서 40문제 모의고사 구성 (선택지 셔플로 변형)
-function _buildBankQuiz(sub){
-  var bank=MOCK_BANK[sub.id]||[];
-  var labels=['①','②','③','④','⑤'];
-  if(bank.length===0)return [];
-
-  function makeQ(src,variant){
-    // 선택지 순서를 섞어 같은 문제도 다르게 보이게 (정답 추적)
-    var idxArr=src.choices.map(function(_,i){return i;});
-    if(variant>0){
-      for(var i=idxArr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=idxArr[i];idxArr[i]=idxArr[j];idxArr[j]=t;}
-    }
-    var correctOrig=(src.answer||1)-1;
-    var newChoices=[], newCorrectIdx=0;
-    idxArr.forEach(function(origIdx,newIdx){
-      newChoices.push({label:labels[newIdx],text:String(src.choices[origIdx]).trim()});
-      if(origIdx===correctOrig)newCorrectIdx=newIdx;
-    });
-    return{question:src.q,choices:newChoices,correct:labels[newCorrectIdx],expl:src.expl||''};
-  }
-
-  // 40문제 구성: 은행 문제를 반복하며 변형
-  var out=[];
-  var pool=bank.slice();
-  // 셔플
-  for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t;}
-  var variant=0;
-  while(out.length<40){
-    for(var k=0;k<pool.length && out.length<40;k++){
-      out.push(makeQ(pool[k], variant));
-    }
-    variant++;
-    if(variant>10)break; // 안전장치
-  }
-  return out.slice(0,40);
-}
-
-async function _mockGen(sub, corpus, count, batch){
-  var topics=(typeof SUB_GUIDE!=='undefined'&&SUB_GUIDE[sub.id])||'';
-  var bp=MOCK_BLUEPRINT[sub.id]||[];
-  // 이번 배치가 담당할 단원 배분 (전체 40문제를 2배치로 → 각 20문제)
-  var bpText=bp.map(function(x){return x[0]+' '+Math.round(x[1]/2)+'문제';}).join(', ');
-  var prompt='당신은 공인중개사 시험 출제위원입니다. "'+sub.name+'" 과목의 실전 모의고사 '+count+'문제를 만드세요.\n'
-    +'실제 시험 출제 경향에 맞춰 다음 단원별 비중으로 골고루 출제하세요: '+bpText+'.\n'
-    +(batch>0?'앞 배치와 겹치지 않게 다른 지문·주제로 출제하세요.\n':'')
-    +'난이도는 실제 시험 수준(중상)이며, 박스형·사례형 문제도 일부 포함하세요.\n'
-    +'2026년 개정 법령 기준으로 작성하세요.\n'
-    +'반드시 아래 JSON 형식으로만 출력 (다른 텍스트 절대 금지):\n'
-    +'{"questions":[{"q":"문제","choices":["선택지1","선택지2","선택지3","선택지4","선택지5"],"answer":1,"expl":"해설"}]}\n'
-    +'answer는 정답 번호(1~5). 해설은 1~2문장.\n\n[학습 참고 내용]\n'+corpus.slice(0,3500);
-
-  var resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:prompt}]})
-  });
-  if(!resp.ok)throw new Error('HTTP '+resp.status);
-  var d=await resp.json();
-  if(d.error)throw new Error(d.error.message);
-  var raw=(d.content||[]).map(function(c){return c.text||'';}).join('');
-  var m=raw.match(/\{[\s\S]+\}/);
-  if(!m)return [];
-  var parsed=JSON.parse(m[0]);
-  var labels=['①','②','③','④','⑤'];
-  return (parsed.questions||[]).map(function(q){
-    var choices=(q.choices||[]).slice(0,5).map(function(t,ci){return{label:labels[ci],text:String(t).trim()};});
-    var ai=Math.max(1,Math.min(5,q.answer||1))-1;
-    return{question:String(q.q||'').trim(),choices:choices,correct:labels[ai]||'①',expl:String(q.expl||'').trim()};
-  }).filter(function(q){return q.question&&q.choices.length>=4;});
-}
-
-function renderMock(){
-  var sub=MOCK.sub;
-  document.getElementById('mock-loading').style.display='none';
-  document.getElementById('mock-pick').style.display='none';
-  document.getElementById('mock-quiz').style.display='block';
-  document.getElementById('mock-result').style.display='none';
-
-  var hdr=document.getElementById('mock-hdr');
-  hdr.style.background='linear-gradient(135deg,'+sub.color+','+sub.color+'CC)';
-  document.getElementById('mock-icon').textContent=sub.icon;
-  document.getElementById('mock-title').textContent=sub.name+' 모의고사';
-  document.getElementById('mock-prog').textContent='총 '+MOCK.qs.length+'문제';
-
-  var sb=document.getElementById('mock-submit');
-  sb.style.background='linear-gradient(135deg,'+sub.color+','+sub.color+'AA)';
-
-  var qlist=document.getElementById('mock-qlist');
-  qlist.innerHTML=MOCK.qs.map(function(q,qi){
-    return '<div class="qcard" style="margin-bottom:14px">'
-      +'<div class="qhead"><span class="qnum" style="background:'+sub.color+'">'+(qi+1)+'</span>'
-      +'<div class="qtext">'+esc(q.question)+'</div></div>'
-      +'<div class="qopts">'+q.choices.map(function(c,ci){
-        return '<button class="qopt" id="mopt-'+qi+'-'+ci+'" onclick="pickMock('+qi+','+ci+')">'
-          +'<span class="qopt-label">'+c.label+'</span><span class="qopt-text">'+esc(c.text)+'</span></button>';
-      }).join('')+'</div>'
-      +'<div class="qres" id="mres-'+qi+'" style="display:none"></div>'
-      +'</div>';
-  }).join('');
-  window.scrollTo(0,0);
-}
-
-function pickMock(qi,ci){
-  if(MOCK.submitted)return;
-  MOCK.answers[qi]=ci;
-  var q=MOCK.qs[qi];
-  q.choices.forEach(function(c,idx){
-    var b=document.getElementById('mopt-'+qi+'-'+idx);
-    if(b)b.classList.toggle('sel',idx===ci);
-  });
-  var done=Object.keys(MOCK.answers).length;
-  document.getElementById('mock-prog').textContent=done+' / '+MOCK.qs.length+' 풀이';
-}
-
-function submitMock(){
-  if(MOCK.submitted)return;
-  var unanswered=MOCK.qs.length-Object.keys(MOCK.answers).length;
-  if(unanswered>0 && !confirm(unanswered+'문제를 풀지 않았습니다. 채점할까요?'))return;
-  MOCK.submitted=true;
-  var sub=MOCK.sub, correct=0;
-
-  MOCK.qs.forEach(function(q,qi){
-    var labels=['①','②','③','④','⑤'];
-    var pickedIdx=MOCK.answers[qi];
-    var correctIdx=labels.indexOf(q.correct);
-    var isC=pickedIdx===correctIdx;
-    if(isC)correct++;
-    q.choices.forEach(function(c,ci){
-      var b=document.getElementById('mopt-'+qi+'-'+ci);
-      if(!b)return;
-      b.disabled=true;
-      if(ci===correctIdx)b.classList.add('correct');
-      else if(ci===pickedIdx)b.classList.add('wrong');
-    });
-    var res=document.getElementById('mres-'+qi);
-    if(res){
-      res.style.display='block';
-      var head=isC?'<span style="color:#2E7D32;font-weight:700">✅ 정답</span>'
-        :'<span style="color:#C62828;font-weight:700">❌ 오답 — 정답: '+q.correct+'</span>';
-      var ex=q.expl?'<div style="font-size:13px;color:#4B5563;line-height:1.7;margin-top:5px">💡 '+esc(_explClean(q.expl))+'</div>':'';
-      res.innerHTML='<div style="background:#F8FAFB;border-radius:9px;padding:10px 12px;margin-top:8px">'+head+ex+'</div>';
-      // 오답은 오답노트에 저장
-      if(!isC){
-        WRONGS.push({lesson:'모의고사-'+sub.id,num:qi+1,question:q.question,choices:q.choices,correct:q.correct,expl:q.expl,sub:sub.id});
-      }
-    }
-  });
-  if(WRONGS.length)lsSave(WK,WRONGS);
-  updateNavWrong();
-
-  var pct=Math.round(correct/MOCK.qs.length*100);
-  var grade=pct>=80?'합격권 🎉':pct>=60?'경계선 ⚡':'더 분발 💪';
-  var rEl=document.getElementById('mock-result');
-  rEl.style.display='block';
-  rEl.innerHTML='<div style="background:linear-gradient(135deg,'+sub.color+','+sub.color+'CC);border-radius:16px;padding:22px;color:#fff;text-align:center;margin-bottom:14px">'
-    +'<div style="font-size:14px;opacity:.85">'+sub.name+' 모의고사 결과</div>'
-    +'<div style="font-size:40px;font-weight:900;margin:6px 0">'+correct+' / '+MOCK.qs.length+'</div>'
-    +'<div style="font-size:20px;font-weight:800">'+pct+'점 · '+grade+'</div>'
-    +'<div style="font-size:12px;opacity:.8;margin-top:8px">합격 기준: 40점 이상 + 전체 평균 60점</div></div>'
-    +'<button onclick="goMock()" style="width:100%;padding:13px;border-radius:12px;border:none;background:#F3F4F6;color:#333;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:30px">다른 과목 풀기</button>';
-  document.getElementById('mock-submit').style.display='none';
-  rEl.scrollIntoView({behavior:'smooth'});
-  if(typeof _cloud!=='undefined'&&_cloud&&typeof _su==='function')setTimeout(_su,300);
-}
-
-
-// ══════════════════════════════════════════
-//  HOME
-// ══════════════════════════════════════════
 function renderHome(){
   const dd=dday();
   const ddEl=document.getElementById('dday');
-  ddEl.textContent='D-'+dd;ddEl.className='hero-dday-num'+(dd<90?' urgent':'');
+  if(ddEl){ddEl.textContent='D-'+dd;ddEl.className='hero-dday-num'+(dd<90?' urgent':'');}
   const ss=subStats();
   const tq=Object.values(ss).reduce((a,s)=>a+(s.total||0),0);
   const tc=Object.values(ss).reduce((a,s)=>a+(s.correct||0),0);
   const op=tq?Math.round(tc/tq*100):0;
-  document.getElementById('ov-score').innerHTML=tc+'<span style="font-size:12px;opacity:.65">/'+tq+' 문제</span>';
+  
+  const ovScore=document.getElementById('ov-score');
+  if(ovScore) ovScore.innerHTML=tc+'<span style="font-size:12px;opacity:.65">/'+tq+' 문제</span>';
   ring(document.getElementById('ring-ov'),op,'rgba(183,228,199,1)',66,6);
+  
   const wb=document.getElementById('wbanner');
-  if(WRONGS.length>0){wb.classList.add('show');document.getElementById('wbanner-t').textContent='오답노트 '+WRONGS.length+'문제';}
-  else wb.classList.remove('show');
-  const grid=document.getElementById('sgrid');grid.innerHTML='';
-  SUBS.forEach(sub=>{
-    const s=ss[sub.id]||{};
-    const pct=s.total?Math.round((s.correct||0)/s.total*100):0;
-    const card=document.createElement('button');card.className='scard';
-    card.style.borderColor=s.total?sub.light:'var(--bdr)';
-    card.innerHTML=`<div class="scard-top"><span style="font-size:24px">${sub.icon}</span><svg width="40" height="40"></svg></div>
-      <div><div class="scard-name">${sub.name}</div>
-      <div class="scard-meta">${s.total?s.total+'문제 · 정답 '+(s.correct||0):'아직 학습 전'}</div></div>`;
-    ring(card.querySelector('svg'),pct,sub.color,40,4);
-    card.onclick=()=>openSub(sub);grid.appendChild(card);
-  });
+  if(wb){
+    if(WRONGS.length>0){wb.classList.add('show');document.getElementById('wbanner-t').textContent='오답노트 '+WRONGS.length+'문제';}
+    else wb.classList.remove('show');
+  }
+  
+  const grid=document.getElementById('sgrid');
+  if(grid){
+    grid.innerHTML='';
+    SUBS.forEach(sub=>{
+      const s=ss[sub.id]||{};
+      const pct=s.total?Math.round((s.correct||0)/s.total*100):0;
+      const card=document.createElement('button');card.className='scard';
+      card.style.borderColor=s.total?sub.light:'var(--bdr)';
+      card.innerHTML=`<div class="scard-top"><span style="font-size:24px">${sub.icon}</span><svg width="40" height="40"></svg></div>
+        <div><div class="scard-name">${sub.name}</div>
+        <div class="scard-meta">${s.total?s.total+'문제 · 정답 '+(s.correct||0):'아직 학습 전'}</div></div>`;
+      grid.appendChild(card);
+      ring(card.querySelector('svg'),pct,sub.color,40,4);
+      card.onclick=()=>openSub(sub);
+    });
+  }
   updateNavWrong();
 }
 
-// ══════════════════════════════════════════
-//  SUBJECT
-// ══════════════════════════════════════════
 function openSub(sub){
-  const sameSubReload = ST.sub && ST.sub.id===sub.id && ST.posts && ST.posts.length>0;
   ST.sub=sub;
   const hdr=document.getElementById('sub-hdr');
-  hdr.style.background=`linear-gradient(135deg,${sub.color} 0%,${sub.color}CC 100%)`;
+  if(hdr) hdr.style.background=`linear-gradient(135deg,${sub.color} 0%,${sub.color}CC 100%)`;
   document.getElementById('sub-icon').textContent=sub.icon;
   document.getElementById('sub-name').textContent=sub.name;
   showView('sub');
-  // 같은 과목 재진입 + 캐시 있으면 즉시 갱신 (진도율 반영)
-  if(sameSubReload){
-    renderLessonList({feed:{entry:ST.posts.map(p=>({
-      title:{$t:p.title}, link:[{rel:'alternate',href:p.link}],
-      content:{$t:p.content}, published:{$t:p.pub}
-    }))}}, sub);
-    return;
-  }
   document.getElementById('sub-meta').textContent='로딩 중...';
   document.getElementById('llist').innerHTML='<div class="spin-wrap"><div class="spin"></div></div>';
   fetchLabel(sub.id)
     .then(data=>renderLessonList(data,sub))
     .catch(()=>{
-      document.getElementById('llist').innerHTML=`
-        <div style="background:#FFF3F3;border-radius:var(--r);padding:18px;text-align:center;color:var(--red)">
-          ⚠️ 데이터를 불러올 수 없습니다.<br>
-          <small style="color:var(--tx3)">인터넷 연결 확인 후 다시 시도해주세요</small><br><br>
-          <button onclick="openSub(ST.sub)" style="background:${sub.color};color:#fff;border-radius:9px;padding:9px 18px;font-weight:700;font-size:13px">🔄 다시 시도</button>
-        </div>`;
+      document.getElementById('llist').innerHTML=`<div style="padding:20px;text-align:center;"><button onclick="openSub(ST.sub)">🔄 다시 시도</button></div>`;
     });
 }
 
@@ -1677,758 +736,83 @@ function renderLessonList(data,sub){
   const entries=(data.feed?.entry||[]).map(e=>{
     const title=e.title?.$t||'';
     const link=e.link?.find(l=>l.rel==='alternate')?.href||'';
-    const content=e.content?.$t||e.summary?.$t||'';
-    const pub=e.published?.$t||'';
+    const content=e.content?.$t||'';
     const chM=title.match(/(\d+)\s*차시/);const ch=chM?+chM[1]:null;
-    const isMock=/모의고사|단원별/i.test(title);
-    return{title,link,content,pub,ch,isMock};
-  }).sort((a,b)=>{if(a.ch&&b.ch)return a.ch-b.ch;if(a.ch)return-1;if(b.ch)return 1;return a.pub.localeCompare(b.pub);});
-  ST.posts=entries;
-  const done=entries.filter(p=>STATS[p.link]).length;
-  const dp=entries.length?Math.round(done/entries.length*100):0;
-  document.getElementById('sub-meta').textContent=`전체 ${entries.length}강 · 완료 ${done}강`;
-  ring(document.getElementById('ring-sub'),dp,'rgba(255,255,255,.85)',52,4);
+    return{title,link,content,ch};
+  }).sort((a,b)=>a.ch-b.ch);
+  
   const list=document.getElementById('llist');
-  if(!entries.length){list.innerHTML='<div class="empty"><div class="empty-ico">📭</div>게시물이 없습니다</div>';return;}
+  if(!list) return;
   list.innerHTML='';
   entries.forEach((post,i)=>{
-    const s=STATS[post.link]||{};
-    const pct=s.total?Math.round((s.correct||0)/s.total*100):null;
-    const pc=pct===null?'#999':pct>=80?'#1B5E20':pct>=60?'#E65100':'#C62828';
-    const lbl=post.ch?post.ch+'강':post.isMock?'모의':(i+1)+'';
-    const mc=pct===null?'':pct>=80?'ok':pct>=60?'warn':'bad';
-    const mt=pct!==null?`정답률 ${pct}% (${s.correct}/${s.total})`:'미학습';
-    const ns=s.total?`background:${sub.light};color:${sub.color}`:'';
     const card=document.createElement('button');card.className='lcard';
-    card.style.borderColor=s.total?sub.light:'var(--bdr)';
-    card.innerHTML=`<div class="lnum" style="${ns}">${lbl}</div>
-      <div class="linfo"><div class="ltitle">${esc(cleanT(post.title))}</div>
-      <div class="lmeta ${mc}">${mt}</div></div>
-      ${pct!==null?`<svg width="36" height="36"></svg>`:`<span style="font-size:15px;color:#D1D5DB">›</span>`}`;
-    if(pct!==null)ring(card.querySelector('svg'),pct,pc,36,3.5);
-    card.onclick=()=>openLesson(post);list.appendChild(card);
+    card.innerHTML=`<div class="lnum">${post.ch||(i+1)}</div><div class="linfo"><div class="ltitle">${esc(cleanT(post.title))}</div></div>`;
+    card.onclick=()=>openLesson(post);
+    list.appendChild(card);
   });
 }
 
-// ══════════════════════════════════════════
-//  LESSON OPEN
-// ══════════════════════════════════════════
 function openLesson(post){
   const sub=ST.sub;
   ST.lesson=post;ST.answers={};ST.submitted=false;ST.tab='study';
   const text=h2t(post.content||'');
   ST.text=text;ST.qs=parseQs(text);
 
-  // 차시 제목으로 내장 정답·해설 매칭 (블로그에 정답이 숨김처리된 경우 보완)
-  const _la=_lessonAnswers(cleanT(post.title));
-  if(_la){
-    const labels=['①','②','③','④','⑤'];
-    ST.qs.forEach((q,qi)=>{
-      if(qi<_la.length){
-        if(!q.correct && _la[qi].a)q.correct=labels[_la[qi].a-1];
-        if((!q.expl||q.expl.length<15) && _la[qi].e)q.expl=_la[qi].e;
-      }
-    });
-  }
-
-  const hdr=document.getElementById('les-hdr');
-  hdr.style.background=`linear-gradient(135deg,${sub.color} 0%,${sub.color}AA 100%)`;
   document.getElementById('les-title').textContent=cleanT(post.title);
-  document.getElementById('les-meta').textContent=sub.icon+' '+sub.name+' · '+ST.qs.length+'문제';
-  document.getElementById('les-back').onclick=function(){
-    showView('sub');
-    if(ST.sub) openSub(ST.sub);
-  };
-  document.getElementById('ring-les').style.display='none';
-  document.getElementById('abar').style.display='none';
-  document.getElementById('ai-retry').style.display='none';
-
-  // ① 자체 파싱으로 즉시 학습 콘텐츠 표시 (AI 없이도 완전한 내용)
+  document.getElementById('les-meta').textContent=sub.name+' · '+ST.qs.length+'문제';
+  
   const studyData=buildStudyData(text);
   renderStudyContent(studyData, sub);
-
   renderQuiz();
   switchTab('study');
   showView('les');
-
-  // ②-A 정답이 없는 문제 → AI로 정답+해설 일괄 생성
-  const needAnswer=ST.qs.filter(q=>!q.correct || !(q.expl&&q.expl.replace(/\s/g,'').length>=20));
-  if(needAnswer.length>0){
-    setTimeout(()=>_fillAnswers(sub),300);
-  }
-
-  // ② AI 향상 시도 (성공하면 더 풍부한 내용으로 업데이트, 실패해도 ①이 표시됨)
-  setTimeout(()=>tryAIEnhance(sub),500);
-}
-
-// 정답/해설이 없는 문제를 AI로 일괄 보충
-async function _fillAnswers(sub){
-  const targets=ST.qs.filter(q=>!q.correct || !(q.expl&&q.expl.replace(/\s/g,'').length>=20));
-  if(targets.length===0)return;
-  const meta=document.getElementById('les-meta');
-  const origMeta=meta?meta.textContent:'';
-  if(meta)meta.textContent=sub.icon+' '+sub.name+' · 🤖 정답·해설 준비 중...';
-
-  // 문제를 5개씩 나눠 처리 (토큰 관리)
-  const labels=['①','②','③','④','⑤'];
-  try{
-    for(let b=0; b<targets.length; b+=5){
-      const batch=targets.slice(b,b+5);
-      const qList=batch.map((q,i)=>{
-        return '문제'+(i+1)+'. '+q.question+'\n'+q.choices.map(c=>c.label+' '+c.text).join('\n');
-      }).join('\n\n');
-      const prompt='당신은 공인중개사 시험 전문 강사입니다. 아래 문제들의 정답과 해설을 작성하세요.\n'
-        +'각 문제마다 정답 번호(1~5)와 2~3문장 해설을 제공하세요.\n'
-        +'반드시 JSON만 출력 (다른 텍스트 금지):\n'
-        +'{"answers":[{"num":1,"answer":3,"expl":"해설"},...]}\n\n'+qList;
-      const resp=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})
-      });
-      if(!resp.ok)throw new Error('HTTP '+resp.status);
-      const d=await resp.json();
-      if(d.error)throw new Error(d.error.message);
-      const raw=(d.content||[]).map(c=>c.text||'').join('');
-      const m=raw.match(/\{[\s\S]+\}/);
-      if(!m)continue;
-      const parsed=JSON.parse(m[0]);
-      (parsed.answers||[]).forEach(a=>{
-        const idx=(a.num||0)-1;
-        if(idx>=0&&idx<batch.length){
-          const q=batch[idx];
-          const ai=Math.max(1,Math.min(5,a.answer||1))-1;
-          if(!q.correct)q.correct=labels[ai];
-          if(a.expl&&(!q.expl||q.expl.length<20))q.expl=String(a.expl).trim();
-        }
-      });
-    }
-    if(meta)meta.textContent=sub.icon+' '+sub.name+' · '+ST.qs.length+'문제';
-    // 아직 답 안 한 상태면 다시 렌더 (정답 반영)
-    if(Object.keys(ST.answers).length===0 && !ST.submitted){
-      renderQuiz();
-      if(typeof showToast==='function')showToast('🤖 정답·해설이 준비되었습니다');
-    }
-  }catch(e){
-    if(meta)meta.textContent=origMeta;
-  }
-}
-
-// ══════════════════════════════════════════
-//  QUIZ
-// ══════════════════════════════════════════
-// ══════════════════════════════════════════
-//  문제 렌더링 — 선택지 5개만 표시
-// ══════════════════════════════════════════
-// 차시 내용으로 AI가 5지선다 문제 생성
-async function genAIQuiz(){
-  const sub=ST.sub;
-  const statusEl=document.getElementById('aiquiz-status');
-  const content=(ST.text||'').slice(0,3000);
-  if(content.length<50){
-    if(statusEl)statusEl.textContent='⚠️ 학습 내용이 부족해 문제를 만들 수 없습니다.';
-    return;
-  }
-  if(statusEl)statusEl.innerHTML='<span style="color:'+sub.color+'">🤖 AI가 문제를 만들고 있습니다... (10~20초)</span>';
-
-  const prompt='당신은 공인중개사 시험 출제위원입니다. 아래 "'+sub.name+'" 과목 학습 내용을 바탕으로 '
-    +'실제 시험 수준의 5지선다 객관식 문제 5개를 만드세요. 각 문제는 4~5개 선택지, 명확한 정답 1개, 간단한 해설을 포함합니다.\n'
-    +'반드시 아래 JSON 형식으로만 출력 (다른 텍스트 없이):\n'
-    +'{"questions":[{"q":"문제 질문","choices":["선택지1","선택지2","선택지3","선택지4","선택지5"],"answer":1,"expl":"해설"}]}\n'
-    +'answer는 정답 선택지의 번호(1~5). 2026년 개정 법령 기준으로 작성.\n\n'
-    +'[학습 내용]\n'+content;
-
-  try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2500,messages:[{role:'user',content:prompt}]})
-    });
-    if(!resp.ok)throw new Error('HTTP '+resp.status);
-    const d=await resp.json();
-    if(d.error)throw new Error(d.error.message);
-    const raw=(d.content||[]).map(c=>c.text||'').join('');
-    const m=raw.match(/\{[\s\S]+\}/);
-    if(!m)throw new Error('형식 오류');
-    const parsed=JSON.parse(m[0]);
-    const labels=['①','②','③','④','⑤'];
-    const newQs=(parsed.questions||[]).map((q,i)=>{
-      const choices=(q.choices||[]).slice(0,5).map((t,ci)=>({label:labels[ci],text:String(t).trim()}));
-      const ansIdx=Math.max(1,Math.min(5,q.answer||1))-1;
-      return{
-        id:'aq'+i,num:i+1,question:String(q.q||'').trim(),
-        choices:choices,correct:labels[ansIdx]||'①',
-        expl:String(q.expl||'').trim(),aiGen:true
-      };
-    }).filter(q=>q.question&&q.choices.length>=4);
-
-    if(newQs.length===0)throw new Error('생성된 문제 없음');
-    ST.qs=newQs;
-    const lm=document.getElementById('les-meta');
-    if(lm)lm.textContent=sub.icon+' '+sub.name+' · '+ST.qs.length+'문제 (AI 생성)';
-    renderQuiz();
-    buildTabs();
-    if(typeof showToast==='function')showToast('🤖 AI가 '+newQs.length+'개 문제를 생성했습니다!');
-  }catch(e){
-    if(statusEl)statusEl.innerHTML='<span style="color:#C62828">⚠️ 생성 실패: '+e.message+'<br>잠시 후 다시 시도해 주세요.</span>';
-  }
 }
 
 function renderQuiz(){
-  const sub=ST.sub;
   const qlist=document.getElementById('qlist');
-  const sBtn=document.getElementById('sub-btn');
-  document.getElementById('res-card').classList.remove('show');
-
-  if(!ST.qs.length){
-    qlist.innerHTML='<div class="empty" style="padding:30px 20px;text-align:center">'
-      +'<div class="empty-ico" style="font-size:42px">📝</div>'
-      +'<div style="margin:12px 0;color:var(--tx2);font-size:15px">이 차시에는 등록된 문제가 없습니다.<br>학습 내용을 바탕으로 AI가 문제를 만들어 드릴까요?</div>'
-      +'<button onclick="genAIQuiz()" style="margin-top:8px;padding:12px 24px;border-radius:11px;border:none;background:linear-gradient(135deg,'+sub.color+','+sub.color+'CC);color:#fff;font-weight:800;font-size:15px;cursor:pointer">🤖 AI 문제 생성하기</button>'
-      +'<div id="aiquiz-status" style="margin-top:12px;font-size:13px;color:var(--tx3)"></div>'
-      +'</div>';
-    sBtn.style.display='none';
-    return;
-  }
-
-  sBtn.style.display='block';
-  sBtn.style.background=`linear-gradient(135deg,${sub.color},${sub.color}AA)`;
-  sBtn.style.boxShadow=`0 4px 14px ${sub.color}33`;
-  sBtn.onclick=handleSubmit;
-  updateSubBtn();
-
-  // ★ 선택지 5개만 렌더링. 해설 div는 내용 없이 숨김.
+  if(!qlist)return;
   qlist.innerHTML='';
   ST.qs.forEach(q=>{
-    const card=document.createElement('div');
-    card.className='qcard';
-    card.id='qc-'+q.id;
-    card.innerHTML=`
-      <div class="qhdr">
-        <span class="qbadge" style="background:${sub.light};color:${sub.color}">Q${q.num}</span>
-        <div class="qtext">${esc(q.question)}</div>
-      </div>
-      <div class="q-choices" id="choices-${q.id}"></div>
-      <div class="q-result" id="res-${q.id}" style="display:none"></div>`;
-    // 선택지 버튼 5개만 추가
+    const card=document.createElement('div');card.className='qcard';
+    card.innerHTML=`<div class="qhdr"><div class="qtext"><b>Q${q.num}.</b> ${esc(q.question)}</div></div><div class="q-choices"></div>`;
     const choicesEl=card.querySelector('.q-choices');
-    q.choices.forEach((c,ci)=>{
-      const btn=document.createElement('button');
-      btn.className='choice';
-      btn.id='ch-'+q.id+'-'+ci;
-      btn.innerHTML=`<span class="choice-lbl" style="color:${sub.color}">${c.label}</span><span class="choice-txt">${esc(c.text)}</span><span class="choice-mk" id="mk-${q.id}-${ci}"></span>`;
-      btn.onclick=()=>pickAns(q.id,ci);
+    q.choices.forEach(c=>{
+      const btn=document.createElement('button');btn.className='choice';
+      btn.innerHTML=`<span class="choice-lbl">${c.label}</span><span class="choice-txt">${esc(c.text)}</span>`;
       choicesEl.appendChild(btn);
     });
     qlist.appendChild(card);
   });
 }
 
-// ══════════════════════════════════════════
-//  선택 → 정오 표시 + 해설 (선택 후에만)
-// ══════════════════════════════════════════
-function pickAns(qid,ci){
-  if(ST.answers[qid]!==undefined)return;
-  if(ST.submitted)return;
-
-  const q=ST.qs.find(q=>q.id===qid);
-  if(!q)return;
-  ST.answers[qid]=ci;
-
-  const sub=ST.sub;
-  const userLabel=q.choices[ci]?.label;
-
-  // 정답이 없는 문제: 채점 보류하고 AI로 정답+해설 즉시 생성
-  if(!q.correct){
-    // 선택 표시만 (정오 판정은 보류)
-    q.choices.forEach((c,i)=>{
-      const btn=document.getElementById('ch-'+qid+'-'+i);
-      if(!btn)return;
-      btn.disabled=true; btn.style.cursor='default';
-      if(i===ci){btn.style.borderColor='#3B82F6';btn.style.background='#EFF6FF';}
-    });
-    const resEl0=document.getElementById('res-'+qid);
-    if(resEl0){
-      resEl0.style.display='block';
-      resEl0.innerHTML='<div id="aiexp-'+qid+'" style="font-size:13px;color:#888;line-height:1.75">💭 정답·해설을 불러오는 중...</div>';
-    }
-    _genAnswerExpl(q, qid, ci);
-    updateSubBtn();
-    return;
-  }
-
-  const isCorrect=!!(q.correct && userLabel===q.correct);
-
-  // 선택지 버튼 잠금 + 정오 색상
-  q.choices.forEach((c,i)=>{
-    const btn=document.getElementById('ch-'+qid+'-'+i);
-    if(!btn)return;
-    btn.disabled=true;
-    btn.style.cursor='default';
-    const isAns =!!(q.correct && c.label===q.correct);
-    const isUser=(i===ci);
-    if(isAns){
-      btn.style.borderColor='#43A047';
-      btn.style.background='#E8F5E9';
-      document.getElementById('mk-'+qid+'-'+i).textContent='✅';
-    } else if(isUser && !isAns){
-      btn.style.borderColor='#E53935';
-      btn.style.background='#FFEBEE';
-      document.getElementById('mk-'+qid+'-'+i).textContent='❌';
-    }
-  });
-
-  // 카드 테두리
-  const card=document.getElementById('qc-'+qid);
-  if(card) card.style.borderColor=isCorrect?'#43A047':'#E53935';
-
-  // ★ 결과+해설: 선택 후에만 표시
-  const resEl=document.getElementById('res-'+qid);
-  if(resEl){
-    let html='';
-    if(isCorrect){
-      html+='<div style="color:#2E7D32;font-weight:700;margin-bottom:6px">✅ 정답입니다!</div>';
-    } else {
-      html+='<div style="color:#C62828;font-weight:700;margin-bottom:6px">❌ 오답 — 정답: <b>'+esc(q.correct||'미제공')+'</b></div>';
-    }
-    // 해설이 충분하면 표시, 부족하면 AI 생성
-    const cleanedExpl = _explClean(q.expl||'');
-    const hasGoodExpl = cleanedExpl && cleanedExpl.replace(/\s/g,'').length>=25;
-    if(hasGoodExpl){
-      html+='<div style="font-size:13px;color:#4B5563;line-height:1.75">💡 '+esc(cleanedExpl)+'</div>';
-    } else {
-      html+='<div id="aiexp-'+qid+'" style="font-size:13px;color:#888;line-height:1.75">💭 해설 생성 중...</div>';
-    }
-    resEl.innerHTML=html;
-    resEl.style.display='block';
-
-    // 해설 부족 시 AI로 생성
-    if(!hasGoodExpl){
-      _genExpl(q, qid);
-    }
-  }
-
-  updateSubBtn();
-}
-
-// ── 정답 없는 문제: AI로 정답+해설 받아서 채점
-function _genAnswerExpl(q, qid, pickedCi){
-  const labels=['①','②','③','④','⑤'];
-  const prompt='당신은 공인중개사 시험 전문 강사입니다. 아래 문제의 정답 번호와 해설을 알려주세요.\n'
-    +'반드시 JSON만 출력 (다른 텍스트 금지): {"answer":정답번호(1~5),"expl":"2~3문장 해설"}\n\n'
-    +'[문제] '+q.question+'\n[선택지]\n'+q.choices.map((c,i)=>(i+1)+') '+c.text).join('\n');
-
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})
-  })
-  .then(r=>r.json())
-  .then(d=>{
-    if(d.error)throw new Error(d.error.message);
-    const raw=(d.content||[]).map(c=>c.text||'').join('');
-    const m=raw.match(/\{[\s\S]+\}/);
-    if(!m)throw new Error('형식 오류');
-    const parsed=JSON.parse(m[0]);
-    const ai=Math.max(1,Math.min(5,parsed.answer||1))-1;
-    q.correct=labels[ai];
-    q.expl=String(parsed.expl||'').trim();
-    _applyGrade(q, qid, pickedCi);
-  })
-  .catch(e=>{
-    const resEl=document.getElementById('res-'+qid);
-    if(resEl){
-      resEl.innerHTML='<div style="color:#1D4ED8;font-weight:700;margin-bottom:6px">📘 선택 완료</div>'
-        +'<div style="font-size:13px;color:#4B5563;line-height:1.7">이 문제는 정답이 별도 제공되지 않은 차시입니다. '
-        +'각 선택지를 학습 자료와 비교하며 스스로 정답을 판단해 보세요. '
-        +'(인터넷 연결 시 AI가 정답·해설을 제공합니다.)</div>';
-    }
-    updateSubBtn();
-  });
-}
-
-// 채점 결과를 화면에 반영 (정답 확정 후)
-function _applyGrade(q, qid, ci){
-  const userLabel=q.choices[ci]?.label;
-  const isCorrect=!!(q.correct && userLabel===q.correct);
-  q.choices.forEach((c,i)=>{
-    const btn=document.getElementById('ch-'+qid+'-'+i);
-    if(!btn)return;
-    btn.disabled=true; btn.style.cursor='default';
-    const isAns=!!(q.correct && c.label===q.correct);
-    const mk=document.getElementById('mk-'+qid+'-'+i);
-    if(isAns){btn.style.borderColor='#43A047';btn.style.background='#E8F5E9';if(mk)mk.textContent='✅';}
-    else if(i===ci && !isAns){btn.style.borderColor='#E53935';btn.style.background='#FFEBEE';if(mk)mk.textContent='❌';}
-  });
-  const card=document.getElementById('qc-'+qid);
-  if(card)card.style.borderColor=isCorrect?'#43A047':'#E53935';
-  const resEl=document.getElementById('res-'+qid);
-  if(resEl){
-    let html=isCorrect
-      ?'<div style="color:#2E7D32;font-weight:700;margin-bottom:6px">✅ 정답입니다!</div>'
-      :'<div style="color:#C62828;font-weight:700;margin-bottom:6px">❌ 오답 — 정답: <b>'+esc(q.correct)+'</b></div>';
-    const ce=_explClean(q.expl||'');
-    if(ce&&ce.replace(/\s/g,'').length>=10){
-      html+='<div style="font-size:13px;color:#4B5563;line-height:1.75">💡 '+esc(ce)+' <span style="font-size:11px;color:#AAA">(AI)</span></div>';
-    }
-    resEl.innerHTML=html;
-    resEl.style.display='block';
-  }
-  updateSubBtn();
-}
-
-// ── AI로 문제 해설 생성 (원본 해설이 부족할 때)
-function _genExpl(q, qid){
-  const ans=q.choices.find(c=>c.label===q.correct);
-  const prompt='당신은 공인중개사 시험 전문 강사입니다. 아래 문제의 해설을 2~3문장으로 명확하게 작성하세요. '
-    +'정답인 이유와 핵심 개념을 설명하고, 수험생이 암기할 포인트를 포함하세요. 해설만 출력하세요.\n\n'
-    +'[문제] '+q.question+'\n'
-    +'[선택지]\n'+q.choices.map(c=>c.label+' '+c.text).join('\n')+'\n'
-    +'[정답] '+(q.correct||'')+(ans?' ('+ans.text+')':'')
-    +(q.expl?'\n[참고] '+q.expl:'');
-
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    const txt=(d.content||[]).map(function(c){return c.text||'';}).join('').trim();
-    const el=document.getElementById('aiexp-'+qid);
-    if(el&&txt){
-      el.style.color='#4B5563';
-      el.innerHTML='💡 '+esc(txt)+' <span style="font-size:11px;color:#AAA">(AI 해설)</span>';
-      q.expl=txt; // 저장해서 재생성 방지
-    }else if(el){
-      el.style.display='none';
-    }
-  })
-  .catch(function(){
-    const el=document.getElementById('aiexp-'+qid);
-    if(el)el.style.display='none';
-  });
-}
-
-// ══════════════════════════════════════════
-//  제출 버튼 상태
-// ══════════════════════════════════════════
-function updateSubBtn(){
-  const n=Object.keys(ST.answers).length,t=ST.qs.length;
-  const btn=document.getElementById('sub-btn');
-  if(!btn)return;
-  if(n===0){btn.textContent='문제를 풀어주세요 (0/'+t+')';btn.style.opacity='0.5';}
-  else if(n<t){btn.textContent='계속 풀기 ('+n+'/'+t+'문제 완료)';btn.style.opacity='0.7';}
-  else{btn.textContent='최종 제출 → 결과 보기';btn.style.opacity='1';}
-}
-
-// ══════════════════════════════════════════
-//  최종 제출
-// ══════════════════════════════════════════
-function handleSubmit(){
-  if(!Object.keys(ST.answers).length)return;
-  ST.submitted=true;
-  const sub=ST.sub;
-  let correct=0;const newW=[];
-
-  ST.qs.forEach(q=>{
-    const ci=ST.answers[q.id];
-    const ul=ci!==undefined?q.choices[ci]?.label:null;
-    const ok=!!(ul&&ul===q.correct);
-    if(ok)correct++;
-    if(ul&&q.correct&&!ok)newW.push({subject:sub.name,lesson:ST.lesson.title,...q,userLabel:ul});
-  });
-
-  const total=ST.qs.filter(q=>q.correct).length||ST.qs.length;
-  STATS[ST.lesson.link]={total,correct,sid:sub.id};lsSave(SK,STATS);
-  if(newW.length){
-    const ex=new Set(WRONGS.map(w=>w.lesson+'_'+w.num));
-    WRONGS=[...WRONGS,...newW.filter(w=>!ex.has(w.lesson+'_'+w.num))];
-    lsSave(WK,WRONGS);updateNavWrong();
-  }
-
-  const pct=Math.round(correct/ST.qs.length*100),wc=ST.qs.length-correct;
-  document.getElementById('sub-btn').style.display='none';
-  const rc=document.getElementById('res-card');rc.classList.add('show');
-  document.getElementById('res-emoji').textContent=wc===0?'🏆':pct>=70?'👍':'📚';
-  document.getElementById('res-pct').textContent=pct+'%';
-  document.getElementById('res-pct').style.color=sub.color;
-  document.getElementById('res-sub').textContent=correct+' / '+ST.qs.length+' 정답';
-  const rwBtn=document.getElementById('res-wbtn');
-  if(wc>0){
-    rwBtn.style.display='inline-block';
-    rwBtn.textContent='오답노트 ('+wc+'문제) →';
-    rwBtn.onclick=()=>{switchTab('wrong');renderWrongTab();};
-  } else rwBtn.style.display='none';
-  document.getElementById('res-rbtn').onclick=()=>{
-    ST.answers={};ST.submitted=false;
-    renderQuiz();switchTab('quiz');
-    document.getElementById('res-card').classList.remove('show');
-    document.getElementById('sub-btn').style.display='block';
-  };
-  const rl=document.getElementById('ring-les');
-  rl.style.display='block';ring(rl,pct,'rgba(255,255,255,.85)',40,4);
-  buildTabs();
-
-  // 진도율 화면 갱신 (홈 + 차시목록)
-  try{ renderHome(); }catch(e){}
-  // 로그인 상태면 즉시 클라우드 저장
-  if(typeof _cloud!=='undefined' && _cloud && typeof _su==='function'){
-    setTimeout(function(){ _su(); }, 300);
-  }
-}
-
-
-// ══════════════════════════════════════════
-//  TABS
-// ══════════════════════════════════════════
-function buildTabs(){
-  const sub=ST.sub;
-  const wc=ST.submitted?ST.qs.filter(q=>{const ul=q.choices[ST.answers[q.id]]?.label;return q.correct&&ul!==q.correct;}).length:0;
-  const tabs=[{key:'study',label:'📖 학습정리'},{key:'quiz',label:`📝 문제(${ST.qs.length})`},...(ST.submitted&&wc>0?[{key:'wrong',label:`❌ 오답(${wc})`}]:[])];
-  const el=document.getElementById('tabs');el.innerHTML='';
-  tabs.forEach(t=>{
-    const b=document.createElement('button');b.className='tab'+(ST.tab===t.key?' on':'');
-    if(ST.tab===t.key)b.style.background=sub.color;
-    b.textContent=t.label;
-    b.onclick=()=>{switchTab(t.key);if(t.key==='wrong')renderWrongTab();};
-    el.appendChild(b);
-  });
-}
 function switchTab(tab){
   ST.tab=tab;
   document.getElementById('psum').style.display=tab==='study'?'block':'none';
   document.getElementById('pquiz').style.display=tab==='quiz'?'block':'none';
-  document.getElementById('pwrong').style.display=tab==='wrong'?'block':'none';
   buildTabs();
 }
 
-// ══════════════════════════════════════════
-//  WRONG TAB
-// ══════════════════════════════════════════
-function renderWrongTab(){
+function buildTabs(){
   const sub=ST.sub;
-  const wqs=ST.qs.filter(q=>{const ul=q.choices[ST.answers[q.id]]?.label;return q.correct&&ul!==q.correct;});
-  document.getElementById('wlist').innerHTML=wqs.map(q=>{
-    const ci=ST.answers[q.id],ul=ci!==undefined?q.choices[ci]?.label:'미답변';
-    const chs=q.choices.map((c,i)=>{
-      const isAns=c.label===q.correct,isUser=ci===i;
-      if(!isAns&&!isUser)return'';
-      return`<div class="wq-ch ${isAns?'ans':''} ${(isUser&&!isAns)?'bad':''}">
-        <span style="font-weight:800;color:${isAns?'#1B5E20':'#C62828'};flex-shrink:0">${c.label}</span>
-        <span style="flex:1;line-height:1.5">${esc(c.text)}</span>
-        <span>${isAns?'✅':''}</span></div>`;
-    }).join('');
-    return`<div class="wq-card">
-      <div class="qhdr" style="margin-bottom:7px">
-        <span class="qbadge" style="background:#FFEBEE;color:#C62828">Q${q.num}</span>
-        <div class="qtext">${esc(q.question)}</div>
-      </div>
-      <div style="display:flex;gap:14px;font-size:11.5px;margin-bottom:9px">
-        <span style="color:#E53935">내 답: ${esc(ul)}</span>
-        ${q.correct?`<span style="color:#1B5E20">✅ 정답: ${q.correct}</span>`:''}
-      </div>${chs}
-      ${q.expl&&_explClean(q.expl)?`<div style="margin-top:9px;background:#FFFBEB;border-radius:8px;padding:9px 11px;border-left:3px solid #F59E0B">
-        <div style="font-size:12px;color:var(--tx2);line-height:1.65">💡 ${esc(_explClean(q.expl))}</div>
-      </div>`:''}
-    </div>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════════
-//  ALL WRONG
-// ══════════════════════════════════════════
-// ══════════════════════════════════════════
-//  오답노트 (과목별 선택)
-// ══════════════════════════════════════════
-var _wrongSub=null; // 현재 선택된 과목 (null=과목선택화면)
-
-function goWrong(){
-  _wrongSub=null;
-  showView('wrong');
-  renderWrongPick();
-}
-
-function wrongBack(){
-  if(_wrongSub){
-    // 과목 상세 → 과목 선택 화면으로
-    _wrongSub=null;
-    renderWrongPick();
-  } else {
-    // 과목 선택 → 홈으로
-    goHome();
-  }
-}
-
-// 과목 선택 화면
-function renderWrongPick(){
-  _wrongSub=null;
-  document.getElementById('wrong-pick').style.display='block';
-  document.getElementById('wrong-detail').style.display='none';
-  document.getElementById('wrong-title').textContent='❌ 오답노트';
-  document.getElementById('wrong-back-btn').onclick=function(){goHome();};
-
-  const total=WRONGS.length;
-  document.getElementById('aw-cnt').textContent='총 '+total+'문제 · 과목을 선택하세요';
-
-  const grid=document.getElementById('wrong-grid');
-  grid.innerHTML='';
-
-  if(total===0){
-    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:60px 0">'
-      +'<div style="font-size:50px;margin-bottom:10px">🏆</div>'
-      +'<div style="font-weight:800;font-size:17px;color:#1B5E20">오답이 없습니다!</div>'
-      +'<div style="color:var(--tx3);margin-top:4px">꾸준히 학습하고 있습니다</div></div>';
-    return;
-  }
-
-  SUBS.forEach(function(sub){
-    const items=WRONGS.filter(function(w){return w.subject===sub.name||w.sub===sub.id;});
-    const card=document.createElement('button');
-    card.className='scard';
-    card.style.borderColor=sub.light;
-    card.style.opacity=items.length?'1':'0.45';
-    card.innerHTML='<div class="scard-top">'
-      +'<span style="font-size:24px">'+sub.icon+'</span>'
-      +'<span style="font-size:11px;font-weight:700;color:'+(items.length?sub.color:'#999')+';background:'+(items.length?sub.light:'#F3F4F6')+';padding:3px 8px;border-radius:6px">'
-      +(items.length?items.length+'문제':'없음')+'</span></div>'
-      +'<div><div class="scard-name">'+sub.name+'</div>'
-      +'<div class="scard-meta">'+(items.length?'틀린 문제 확인':'오답 없음')+'</div></div>';
-    if(items.length){
-      card.onclick=function(){renderWrongDetail(sub);};
-    }
-    grid.appendChild(card);
+  const el=document.getElementById('tabs');
+  if(!el) return;
+  el.innerHTML='';
+  if(!sub) return; 
+  const tabs=[{key:'study',label:'📖 학습정리'},{key:'quiz',label:'📝 문제'}];
+  tabs.forEach(t=>{
+    const b=document.createElement('button');b.className='tab'+(ST.tab===t.key?' on':'');
+    if(ST.tab===t.key)b.style.background=sub.color;
+    b.textContent=t.label;
+    b.onclick=()=>switchTab(t.key);
+    el.appendChild(b);
   });
 }
 
-// 과목별 오답 목록
-function renderWrongDetail(sub){
-  _wrongSub=sub;
-  document.getElementById('wrong-pick').style.display='none';
-  document.getElementById('wrong-detail').style.display='block';
-  document.getElementById('wrong-title').innerHTML=sub.icon+' '+sub.name+' 오답노트';
-  document.getElementById('wrong-back-btn').onclick=function(){renderWrongPick();};
+function goWrong(){}
+function wrongBack(){}
+function updateNavWrong(){}
 
-  const items=WRONGS.filter(function(w){return w.subject===sub.name||w.sub===sub.id;});
-  document.getElementById('aw-cnt').textContent=items.length+'문제 틀림';
-
-  const body=document.getElementById('aw-body');
-  if(!items.length){
-    body.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--tx3)">이 과목의 오답이 없습니다</div>';
-    return;
-  }
-
-  // 차시별로 묶기
-  const byLesson={};
-  items.forEach(function(w){
-    const k=w.lesson||'기타';
-    if(!byLesson[k])byLesson[k]=[];
-    byLesson[k].push(w);
-  });
-
-  body.innerHTML='';
-  Object.keys(byLesson).forEach(function(lesson){
-    const ws=byLesson[lesson];
-    const sec=document.createElement('div');
-    sec.style.marginBottom='18px';
-    sec.innerHTML='<div style="font-size:12px;font-weight:800;color:'+sub.color
-      +';background:'+sub.light+';border-radius:8px;padding:7px 11px;margin-bottom:9px;display:flex;align-items:center;gap:7px">'
-      +'<span>📂</span><span>'+esc(cleanT(lesson))+'</span>'
-      +'<span style="margin-left:auto;font-size:10px;opacity:.8">'+ws.length+'문제</span></div>';
-    ws.forEach(function(w){
-      const d=document.createElement('div');
-      d.className='aw-item';
-      d.innerHTML='<div class="aw-q">Q'+w.num+'. '+esc(w.question||'')+'</div>'
-        +'<div style="display:flex;gap:12px;font-size:12px;margin:5px 0">'
-        +(w.userLabel?'<span style="color:#E53935">내 답: '+esc(w.userLabel)+'</span>':'')
-        +(w.correct?'<span style="color:#1B5E20">✅ 정답: '+esc(w.correct)+'</span>':'')
-        +'</div>'
-        +(w.expl?'<div class="aw-expl">💡 '+esc(_explClean?_explClean(w.expl):w.expl)+'</div>':'');
-      sec.appendChild(d);
-    });
-    body.appendChild(sec);
-  });
-}
-
-function renderAllWrong(){renderWrongPick();}
-
-function clearWrongs(){
-  const msg=_wrongSub
-    ?(_wrongSub.name+' 오답노트를 초기화할까요?')
-    :'전체 오답노트를 모두 초기화할까요?';
-  if(!confirm(msg))return;
-  if(_wrongSub){
-    WRONGS=WRONGS.filter(function(w){return w.subject!==_wrongSub.name&&w.sub!==_wrongSub.id;});
-  } else {
-    WRONGS=[];
-  }
-  lsSave(WK,WRONGS);
-  updateNavWrong();
-  if(_wrongSub)renderWrongDetail(_wrongSub);
-  else renderWrongPick();
-}
-
-
-// ══════════════════════════════════════════
-//  NAV
-// ══════════════════════════════════════════
-function updateNavWrong(){
-  const b=document.getElementById('nav-wrong');
-  if(WRONGS.length>0){b.classList.add('on');b.textContent=`❌ 오답노트 (${WRONGS.length})`;}
-  else{b.classList.remove('on');b.textContent='❌ 오답노트';}
-}
-
-// INIT
-document.addEventListener('DOMContentLoaded',function(){updateNavWrong();renderHome();buildTabs();});
+document.addEventListener('DOMContentLoaded',function(){renderHome();});
 </script>
-
-<script>
-var _FB={apiKey:"AIzaSyBSmnAKzscPBC52OCvGuKytCpGlnJjE4qs",authDomain:"re-test-20fd8.firebaseapp.com",databaseURL:"https://re-test-20fd8-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"re-test-20fd8",storageBucket:"re-test-20fd8.firebasestorage.app",messagingSenderId:"278315977222",appId:"1:278315977222:web:03a31e2c727d2ae80e9187"};
-var _auth=null,_db=null,_user=null,_cloud=false,_syncDone=false;
-var _FLOG="fb9_ok",_FSKIP="fb9_skip";
-function _fbInit(){
-  if(typeof firebase==="undefined"){console.warn("SDK 미로드");return;}
-  try{
-    var app;try{app=firebase.app();}catch(e){app=firebase.initializeApp(_FB);}
-    _auth=firebase.auth(app);_db=firebase.database(app);
-    _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
-    _auth.onAuthStateChanged(function(u){
-      if(u){_user=u;_cloud=true;_nb(u);_hm();localStorage.setItem(_FLOG,"1");localStorage.removeItem(_FSKIP);if(!_syncDone){_syncDone=true;_sd();}}
-      else{_user=null;_cloud=false;_nb(null);if(localStorage.getItem(_FSKIP)||localStorage.getItem(_FLOG))return;setTimeout(function(){if(!_user)_om();},1000);}
-    });
-  }catch(e){console.error("FB:",e.message);if(!localStorage.getItem(_FSKIP)&&!localStorage.getItem(_FLOG))setTimeout(_om,1000);}
-}
-function _nb(u){var b=document.getElementById("nav-user");if(!b)return;if(u){b.textContent="👤 "+(u.displayName||u.email||"").slice(0,8);b.style.background="#E8F5E9";b.style.color="#1B5E20";}else{b.textContent="👤";b.style.background="#F3F4F6";b.style.color="#555";}}
-function _om(){var m=document.getElementById("_fm");if(m)m.style.display="flex";var e=document.getElementById("_fe");if(e)e.style.display="none";}
-function _hm(){var m=document.getElementById("_fm");if(m)m.style.display="none";}
-function _em(s){var e=document.getElementById("_fe");if(e){e.textContent=s;e.style.display="block";}}
-function showLoginModal(){_om();}
-function doGoogleLogin(){if(!_auth){var t=0,iv=setInterval(function(){if(_auth){clearInterval(iv);_gp();}else if(++t>20){clearInterval(iv);_em("연결 실패. 새로고침해 주세요.");}},200);return;}_gp();}
-function _gp(){var p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});_auth.signInWithPopup(p).then(function(r){if(r.user)showToast("✅ Google 로그인 완료!");}).catch(function(e){if(e.code!=="auth/popup-closed-by-user")_em("Google 오류: "+e.message);});}
-function doEmailLogin(){if(!_auth){var t=0,iv=setInterval(function(){if(_auth){clearInterval(iv);_ep();}else if(++t>20){clearInterval(iv);_em("연결 실패.");}},200);return;}_ep();}
-function _ep(){var em=(document.getElementById("_fee")||{}).value||"";var pw=(document.getElementById("_fep")||{}).value||"";if(!em||pw.length<6){_em("이메일과 비밀번호(6자+)를 입력하세요");return;}_auth.signInWithEmailAndPassword(em,pw).then(function(){showToast("✅ 로그인 완료!");}).catch(function(e){if(["auth/user-not-found","auth/invalid-credential","auth/invalid-login-credentials"].indexOf(e.code)>=0){_auth.createUserWithEmailAndPassword(em,pw).then(function(){showToast("✅ 회원가입 완료!");}).catch(function(e2){_em("가입 실패: "+e2.message);});}else if(e.code==="auth/wrong-password"){_em("비밀번호가 틀렸습니다");}else{_em("오류: "+e.message);}});}
-function skipLogin(){_cloud=false;localStorage.setItem(_FSKIP,"1");localStorage.removeItem(_FLOG);_hm();showToast("이 기기에만 저장됩니다");}
-function showUserMenu(){if(_user){if(confirm("👤 "+(_user.email||_user.displayName||"")+"\n로그아웃 하시겠습니까?")){_auth.signOut();_user=null;_cloud=false;_syncDone=false;localStorage.removeItem(_FLOG);_nb(null);showToast("로그아웃 되었습니다");}}else{_om();}}
-function _su(){if(!_cloud||!_user||!_db||_syncing)return;_db.ref("u/"+_user.uid).set({s:JSON.stringify(STATS),w:JSON.stringify(WRONGS),t:Date.now()}).then(function(){showToast("☁️ 저장 완료");}).catch(function(e){console.warn(e.message);});}
-function _sd(){if(!_user||!_db)return;_syncing=true;_db.ref("u/"+_user.uid).once("value").then(function(snap){var d=snap.val();if(d&&d.t){var cs={},cw=[];try{cs=JSON.parse(d.s)||{};}catch(e){}try{cw=JSON.parse(d.w)||[];}catch(e){}var ms=JSON.parse(JSON.stringify(cs));Object.keys(STATS).forEach(function(k){if(!ms[k])ms[k]=STATS[k];});STATS=ms;var wm={};cw.forEach(function(w){wm[w.lesson+"|"+w.num]=w;});WRONGS.forEach(function(w){var k=w.lesson+"|"+w.num;if(!wm[k])wm[k]=w;});WRONGS=Object.values(wm);try{localStorage.setItem(SK,JSON.stringify(STATS));}catch(e){}try{localStorage.setItem(WK,JSON.stringify(WRONGS));}catch(e){}renderHome();updateNavWrong();showToast("☁️ 동기화 완료!");}else if(Object.keys(STATS).length>0||WRONGS.length>0){_syncing=false;_su();return;}}).catch(function(e){showToast("⚠️ 동기화 실패");}).finally(function(){_syncing=false;});}
-var _syncUp=_su;
-function showToast(msg){var t=document.getElementById("_ft");if(!t)return;clearTimeout(t._id);t.textContent=msg;t.style.cssText="display:block;opacity:1;position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#1B4332;color:#fff;padding:11px 20px;border-radius:22px;font-size:15px;font-weight:600;z-index:9000;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.22)";t._id=setTimeout(function(){t.style.opacity="0";setTimeout(function(){t.style.display="none";},300);},2500);}
-window.addEventListener("load",function(){if(typeof _fbInit==="function")_fbInit();});
-</script>
-<div id="_fm" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:22px;padding:28px 22px;width:min(360px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.28)">
-    <div style="text-align:center;margin-bottom:18px">
-      <div style="font-size:38px;margin-bottom:7px">📗</div>
-      <div style="font-weight:900;font-size:20px;color:#1B4332">공인중개사 2026</div>
-      <div style="font-size:14px;color:#888;margin-top:5px;line-height:1.6">로그인하면 어디서나<br>오답노트가 동기화됩니다</div>
-    </div>
-    <input id="_fee" type="email" placeholder="이메일" autocomplete="email" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #ddd;font-size:16px;margin-bottom:8px;font-family:inherit;outline:none;box-sizing:border-box"/>
-    <input id="_fep" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #ddd;font-size:16px;margin-bottom:11px;font-family:inherit;outline:none;box-sizing:border-box"/>
-    <div id="_fe" style="display:none;color:#C62828;font-size:13px;margin-bottom:9px;padding:8px 12px;background:#FFEBEE;border-radius:8px"></div>
-    <button onclick="doEmailLogin()" style="width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;font-weight:800;font-size:16px;cursor:pointer;margin-bottom:8px">로그인 / 회원가입</button>
-    <div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:11px">처음이면 자동으로 회원가입됩니다</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><div style="flex:1;height:1px;background:#eee"></div><span style="font-size:12px;color:#ccc">또는</span><div style="flex:1;height:1px;background:#eee"></div></div>
-    <button onclick="doGoogleLogin()" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid #ddd;background:#fff;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:8px"><img src="https://www.google.com/favicon.ico" width="17" height="17">Google 계정으로 로그인</button>
-    <button onclick="skipLogin()" style="width:100%;padding:10px;border-radius:10px;border:none;background:#F5F5F5;color:#999;font-size:14px;cursor:pointer">로그인 없이 계속</button>
-  </div>
-</div>
-<div id="_ft" style="display:none"></div>
 </body>
 </html>
