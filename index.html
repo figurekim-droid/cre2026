@@ -253,11 +253,19 @@ button:active{opacity:.75;transform:scale(.97);}
       <span style="margin-left:auto;font-size:14px;color:#ccc">›</span>
     </div>
     <div class="slbl">📝 실전 모의고사</div>
-    <div onclick="goMock()" style="background:linear-gradient(135deg,#1B4332,#2D6A4F);border-radius:16px;padding:16px 16px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:13px;box-shadow:0 4px 14px rgba(27,67,50,.25)">
+    <div onclick="goMock()" style="background:linear-gradient(135deg,#1B4332,#2D6A4F);border-radius:16px;padding:16px 16px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:13px;box-shadow:0 4px 14px rgba(27,67,50,.25)">
       <div style="font-size:30px">🎯</div>
       <div style="flex:1">
         <div style="color:#fff;font-weight:800;font-size:16px">과목별 AI 모의고사</div>
         <div style="color:rgba(255,255,255,.8);font-size:12.5px;margin-top:3px">실전처럼 40문제로 실력을 점검하세요</div>
+      </div>
+      <span style="color:rgba(255,255,255,.7);font-size:18px">›</span>
+    </div>
+    <div onclick="goNotes()" style="background:linear-gradient(135deg,#5B21B6,#7C3AED);border-radius:16px;padding:16px 16px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:13px;box-shadow:0 4px 14px rgba(91,33,182,.25)">
+      <div style="font-size:30px">🗒️</div>
+      <div style="flex:1">
+        <div style="color:#fff;font-weight:800;font-size:16px">나만의 노트</div>
+        <div style="color:rgba(255,255,255,.8);font-size:12.5px;margin-top:3px">과목별로 필기하거나 자료 사진을 정리하세요</div>
       </div>
       <span style="color:rgba(255,255,255,.7);font-size:18px">›</span>
     </div>
@@ -431,12 +439,69 @@ button:active{opacity:.75;transform:scale(.97);}
   </div>
 </div>
 
+<!-- NOTES (나만의 노트) -->
+<div id="v-notes" class="view">
+  <div class="wrap">
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px">
+      <button id="notes-back-btn" style="background:#F3F4F6;border-radius:9px;padding:7px 11px;font-size:14px;color:var(--tx2)" onclick="notesBack()">←</button>
+      <div style="flex:1">
+        <div style="font-weight:900;font-size:17px;color:#5B21B6" id="notes-title">🗒️ 나만의 노트</div>
+        <div id="notes-sub" style="font-size:11px;color:var(--tx3)">과목을 선택하세요</div>
+      </div>
+    </div>
+
+    <!-- 1) 과목 선택 -->
+    <div id="notes-pick">
+      <div class="sgrid" id="notes-grid"></div>
+    </div>
+
+    <!-- 2) 노트 목록 -->
+    <div id="notes-list" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button onclick="newNote()" style="flex:1;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#5B21B6,#7C3AED);color:#fff;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span style="font-size:16px">➕</span><span>새 노트</span>
+        </button>
+        <button id="notes-fullview-toggle" onclick="toggleNotesFullView()" style="padding:13px 15px;border-radius:12px;border:1.5px solid #5B21B6;background:#fff;color:#5B21B6;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span style="font-size:16px">📖</span><span>전체보기</span>
+        </button>
+      </div>
+      <div id="notes-list-body"></div>
+      <div id="notes-fullview-body" style="display:none"></div>
+    </div>
+
+    <!-- 3) 노트 편집기 -->
+    <div id="notes-editor" style="display:none">
+      <input id="note-title-input" type="text" placeholder="노트 제목 (예: 저당권 정리)" style="width:100%;border:1.5px solid var(--bdr);border-radius:11px;padding:12px 14px;font-size:15px;font-weight:700;margin-bottom:10px;box-sizing:border-box">
+      <textarea id="note-body-input" placeholder="자유롭게 정리하거나 필기 내용을 입력하세요..." style="width:100%;min-height:220px;border:1.5px solid var(--bdr);border-radius:11px;padding:12px 14px;font-size:14px;line-height:1.7;box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
+
+      <div style="display:flex;align-items:center;gap:8px;margin:12px 0 8px;flex-wrap:wrap">
+        <label for="note-img-input" style="display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;background:#F3F4F6;color:var(--tx2);font-size:13px;font-weight:700;cursor:pointer">
+          <span>📷</span><span>사진 추가</span>
+        </label>
+        <input id="note-img-input" type="file" accept="image/*" multiple style="display:none" onchange="addNoteImages(this.files)">
+        <label for="note-file-input" style="display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;background:#F3F4F6;color:var(--tx2);font-size:13px;font-weight:700;cursor:pointer">
+          <span>📄</span><span>PDF/문서 추가</span>
+        </label>
+        <input id="note-file-input" type="file" accept=".pdf,.doc,.docx,.hwp,.hwpx,.txt,.ppt,.pptx,.xls,.xlsx" multiple style="display:none" onchange="addNoteFiles(this.files)">
+      </div>
+      <span id="note-img-count" style="font-size:11.5px;color:var(--tx3)"></span>
+      <div id="note-img-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0"></div>
+      <div id="note-doc-list" style="margin-bottom:14px"></div>
+
+      <div style="display:flex;gap:9px;margin:16px 0 30px">
+        <button onclick="saveNote()" style="flex:1;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#5B21B6,#7C3AED);color:#fff;font-weight:800;font-size:15px;cursor:pointer">💾 저장</button>
+        <button id="note-delete-btn" onclick="deleteNote()" style="padding:14px 18px;border-radius:12px;border:none;background:#FEE2E2;color:#C62828;font-weight:800;font-size:14px;cursor:pointer;display:none">삭제</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════════════
 const BLOG='https://life-thru-kr.blogspot.com';
-const SK='cre26_stats_v9', WK='cre26_wrongs_v9';
+const SK='cre26_stats_v9', WK='cre26_wrongs_v9', NK='cre26_notes_v1';
 const EXAM=new Date('2026-10-31');
 const SUBS=[
   {id:'공법',       name:'부동산공법',      icon:'🏗️',color:'#1B5E20',light:'#E8F5E9'},
@@ -451,7 +516,7 @@ const SUBS=[
 //  STATE
 // ══════════════════════════════════════════
 let ST={sub:null,lesson:null,posts:[],qs:[],answers:{},submitted:false,tab:'study',text:'',rawHtml:''};
-let STATS=lsGet(SK,{}), WRONGS=lsGet(WK,[]);
+let STATS=lsGet(SK,{}), WRONGS=lsGet(WK,[]), NOTES=lsGet(NK,[]);
 let _cbId=0;
 
 function lsGet(k,d){try{return JSON.parse(localStorage.getItem(k))||d;}catch{return d;}}
@@ -512,6 +577,7 @@ function ring(el,pct,color,sz,sw){
 //  UTILS
 // ══════════════════════════════════════════
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escAttr(s){return esc(s).replace(/"/g,'&quot;');} // 속성값(download="" 등)에 안전하게 삽입
 
 // ★ 핵심 수정: li·br·p·div 태그를 줄바꿈으로 변환해야
 //   선택지가 한 줄에 붙지 않고 개별 파싱됨
@@ -2633,6 +2699,373 @@ function renderWaResult(sub, data){
   box.innerHTML=html;
 }
 
+// ══════════════════════════════════════════
+//  나만의 노트 (과목별 필기 + 사진 자료)
+// ══════════════════════════════════════════
+let _noteSub=null;    // 현재 선택된 과목
+let _noteEditing=null; // 편집 중인 노트 (null=새 노트)
+
+function goNotes(){
+  _noteSub=null;
+  showView('notes');
+  renderNotesPick();
+}
+
+function notesBack(){
+  const editorOpen=document.getElementById('notes-editor').style.display!=='none';
+  const listOpen=document.getElementById('notes-list').style.display!=='none';
+  if(editorOpen){
+    renderNoteList(_noteSub);
+  } else if(listOpen){
+    _noteSub=null;
+    renderNotesPick();
+  } else {
+    goHome();
+  }
+}
+
+// 1) 과목 선택 화면
+function renderNotesPick(){
+  document.getElementById('notes-pick').style.display='block';
+  document.getElementById('notes-list').style.display='none';
+  document.getElementById('notes-editor').style.display='none';
+  document.getElementById('notes-title').textContent='🗒️ 나만의 노트';
+  document.getElementById('notes-sub').textContent='과목을 선택하세요';
+  document.getElementById('notes-back-btn').onclick=goHome;
+
+  const grid=document.getElementById('notes-grid');
+  grid.innerHTML='';
+  SUBS.forEach(sub=>{
+    const cnt=NOTES.filter(n=>n.sub===sub.id).length;
+    const card=document.createElement('button');
+    card.className='scard';
+    card.style.borderColor=sub.light;
+    card.innerHTML='<div class="scard-top"><span style="font-size:24px">'+sub.icon+'</span>'
+      +(cnt?'<span style="font-size:11px;font-weight:700;color:'+sub.color+';background:'+sub.light+';padding:3px 8px;border-radius:6px">'+cnt+'개</span>':'')
+      +'</div><div><div class="scard-name">'+sub.name+'</div>'
+      +'<div class="scard-meta">'+(cnt?'노트 보기':'새로 작성하기')+'</div></div>';
+    card.onclick=()=>{_noteSub=sub;renderNoteList(sub);};
+    grid.appendChild(card);
+  });
+}
+
+// 2) 노트 목록 화면
+function renderNoteList(sub){
+  _noteSub=sub;
+  document.getElementById('notes-pick').style.display='none';
+  document.getElementById('notes-list').style.display='block';
+  document.getElementById('notes-editor').style.display='none';
+  document.getElementById('notes-title').innerHTML=sub.icon+' '+sub.name+' 노트';
+  document.getElementById('notes-sub').textContent='탭하여 열람하거나 수정하세요';
+  document.getElementById('notes-back-btn').onclick=()=>{_noteSub=null;renderNotesPick();};
+
+  // 목록 모드로 리셋 (전체보기에서 돌아온 경우 대비)
+  document.getElementById('notes-list-body').style.display='block';
+  document.getElementById('notes-fullview-body').style.display='none';
+  document.getElementById('notes-fullview-toggle').innerHTML='<span style="font-size:16px">📖</span><span>전체보기</span>';
+
+  const items=NOTES.filter(n=>n.sub===sub.id).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const body=document.getElementById('notes-list-body');
+  if(!items.length){
+    body.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--tx3)">아직 작성한 노트가 없습니다<br>위 버튼으로 첫 노트를 작성해보세요</div>';
+    return;
+  }
+  body.innerHTML=items.map(n=>{
+    const preview=(n.body||'').replace(/\n/g,' ').slice(0,60);
+    const d=n.updatedAt?new Date(n.updatedAt):null;
+    const dateStr=d?(d.getMonth()+1)+'/'+d.getDate():'';
+    const imgBadge=(n.images&&n.images.length)?'<span style="color:'+sub.color+'">📷 '+n.images.length+'</span>':'';
+    const docBadge=(n.docs&&n.docs.length)?'<span style="color:'+sub.color+'">📄 '+n.docs.length+'</span>':'';
+    return '<div onclick="openNoteEditor(NOTES.find(x=>x.id===\''+n.id+'\'))" style="background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;margin-bottom:10px;cursor:pointer">'
+      +'<div style="font-weight:800;font-size:14.5px;color:var(--tx1);margin-bottom:4px">'+esc(n.title||'제목 없음')+'</div>'
+      +(preview?'<div style="font-size:12.5px;color:var(--tx3);line-height:1.5;margin-bottom:6px">'+esc(preview)+(n.body&&n.body.length>60?'…':'')+'</div>':'')
+      +'<div style="display:flex;gap:10px;font-size:11px;color:var(--tx3)"><span>'+dateStr+'</span>'+imgBadge+docBadge+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// "전체보기" 토글: 이 과목의 모든 노트를 한 화면에서 이어서 열람
+function toggleNotesFullView(){
+  const listBody=document.getElementById('notes-list-body');
+  const fullBody=document.getElementById('notes-fullview-body');
+  const btn=document.getElementById('notes-fullview-toggle');
+  const isFullNow=fullBody.style.display!=='none';
+  if(isFullNow){
+    fullBody.style.display='none';
+    listBody.style.display='block';
+    btn.innerHTML='<span style="font-size:16px">📖</span><span>전체보기</span>';
+  } else {
+    renderNotesFullView(_noteSub);
+    fullBody.style.display='block';
+    listBody.style.display='none';
+    btn.innerHTML='<span style="font-size:16px">📋</span><span>목록으로</span>';
+  }
+}
+
+// 과목의 모든 노트를 제목+본문+이미지+문서까지 한 번에 이어서 렌더링 (복습용 전체보기)
+function renderNotesFullView(sub){
+  const box=document.getElementById('notes-fullview-body');
+  const items=NOTES.filter(n=>n.sub===sub.id).sort((a,b)=>(a.updatedAt||0)-(b.updatedAt||0));
+  if(!items.length){
+    box.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--tx3)">표시할 노트가 없습니다</div>';
+    return;
+  }
+  box.innerHTML=items.map((n,idx)=>{
+    const d=n.updatedAt?new Date(n.updatedAt):null;
+    const dateStr=d?(d.getFullYear())+'.'+(d.getMonth()+1)+'.'+d.getDate():'';
+    const bodyHtml=n.body?('<div style="font-size:14px;color:var(--tx2);line-height:1.8;white-space:pre-wrap;margin-top:8px">'+esc(n.body)+'</div>'):'';
+    const imgsHtml=(n.images&&n.images.length)
+      ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px">'
+        +n.images.map((src,ii)=>'<img src="'+src+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:9px;cursor:pointer" onclick="viewFullViewImage(\''+n.id+'\','+ii+')">').join('')
+        +'</div>'
+      : '';
+    const docsHtml=(n.docs&&n.docs.length)
+      ? '<div style="margin-top:10px">'+n.docs.map(f=>
+          '<div style="display:flex;align-items:center;gap:8px;background:#F8F7FF;border-radius:8px;padding:8px 10px;margin-bottom:6px">'
+          +'<span>'+_fileIcon(f.name)+'</span>'
+          +'<span style="flex:1;font-size:12.5px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(f.name)+'</span>'
+          +'<a href="'+f.dataUrl+'" download="'+escAttr(f.name)+'" style="padding:5px 9px;border-radius:7px;background:#5B21B6;color:#fff;font-size:11px;font-weight:700;text-decoration:none">열기</a>'
+          +'</div>'
+        ).join('')+'</div>'
+      : '';
+    return '<div style="background:var(--card);border-left:4px solid '+sub.color+';border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.05)">'
+      +'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">'
+      +'<div style="font-weight:900;font-size:15.5px;color:var(--tx1)">'+(idx+1)+'. '+esc(n.title||'제목 없음')+'</div>'
+      +'<div style="font-size:10.5px;color:var(--tx3);flex-shrink:0">'+dateStr+'</div>'
+      +'</div>'
+      +bodyHtml+imgsHtml+docsHtml
+      +'<div onclick="openNoteEditor(NOTES.find(x=>x.id===\''+n.id+'\'))" style="margin-top:12px;text-align:right;font-size:12px;color:'+sub.color+';font-weight:700;cursor:pointer">✏️ 수정하기</div>'
+      +'</div>';
+  }).join('');
+}
+
+// 3) 새 노트 / 편집
+function newNote(){
+  _noteEditing={id:'n'+Date.now(),sub:_noteSub.id,title:'',body:'',images:[],docs:[],updatedAt:0};
+  openNoteEditor(_noteEditing,true);
+}
+
+function openNoteEditor(note,isNew){
+  if(!note)return;
+  _noteEditing=note;
+  if(!_noteEditing.images)_noteEditing.images=[];
+  if(!_noteEditing.docs)_noteEditing.docs=[];       // 이전 버전 노트 호환
+  document.getElementById('notes-pick').style.display='none';
+  document.getElementById('notes-list').style.display='none';
+  document.getElementById('notes-editor').style.display='block';
+  document.getElementById('notes-title').textContent=isNew?'✏️ 새 노트':'✏️ 노트 수정';
+  document.getElementById('notes-sub').textContent=_noteSub.icon+' '+_noteSub.name;
+  document.getElementById('notes-back-btn').onclick=()=>renderNoteList(_noteSub);
+  document.getElementById('note-title-input').value=note.title||'';
+  document.getElementById('note-body-input').value=note.body||'';
+  document.getElementById('note-delete-btn').style.display=isNew?'none':'inline-block';
+  renderNoteImages();
+  renderNoteDocs();
+  window.scrollTo(0,0);
+}
+
+function renderNoteImages(){
+  const grid=document.getElementById('note-img-grid');
+  const imgs=(_noteEditing&&_noteEditing.images)||[];
+  document.getElementById('note-img-count').textContent=imgs.length?imgs.length+'/5장':'';
+  grid.innerHTML=imgs.map((src,i)=>
+    '<div style="position:relative;border-radius:9px;overflow:hidden;aspect-ratio:1;background:#F3F4F6">'
+    +'<img src="'+src+'" style="width:100%;height:100%;object-fit:cover" onclick="viewNoteImage(\''+i+'\')">'
+    +'<button onclick="removeNoteImage('+i+')" style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:13px;cursor:pointer;line-height:1">✕</button>'
+    +'</div>'
+  ).join('');
+}
+
+function viewNoteImage(i){
+  const imgs=(_noteEditing&&_noteEditing.images)||[];
+  const src=imgs[i];
+  if(!src)return;
+  const w=window.open('');
+  if(w)w.document.write('<img src="'+src+'" style="max-width:100%">');
+}
+
+// 전체보기 갤러리 전용: 노트ID+인덱스로 안전하게 조회 (데이터URL을 onclick에 직접 넣지 않음)
+function viewFullViewImage(noteId,i){
+  const note=NOTES.find(n=>n.id===noteId);
+  const src=note&&note.images&&note.images[i];
+  if(!src)return;
+  const w=window.open('');
+  if(w)w.document.write('<img src="'+src+'" style="max-width:100%">');
+}
+
+function removeNoteImage(i){
+  if(!_noteEditing||!_noteEditing.images)return;
+  _noteEditing.images.splice(i,1);
+  renderNoteImages();
+}
+
+// 이미지 압축 후 base64로 추가 (용량 관리를 위해 리사이즈)
+function addNoteImages(files){
+  if(!files||!files.length||!_noteEditing)return;
+  if(!_noteEditing.images)_noteEditing.images=[];
+  const remain=5-_noteEditing.images.length;
+  if(remain<=0){showToast('사진은 노트당 최대 5장까지 추가할 수 있어요');return;}
+  const list=Array.from(files).slice(0,remain);
+  let done=0;
+  list.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const maxW=1000;
+        const scale=Math.min(1,maxW/img.width);
+        const cv=document.createElement('canvas');
+        cv.width=Math.round(img.width*scale);
+        cv.height=Math.round(img.height*scale);
+        const ctx=cv.getContext('2d');
+        ctx.drawImage(img,0,0,cv.width,cv.height);
+        const dataUrl=cv.toDataURL('image/jpeg',0.6);
+        _noteEditing.images.push(dataUrl);
+        done++;
+        if(done===list.length)renderNoteImages();
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('note-img-input').value='';
+}
+
+// ── PDF / 문서 첨부 (압축 불가, 용량 제한으로 관리)
+const NOTE_FILE_MAX=8*1024*1024; // 파일당 8MB 제한
+
+function _fileIcon(name){
+  const ext=(name.split('.').pop()||'').toLowerCase();
+  if(ext==='pdf')return '📕';
+  if(['doc','docx','hwp','hwpx'].includes(ext))return '📘';
+  if(['ppt','pptx'].includes(ext))return '📙';
+  if(['xls','xlsx'].includes(ext))return '📗';
+  return '📄';
+}
+function _fileSizeStr(bytes){
+  if(bytes<1024*1024)return Math.round(bytes/1024)+'KB';
+  return (bytes/1024/1024).toFixed(1)+'MB';
+}
+
+function addNoteFiles(files){
+  if(!files||!files.length||!_noteEditing)return;
+  if(!_noteEditing.docs)_noteEditing.docs=[];
+  const remain=8-_noteEditing.docs.length;
+  if(remain<=0){showToast('문서는 노트당 최대 8개까지 추가할 수 있어요');return;}
+  const list=Array.from(files).slice(0,remain);
+  const oversized=list.filter(f=>f.size>NOTE_FILE_MAX);
+  const valid=list.filter(f=>f.size<=NOTE_FILE_MAX);
+  if(oversized.length){
+    showToast('⚠️ '+oversized.length+'개 파일이 8MB를 초과해 제외되었습니다');
+  }
+  let done=0;
+  if(!valid.length){document.getElementById('note-file-input').value='';return;}
+  valid.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      _noteEditing.docs.push({name:file.name,type:file.type||'',size:file.size,dataUrl:e.target.result});
+      done++;
+      if(done===valid.length)renderNoteDocs();
+    };
+    reader.onerror=()=>{
+      done++;
+      showToast('⚠️ '+file.name+' 읽기에 실패했습니다');
+      if(done===valid.length)renderNoteDocs();
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('note-file-input').value='';
+}
+
+function renderNoteDocs(){
+  const box=document.getElementById('note-doc-list');
+  const docs=(_noteEditing&&_noteEditing.docs)||[];
+  if(!docs.length){box.innerHTML='';return;}
+  box.innerHTML=docs.map((f,i)=>
+    '<div style="display:flex;align-items:center;gap:10px;background:#F8F7FF;border:1px solid #E9E5FF;border-radius:10px;padding:10px 12px;margin-bottom:7px">'
+    +'<span style="font-size:20px">'+_fileIcon(f.name)+'</span>'
+    +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--tx1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(f.name)+'</div>'
+      +'<div style="font-size:11px;color:var(--tx3)">'+_fileSizeStr(f.size)+'</div>'
+    +'</div>'
+    +'<a href="'+f.dataUrl+'" download="'+escAttr(f.name)+'" style="padding:6px 10px;border-radius:8px;background:#5B21B6;color:#fff;font-size:11.5px;font-weight:700;text-decoration:none;flex-shrink:0">열기</a>'
+    +'<button onclick="removeNoteDoc('+i+')" style="width:26px;height:26px;border-radius:50%;border:none;background:#F3F4F6;color:#999;font-size:14px;cursor:pointer;flex-shrink:0">✕</button>'
+    +'</div>'
+  ).join('');
+}
+
+function removeNoteDoc(i){
+  if(!_noteEditing||!_noteEditing.docs)return;
+  _noteEditing.docs.splice(i,1);
+  renderNoteDocs();
+}
+
+function saveNote(){
+  if(!_noteEditing||!_noteSub)return;
+  const title=document.getElementById('note-title-input').value.trim();
+  const body=document.getElementById('note-body-input').value.trim();
+  const hasImages=_noteEditing.images&&_noteEditing.images.length;
+  const hasDocs=_noteEditing.docs&&_noteEditing.docs.length;
+  if(!title&&!body&&!hasImages&&!hasDocs){
+    showToast('내용을 입력해주세요');
+    return;
+  }
+  _noteEditing.title=title||'제목 없는 노트';
+  _noteEditing.body=body;
+  _noteEditing.updatedAt=Date.now();
+
+  const idx=NOTES.findIndex(n=>n.id===_noteEditing.id);
+  const backup=NOTES.slice(); // 저장 실패 시 롤백용
+  if(idx>=0)NOTES[idx]=_noteEditing;
+  else NOTES.push(_noteEditing);
+
+  try{
+    localStorage.setItem(NK,JSON.stringify(NOTES));
+  }catch(e){
+    NOTES=backup; // 용량 초과 시 되돌리기
+    showToast('⚠️ 저장 공간이 부족합니다. 사진/문서 용량을 줄이거나 다른 노트를 정리해주세요');
+    return;
+  }
+  showToast('💾 저장되었습니다');
+  _syncNotesUp();
+  renderNoteList(_noteSub);
+}
+
+function deleteNote(){
+  if(!_noteEditing)return;
+  if(!confirm('이 노트를 삭제할까요?'))return;
+  NOTES=NOTES.filter(n=>n.id!==_noteEditing.id);
+  lsSave(NK,NOTES);
+  _syncNotesUp();
+  renderNoteList(_noteSub);
+}
+
+// 노트 전용 클라우드 동기화 (통계/오답 동기화와 별도 — 노트는 저장 시점에만 동기화)
+function _syncNotesUp(){
+  if(typeof _cloud==='undefined'||!_cloud||typeof _user==='undefined'||!_user||typeof _db==='undefined'||!_db)return;
+  try{
+    _db.ref('u/'+_user.uid+'/notes').set({d:JSON.stringify(NOTES),t:Date.now()}).catch(function(e){console.warn(e.message);});
+  }catch(e){}
+}
+
+function _syncNotesDown(){
+  if(typeof _user==='undefined'||!_user||typeof _db==='undefined'||!_db)return;
+  try{
+    _db.ref('u/'+_user.uid+'/notes').once('value').then(function(snap){
+      const d=snap.val();
+      if(!d||!d.d)return;
+      let cloud=[];
+      try{cloud=JSON.parse(d.d)||[];}catch(e){return;}
+      const map={};
+      cloud.forEach(n=>{map[n.id]=n;});
+      NOTES.forEach(n=>{ if(!map[n.id]||(n.updatedAt||0)>(map[n.id].updatedAt||0))map[n.id]=n; });
+      NOTES=Object.values(map);
+      lsSave(NK,NOTES);
+    }).catch(function(e){console.warn(e.message);});
+  }catch(e){}
+}
+
+
 
 function clearWrongs(){
   const msg=_wrongSub
@@ -2675,7 +3108,7 @@ function _fbInit(){
     _auth=firebase.auth(app);_db=firebase.database(app);
     _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
     _auth.onAuthStateChanged(function(u){
-      if(u){_user=u;_cloud=true;_nb(u);_hm();localStorage.setItem(_FLOG,"1");localStorage.removeItem(_FSKIP);if(!_syncDone){_syncDone=true;_sd();}}
+      if(u){_user=u;_cloud=true;_nb(u);_hm();localStorage.setItem(_FLOG,"1");localStorage.removeItem(_FSKIP);if(!_syncDone){_syncDone=true;_sd();_syncNotesDown();}}
       else{_user=null;_cloud=false;_nb(null);if(localStorage.getItem(_FSKIP)||localStorage.getItem(_FLOG))return;setTimeout(function(){if(!_user)_om();},1000);}
     });
   }catch(e){console.error("FB:",e.message);if(!localStorage.getItem(_FSKIP)&&!localStorage.getItem(_FLOG))setTimeout(_om,1000);}
