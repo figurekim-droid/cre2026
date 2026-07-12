@@ -1967,18 +1967,19 @@ async function _fillAnswers(sub){
   const origMeta=meta?meta.textContent:'';
   if(meta)meta.textContent=sub.icon+' '+sub.name+' · 🤖 정답·해설 준비 중...';
 
-  // 문제를 5개씩 나눠 처리 (토큰 관리)
+  // 문제를 5개씩 나눠 처리 (토큰 관리) — 한 배치 실패해도 나머지는 계속 진행
   const labels=['①','②','③','④','⑤'];
-  try{
-    for(let b=0; b<targets.length; b+=5){
-      const batch=targets.slice(b,b+5);
-      const qList=batch.map((q,i)=>{
-        return '문제'+(i+1)+'. '+q.question+'\n'+q.choices.map(c=>c.label+' '+c.text).join('\n');
-      }).join('\n\n');
-      const prompt='당신은 공인중개사 시험 전문 강사입니다. 아래 문제들의 정답과 해설을 작성하세요.\n'
-        +'각 문제마다 정답 번호(1~5)와 2~3문장 해설을 제공하세요.\n'
-        +'반드시 JSON만 출력 (다른 텍스트 금지):\n'
-        +'{"answers":[{"num":1,"answer":3,"expl":"해설"},...]}\n\n'+qList;
+  let anySuccess=false;
+  for(let b=0; b<targets.length; b+=5){
+    const batch=targets.slice(b,b+5);
+    const qList=batch.map((q,i)=>{
+      return '문제'+(i+1)+'. '+q.question+'\n'+q.choices.map(c=>c.label+' '+c.text).join('\n');
+    }).join('\n\n');
+    const prompt='당신은 공인중개사 시험 전문 강사입니다. 아래 문제들의 정답과 해설을 작성하세요.\n'
+      +'각 문제마다 정답 번호(1~5)와 2~3문장 해설을 제공하세요.\n'
+      +'반드시 JSON만 출력 (다른 텍스트 금지):\n'
+      +'{"answers":[{"num":1,"answer":3,"expl":"해설"},...]}\n\n'+qList;
+    try{
       const resp=await fetch('https://api.anthropic.com/v1/messages',{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})
@@ -1988,7 +1989,7 @@ async function _fillAnswers(sub){
       if(d.error)throw new Error(d.error.message);
       const raw=(d.content||[]).map(c=>c.text||'').join('');
       const m=raw.match(/\{[\s\S]+\}/);
-      if(!m)continue;
+      if(!m)throw new Error('형식 오류');
       const parsed=JSON.parse(m[0]);
       (parsed.answers||[]).forEach(a=>{
         const idx=(a.num||0)-1;
@@ -1999,14 +2000,20 @@ async function _fillAnswers(sub){
           if(a.expl&&(!q.expl||q.expl.length<20))q.expl=String(a.expl).trim();
         }
       });
+      anySuccess=true;
+    }catch(batchErr){
+      console.warn('정답 생성 배치 실패(건너뜀):',batchErr.message);
     }
+    if(b+5<targets.length)await new Promise(r=>setTimeout(r,400));
+  }
+  if(anySuccess){
     if(meta)meta.textContent=sub.icon+' '+sub.name+' · '+ST.qs.length+'문제';
     // 아직 답 안 한 상태면 다시 렌더 (정답 반영)
     if(Object.keys(ST.answers).length===0 && !ST.submitted){
       renderQuiz();
       if(typeof showToast==='function')showToast('🤖 정답·해설이 준비되었습니다');
     }
-  }catch(e){
+  } else {
     if(meta)meta.textContent=origMeta;
   }
 }
@@ -2808,6 +2815,7 @@ async function _runWrongStudy(sub,force){
   const sample=items.slice(0,40); // 최대 40문제까지
   const enriched=new Array(sample.length).fill(null);
   const batchSize=8;
+  let successCount=0;
 
   try{
     for(let b=0;b<sample.length;b+=batchSize){
@@ -2831,28 +2839,38 @@ async function _runWrongStudy(sub,force){
         +'keyword는 핵심 개념을 2~6글자 이내 키워드로 요약하세요 (예: "이상/초과 구분", "저당권 vs 유치권").\n\n'
         +'[틀린 문제 목록]\n'+qList;
 
-      const resp=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1800,messages:[{role:'user',content:prompt}]})
-      });
-      if(!resp.ok)throw new Error('HTTP '+resp.status);
-      const d=await resp.json();
-      if(d.error)throw new Error(d.error.message);
-      const raw=(d.content||[]).map(c=>c.text||'').join('');
-      const m=raw.match(/\{[\s\S]+\}/);
-      if(!m)continue;
-      const parsed=JSON.parse(m[0]);
-      (parsed.items||[]).forEach(it=>{
-        const idx=(it.num||0)-1;
-        if(idx<0||idx>=sample.length)return;
-        const type=WS_TYPES[it.type]?it.type:'암기부족';
-        enriched[idx]={
-          wsType:type,
-          wsKeyword:_smartTrimTitle(_cleanSh(it.keyword||''),16,24),
-          wsOneLiner:_fixEnding(_cleanSh(it.oneLiner||''))
-        };
-      });
+      // 배치 하나가 실패해도 나머지 배치는 계속 진행 (전체 실패로 이어지지 않도록)
+      try{
+        const resp=await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1800,messages:[{role:'user',content:prompt}]})
+        });
+        if(!resp.ok)throw new Error('HTTP '+resp.status);
+        const d=await resp.json();
+        if(d.error)throw new Error(d.error.message);
+        const raw=(d.content||[]).map(c=>c.text||'').join('');
+        const m=raw.match(/\{[\s\S]+\}/);
+        if(!m)throw new Error('형식 오류');
+        const parsed=JSON.parse(m[0]);
+        (parsed.items||[]).forEach(it=>{
+          const idx=(it.num||0)-1;
+          if(idx<0||idx>=sample.length)return;
+          const type=WS_TYPES[it.type]?it.type:'암기부족';
+          enriched[idx]={
+            wsType:type,
+            wsKeyword:_smartTrimTitle(_cleanSh(it.keyword||''),16,24),
+            wsOneLiner:_fixEnding(_cleanSh(it.oneLiner||''))
+          };
+        });
+        successCount++;
+      }catch(batchErr){
+        console.warn('배치 실패(건너뜀):',batchErr.message);
+      }
+      // 다음 배치 전 잠시 대기 (연속 요청으로 인한 제한 완화)
+      if(b+batchSize<sample.length)await new Promise(r=>setTimeout(r,400));
     }
+
+    if(successCount===0)throw new Error('모든 요청이 실패했습니다');
 
     // 실패한 항목은 안전 기본값으로 채움
     for(let i=0;i<enriched.length;i++){
