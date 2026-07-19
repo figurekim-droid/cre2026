@@ -210,6 +210,23 @@ button:active{opacity:.75;transform:scale(.97);}
 .empty-ico{font-size:38px;margin-bottom:10px;}
 .slbl{font-size:11px;color:var(--tx3);font-weight:700;letter-spacing:1.2px;margin-bottom:9px;}
 .trend-card{background:var(--card);border-radius:var(--r);padding:14px;border:1.5px solid var(--bdr);}
+/* 과목 요약노트 원문 서식 렌더링 */
+.summary-content{font-size:14px;line-height:1.75;color:var(--tx1);}
+.summary-content h1,.summary-content h2,.summary-content h3{font-size:16px;font-weight:900;color:#0F766E;margin:20px 0 10px;padding-bottom:6px;border-bottom:2px solid #CCFBF1;}
+.summary-content h4,.summary-content h5{font-size:14.5px;font-weight:800;color:#134E4A;margin:14px 0 8px;}
+.summary-content p{margin:8px 0;}
+.summary-content b,.summary-content strong{color:#0F766E;font-weight:800;}
+.summary-content ul,.summary-content ol{margin:8px 0 8px 18px;padding:0;}
+.summary-content li{margin-bottom:5px;}
+.summary-content table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.5px;display:block;overflow-x:auto;white-space:nowrap;}
+.summary-content th{background:#F0FDFA;color:#0F766E;font-weight:800;padding:8px 10px;border:1px solid #99F6E4;text-align:left;}
+.summary-content td{padding:7px 10px;border:1px solid #E5E7EB;background:#fff;white-space:normal;}
+.summary-content hr{border:none;border-top:1.5px dashed var(--bdr);margin:18px 0;}
+.summary-content blockquote{background:#F0FDFA;border-left:3px solid #14B8A6;border-radius:8px;padding:10px 13px;margin:10px 0;color:#134E4A;}
+.summary-divider{display:flex;align-items:center;gap:10px;margin:26px 0 16px;}
+.summary-divider .num{width:26px;height:26px;border-radius:50%;background:#0F766E;color:#fff;font-weight:900;font-size:12.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.summary-divider .line{flex:1;height:1.5px;background:#CCFBF1;}
+
 .trend-item{display:flex;gap:9px;margin-bottom:7px;align-items:flex-start;}
 .trend-text{font-size:12px;color:var(--tx2);line-height:1.6;}
 ::-webkit-scrollbar{width:3px;}
@@ -256,16 +273,24 @@ button:active{opacity:.75;transform:scale(.97);}
     <div onclick="goMock()" style="background:linear-gradient(135deg,#1B4332,#2D6A4F);border-radius:16px;padding:16px 16px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:13px;box-shadow:0 4px 14px rgba(27,67,50,.25)">
       <div style="font-size:30px">🎯</div>
       <div style="flex:1">
-        <div style="color:#fff;font-weight:800;font-size:16px">과목별 AI 모의고사</div>
+        <div style="color:#fff;font-weight:800;font-size:16px">과목별 실전 모의고사</div>
         <div style="color:rgba(255,255,255,.8);font-size:12.5px;margin-top:3px">실전처럼 40문제로 실력을 점검하세요</div>
       </div>
       <span style="color:rgba(255,255,255,.7);font-size:18px">›</span>
     </div>
-    <div onclick="goNotes()" style="background:linear-gradient(135deg,#5B21B6,#7C3AED);border-radius:16px;padding:16px 16px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:13px;box-shadow:0 4px 14px rgba(91,33,182,.25)">
+    <div onclick="goNotes()" style="background:linear-gradient(135deg,#5B21B6,#7C3AED);border-radius:16px;padding:16px 16px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:13px;box-shadow:0 4px 14px rgba(91,33,182,.25)">
       <div style="font-size:30px">🗒️</div>
       <div style="flex:1">
         <div style="color:#fff;font-weight:800;font-size:16px">나만의 노트</div>
         <div style="color:rgba(255,255,255,.8);font-size:12.5px;margin-top:3px">과목별로 필기하거나 자료 사진을 정리하세요</div>
+      </div>
+      <span style="color:rgba(255,255,255,.7);font-size:18px">›</span>
+    </div>
+    <div onclick="goSummary()" style="background:linear-gradient(135deg,#0F766E,#14B8A6);border-radius:16px;padding:16px 16px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:13px;box-shadow:0 4px 14px rgba(15,118,110,.25)">
+      <div style="font-size:30px">📚</div>
+      <div style="flex:1">
+        <div style="color:#fff;font-weight:800;font-size:16px">과목 요약노트</div>
+        <div style="color:rgba(255,255,255,.8);font-size:12.5px;margin-top:3px">박문각 교수님 강의 요약을 과목별로 몰아보기</div>
       </div>
       <span style="color:rgba(255,255,255,.7);font-size:18px">›</span>
     </div>
@@ -287,8 +312,8 @@ button:active{opacity:.75;transform:scale(.97);}
     <div style="background:linear-gradient(135deg,#1B4332,#2D6A4F);border-radius:18px;padding:16px 14px;color:#fff;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
       <button class="back-btn" onclick="goHome()">←</button>
       <div style="flex:1"><div style="font-size:20px">🎯</div>
-        <div style="font-weight:800;font-size:17px;margin-top:2px">과목별 AI 모의고사</div>
-        <div style="font-size:12px;opacity:.85;margin-top:2px">과목을 선택하면 40문제가 생성됩니다</div>
+        <div style="font-weight:800;font-size:17px;margin-top:2px">과목별 실전 모의고사</div>
+        <div style="font-size:12px;opacity:.85;margin-top:2px">박문각 2026 전국모의고사 (이영섭 교수 해설)</div>
       </div>
     </div>
     <div id="mock-pick">
@@ -296,11 +321,18 @@ button:active{opacity:.75;transform:scale(.97);}
       <div class="sgrid" id="mock-grid"></div>
       <div class="trend-card" style="margin-top:6px">
         <div style="font-weight:800;font-size:13px;margin-bottom:7px">ℹ️ 모의고사 안내</div>
-        <div class="trend-text" style="margin-bottom:5px">· 실제 시험과 동일하게 <b>과목당 40문제</b> 5지선다로 구성됩니다</div>
-        <div class="trend-text" style="margin-bottom:5px">· 실제 출제 경향(단원별 비중)에 맞춰 출제됩니다</div>
-        <div class="trend-text" style="margin-bottom:5px">· 합격기준: 과목 40점 이상 + 전체 평균 60점 이상</div>
-        <div class="trend-text">· AI 생성에 20~40초 소요 (실패 시 내장 문제로 자동 전환)</div>
+        <div class="trend-text" style="margin-bottom:5px">· 박문각 2026년 전국모의고사 <b>실제 문제 40제</b>를 그대로 사용합니다</div>
+        <div class="trend-text" style="margin-bottom:5px">· 과목마다 <b>1~5회차</b>가 있어 여러 번 다르게 풀 수 있습니다</div>
+        <div class="trend-text">· 합격기준: 과목 40점 이상 + 전체 평균 60점 이상</div>
       </div>
+    </div>
+    <div id="mock-round-pick" style="display:none">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+        <button onclick="backToMockSubjects()" style="background:#F3F4F6;border-radius:9px;padding:7px 11px;font-size:13px;color:var(--tx2)">←</button>
+        <div id="mock-round-title" style="font-weight:800;font-size:15.5px"></div>
+      </div>
+      <div class="slbl">회차 선택</div>
+      <div id="mock-round-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px"></div>
     </div>
     <div id="mock-loading" style="display:none;text-align:center;padding:50px 20px">
       <div class="spin" style="margin:0 auto 16px"></div>
@@ -482,6 +514,35 @@ button:active{opacity:.75;transform:scale(.97);}
   </div>
 </div>
 
+<!-- SUMMARY (과목 요약노트) -->
+<div id="v-summary" class="view">
+  <div class="wrap">
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px">
+      <button id="summary-back-btn" style="background:#F3F4F6;border-radius:9px;padding:7px 11px;font-size:14px;color:var(--tx2)" onclick="summaryBack()">←</button>
+      <div style="flex:1">
+        <div style="font-weight:900;font-size:17px;color:#0F766E" id="summary-title">📚 과목 요약노트</div>
+        <div id="summary-sub" style="font-size:11px;color:var(--tx3)">과목을 선택하세요</div>
+      </div>
+    </div>
+
+    <div id="summary-pick">
+      <div class="sgrid" id="summary-grid"></div>
+      <div class="trend-card" style="margin-top:6px">
+        <div style="font-weight:800;font-size:13px;margin-bottom:7px">ℹ️ 요약노트 안내</div>
+        <div class="trend-text" style="margin-bottom:5px">· 박문각 교수님 강의를 강의별로 정리한 요약노트입니다</div>
+        <div class="trend-text">· 표·암기팁·기출 지문 정정까지 원문 서식 그대로 이어서 볼 수 있습니다</div>
+      </div>
+    </div>
+
+    <div id="summary-loading" style="display:none;text-align:center;padding:50px 20px">
+      <div class="spin" style="margin:0 auto 16px"></div>
+      <div style="font-size:15px;color:var(--tx2)">요약노트를 불러오는 중...</div>
+    </div>
+
+    <div id="summary-body" style="display:none"></div>
+  </div>
+</div>
+
 <!-- NOTES (나만의 노트) -->
 <div id="v-notes" class="view">
   <div class="wrap">
@@ -658,6 +719,39 @@ function h2t(h){
     .trim();
 }
 function cleanT(t){return t.replace(/\[2026\s*공인중개사\]\s*/i,'').replace(/\s*\d+\s*차시\.\s*/,'').trim();}
+
+// 서식(표·굵은글씨·제목)은 살리고 위험 요소(스크립트·이벤트·외부호출)만 제거하는 sanitizer
+// (요약노트처럼 표·강조 서식이 중요한 콘텐츠를 그대로 보여줄 때 사용)
+function sanitizeRichHtml(h){
+  if(!h)return '';
+  var SCE='<'+'/scr'+'ipt>', STE='<'+'/sty'+'le>';
+  var p;
+  while((p=h.indexOf('<scr'+'ipt'))>=0){
+    var e=h.indexOf(SCE,p);
+    if(e<0){h=h.slice(0,p);break;}
+    h=h.slice(0,p)+h.slice(e+SCE.length);
+  }
+  while((p=h.indexOf('<sty'+'le'))>=0){
+    var e=h.indexOf(STE,p);
+    if(e<0){h=h.slice(0,p);break;}
+    h=h.slice(0,p)+h.slice(e+STE.length);
+  }
+  return h
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi,'')
+    .replace(/<object[\s\S]*?<\/object>/gi,'')
+    .replace(/<embed[^>]*>/gi,'')
+    .replace(/<form[\s\S]*?<\/form>/gi,'')
+    .replace(/\s+on\w+\s*=\s*"[^"]*"/gi,'')
+    .replace(/\s+on\w+\s*=\s*'[^']*'/gi,'')
+    .replace(/\s+style\s*=\s*"[^"]*"/gi,'')
+    .replace(/\s+style\s*=\s*'[^']*'/gi,'')
+    .replace(/\s+class\s*=\s*"[^"]*"/gi,'')
+    .replace(/\s+class\s*=\s*'[^']*'/gi,'')
+    .replace(/\s+id\s*=\s*"[^"]*"/gi,'')
+    .replace(/href\s*=\s*"javascript:[^"]*"/gi,'href="#"')
+    .trim();
+}
+
 function dday(){return Math.ceil((EXAM-new Date())/86400000);}
 function subStats(){
   const o={};
@@ -808,6 +902,10 @@ function parseQs(text){
       .replace(/\[수정[^\]]*\]/g,'')
       // [오답 노트 및 지문 분석] 등 대괄호 메타 문구 제거
       .replace(/\[[^\]]*(?:오답|해설|지문|분석|노트|풀이|선택)[^\]]*\]/g,'')
+      // 실제 모의고사(박문각) 게시물의 접기/펼치기 UI 라벨
+      .replace(/정답\s*및\s*해설\s*보기/g,'')
+      .replace(/💡\s*인쇄\s*가이드[^\n]*/g,'')
+      .replace(/키보드의[^\n]*Ctrl\s*\+\s*P[^\n]*/g,'')
       // 내가 선택한 번호 / 상세 해설 및 오답 분석
       .replace(/내가\s*선택한\s*번호\s*[:：]?\s*\d*/g,'')
       .replace(/상세\s*해설\s*및\s*오답\s*분석\s*[:：]?/g,'')
@@ -921,7 +1019,7 @@ function parseQs(text){
     var expl='';
     if(am){
       var ai=blk.indexOf(am[0])+am[0].length;
-      var raw=blk.slice(ai,ai+700).replace(/\n/g,' ').replace(/\s+/g,' ').trim();
+      var raw=blk.slice(ai,ai+950).replace(/\n/g,' ').replace(/\s+/g,' ').trim();
       if(raw.length>3)expl=raw;
     }
     var aLines=lines.filter(isAnalysis).map(function(l){return l.replace(/^[\u2460\u2461\u2462\u2463\u2464]\s*/,'').trim();});
@@ -949,6 +1047,7 @@ function _explClean(s){
     .replace(/오답\s*분석\s*[:：]?/g,'')
     .replace(/정답\s*확인\s*[:：]?/g,'')
     .replace(/해설\s*보기\s*[:：]?/g,'')
+    .replace(/^해설\s*[:：]\s*/,'')
     .replace(/보기를\s*클릭[^\n.가-힣]{0,30}[^\n.]*/g,'')       // "보기를 클릭하면 ~" 안내 문구
     // ①번 틀림:, ② 맞음: 같은 줄머리 표시
     .replace(/[\u2460\u2461\u2462\u2463\u2464]?\s*\d*\s*번?\s*(맞음|틀림|옳음|오답|정답)\s*[:：]\s*/g,'')
@@ -1559,6 +1658,7 @@ var MOCK_BANK={
 function goMock(){
   showView('mock');
   document.getElementById('mock-pick').style.display='block';
+  document.getElementById('mock-round-pick').style.display='none';
   document.getElementById('mock-loading').style.display='none';
   document.getElementById('mock-quiz').style.display='none';
   // 과목 카드 렌더
@@ -1569,75 +1669,185 @@ function goMock(){
     card.className='scard';
     card.style.borderColor=sub.light;
     card.innerHTML='<div class="scard-top"><span style="font-size:24px">'+sub.icon+'</span>'
-      +'<span style="font-size:11px;font-weight:700;color:'+sub.color+';background:'+sub.light+';padding:3px 8px;border-radius:6px">40문제</span></div>'
+      +'<span style="font-size:11px;font-weight:700;color:'+sub.color+';background:'+sub.light+';padding:3px 8px;border-radius:6px">1~5회</span></div>'
       +'<div><div class="scard-name">'+sub.name+'</div>'
-      +'<div class="scard-meta">AI 실전 모의고사</div></div>';
-    card.onclick=function(){startMock(sub);};
+      +'<div class="scard-meta">박문각 전국모의고사</div></div>';
+    card.onclick=function(){showMockRounds(sub);};
     grid.appendChild(card);
   });
 }
 
-async function startMock(sub){
-  MOCK={sub:sub,qs:[],answers:{},submitted:false};
+// 과목 선택 후 회차(1~5) 선택 화면
+function showMockRounds(sub){
   document.getElementById('mock-pick').style.display='none';
+  document.getElementById('mock-round-pick').style.display='block';
+  document.getElementById('mock-round-title').innerHTML=sub.icon+' '+sub.name+' 모의고사';
+  var grid=document.getElementById('mock-round-grid');
+  grid.innerHTML='';
+  for(var r=1;r<=5;r++){
+    (function(round){
+      var btn=document.createElement('button');
+      btn.style.cssText='padding:16px 4px;border-radius:12px;border:1.5px solid '+sub.light+';background:#fff;font-weight:800;font-size:14px;color:'+sub.color+';cursor:pointer';
+      btn.innerHTML=round+'회';
+      btn.onclick=function(){startMockReal(sub,round);};
+      grid.appendChild(btn);
+    })(r);
+  }
+}
+
+function backToMockSubjects(){
+  document.getElementById('mock-round-pick').style.display='none';
+  document.getElementById('mock-pick').style.display='block';
+}
+
+// "모의고사" + 과목 라벨을 동시에 가진 게시물만 가져오기 (블로그 실제 문제)
+function fetchMockLabel(subId,max){
+  return jsonpFetch(BLOG+'/feeds/posts/default/-/'+encodeURIComponent('모의고사')+'/'+encodeURIComponent(subId)+'?alt=json-in-script&max-results='+(max||10));
+}
+
+// "요약" + 과목 라벨을 동시에 가진 게시물만 가져오기 (박문각 교수 요약노트)
+function fetchSummaryLabel(subId,max){
+  return jsonpFetch(BLOG+'/feeds/posts/default/-/'+encodeURIComponent('요약')+'/'+encodeURIComponent(subId)+'?alt=json-in-script&max-results='+(max||10));
+}
+
+// ══════════════════════════════════════════
+//  과목 요약노트 (박문각 강의 요약 게시물을 과목별로 이어붙여 한 화면에)
+// ══════════════════════════════════════════
+var _summarySub=null;
+var _summaryCache={}; // 세션 내 재방문 시 재요청 방지
+
+function goSummary(){
+  _summarySub=null;
+  showView('summary');
+  document.getElementById('summary-pick').style.display='block';
+  document.getElementById('summary-body').style.display='none';
+  document.getElementById('summary-loading').style.display='none';
+  document.getElementById('summary-title').textContent='📚 과목 요약노트';
+  document.getElementById('summary-sub').textContent='과목을 선택하세요';
+  document.getElementById('summary-back-btn').onclick=goHome;
+
+  var grid=document.getElementById('summary-grid');
+  grid.innerHTML='';
+  SUBS.forEach(function(sub){
+    var card=document.createElement('button');
+    card.className='scard';
+    card.style.borderColor=sub.light;
+    card.innerHTML='<div class="scard-top"><span style="font-size:24px">'+sub.icon+'</span></div>'
+      +'<div><div class="scard-name">'+sub.name+'</div>'
+      +'<div class="scard-meta">강의별 요약 몰아보기</div></div>';
+    card.onclick=function(){openSummary(sub);};
+    grid.appendChild(card);
+  });
+}
+
+function summaryBack(){goHome();}
+
+async function openSummary(sub){
+  _summarySub=sub;
+  document.getElementById('summary-pick').style.display='none';
+  document.getElementById('summary-body').style.display='none';
+  document.getElementById('summary-title').innerHTML=sub.icon+' '+sub.name+' 요약노트';
+  document.getElementById('summary-back-btn').onclick=goSummary;
+
+  if(_summaryCache[sub.id]){
+    renderSummaryBody(sub,_summaryCache[sub.id]);
+    return;
+  }
+
+  document.getElementById('summary-loading').style.display='block';
+  document.getElementById('summary-sub').textContent='불러오는 중...';
+
+  try{
+    var data=await fetchSummaryLabel(sub.id,10);
+    var entries=(data&&data.feed&&data.feed.entry)||[];
+    if(!entries.length)throw new Error('요약 게시물을 찾을 수 없습니다');
+
+    // 제목 끝의 강의 번호(예: "요약 3")로 오름차순 정렬
+    entries.sort(function(a,b){
+      var ta=(a.title&&a.title.$t)||'', tb=(b.title&&b.title.$t)||'';
+      var na=parseInt((ta.match(/(\d+)\s*$/)||[])[1]||'0',10);
+      var nb=parseInt((tb.match(/(\d+)\s*$/)||[])[1]||'0',10);
+      return na-nb;
+    });
+
+    var chapters=entries.map(function(e){
+      var title=(e.title&&e.title.$t)||'';
+      var html=(e.content&&e.content.$t)||'';
+      return {title:title.replace(/^\[공인중개사\]\s*/,'').trim(),html:sanitizeRichHtml(html)};
+    });
+
+    _summaryCache[sub.id]=chapters;
+    document.getElementById('summary-loading').style.display='none';
+    renderSummaryBody(sub,chapters);
+  }catch(e){
+    document.getElementById('summary-loading').style.display='none';
+    document.getElementById('summary-sub').textContent='';
+    document.getElementById('summary-body').style.display='block';
+    document.getElementById('summary-body').innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--tx3)">'
+      +'⚠️ 불러오지 못했습니다. 네트워크 상태를 확인하고 다시 시도해주세요.<br><br>'
+      +'<button onclick="openSummary(_summarySub)" style="padding:10px 20px;border-radius:10px;border:none;background:#0F766E;color:#fff;font-weight:700;cursor:pointer">다시 시도</button></div>';
+  }
+}
+
+function renderSummaryBody(sub,chapters){
+  document.getElementById('summary-sub').textContent='총 '+chapters.length+'개 강의 요약 · 이어서 보기';
+  var box=document.getElementById('summary-body');
+  box.style.display='block';
+  box.innerHTML=chapters.map(function(ch,i){
+    return '<div class="summary-divider"><div class="num">'+(i+1)+'</div><div class="line"></div></div>'
+      +'<div class="summary-content">'+ch.html+'</div>';
+  }).join('');
+  window.scrollTo(0,0);
+}
+
+async function startMockReal(sub,round){
+  MOCK={sub:sub,qs:[],answers:{},submitted:false};
+  document.getElementById('mock-round-pick').style.display='none';
   document.getElementById('mock-quiz').style.display='none';
   document.getElementById('mock-loading').style.display='block';
   var ltxt=document.getElementById('mock-loading-txt');
-  ltxt.textContent=sub.name+' 학습 내용을 불러오는 중...';
+  ltxt.textContent=sub.name+' '+round+'회차 모의고사를 불러오는 중...';
 
   try{
-    // 1) 과목 차시 목록 + 본문 수집 (실패해도 진행)
-    var corpus='';
-    try{
-      var data=await fetchLabel(sub.id,100);
-      var entries=(data&&data.feed&&data.feed.entry)||[];
-      for(var i=0;i<entries.length && corpus.length<6000;i++){
-        var c=(entries[i].content&&entries[i].content.$t)||'';
-        corpus+=h2t(c).slice(0,800)+'\n';
-      }
-    }catch(fetchErr){ corpus=''; }
-    if(corpus.length<100){
-      corpus=(typeof SUB_GUIDE!=='undefined'&&SUB_GUIDE[sub.id])||sub.name;
-    }
+    var data=await fetchMockLabel(sub.id,10);
+    var entries=(data&&data.feed&&data.feed.entry)||[];
+    var re=new RegExp('모의고사\\s*0*'+round+'\\s*$');
+    var target=entries.find(function(e){
+      var title=(e.title&&e.title.$t)||'';
+      return re.test(title.trim());
+    });
+    if(!target)throw new Error('해당 회차 게시물을 찾을 수 없습니다');
 
-    ltxt.textContent='AI가 '+sub.name+' 40문제를 출제하고 있습니다...';
+    var html=(target.content&&target.content.$t)||'';
+    var text=h2t(html);
+    var qs=parseQs(text);
 
-    // 2) AI에 40문제 요청 (분할: 한 번에 많으면 토큰 초과 → 2회 20문제씩)
-    var all=[];
-    try{
-      for(var batch=0; batch<2; batch++){
-        ltxt.textContent='AI 모의고사 생성 중... ('+(batch*20)+'/40문제)';
-        var part=await _mockGen(sub, corpus, 20, batch);
-        all=all.concat(part);
-      }
-    }catch(aiErr){
-      // AI 호출 실패(Failed to fetch 등) → 내장 문제로 폴백
-      all=[];
-    }
+    // "극상 난이도(버리는 문제)" 유형은 선택지 자체가 "(실제 출제된 ~)" 같은
+    // 가려진 placeholder 텍스트라 실제 답을 고를 수 없음 → 제외
+    var placeholderRe=/^\(.*(?:실제\s*출제|실제\s*정답|기타\s*지문|관련\s*지문|법적\s*조문)/;
+    qs=qs.filter(function(q){
+      return !q.choices.some(function(c){return placeholderRe.test((c.text||'').trim());});
+    });
 
-    // AI 생성이 부족하면 내장 문제로 채우기
-    if(all.length<5){
-      all=_buildBankQuiz(sub);
-      if(typeof showToast==='function')showToast('📚 내장 예상문제로 모의고사를 구성했습니다');
-    }
+    if(qs.length<20)throw new Error('문제 추출이 부족합니다('+qs.length+'문제)');
 
-    // 번호 재정렬
-    all=all.map(function(q,idx){return Object.assign({},q,{id:'m'+idx,num:idx+1});});
-    if(all.length===0)throw new Error('문제 구성 실패');
-
+    var all=qs.map(function(q,idx){return Object.assign({},q,{id:'m'+idx,num:idx+1});});
     MOCK.qs=all;
+    MOCK.round=round;
     renderMock();
   }catch(e){
-    // 최후 폴백: 내장 문제라도 표시
+    // 실패 시 안내 후 내장 예상문제로 폴백 (완전히 막히지 않도록)
+    console.warn('실제 모의고사 로드 실패:',e.message);
     var fb=_buildBankQuiz(sub).map(function(q,idx){return Object.assign({},q,{id:'m'+idx,num:idx+1});});
     if(fb.length>0){
       MOCK.qs=fb;
+      MOCK.round=null;
       renderMock();
-      if(typeof showToast==='function')showToast('📚 내장 예상문제로 모의고사를 구성했습니다');
+      if(typeof showToast==='function')showToast('⚠️ 실제 문제를 불러오지 못해 내장 예상문제로 대체했습니다');
     }else{
       document.getElementById('mock-loading').style.display='none';
-      document.getElementById('mock-pick').style.display='block';
-      if(typeof showToast==='function')showToast('⚠️ 생성 실패: '+e.message);
+      document.getElementById('mock-round-pick').style.display='block';
+      if(typeof showToast==='function')showToast('⚠️ 불러오기 실패: '+e.message);
     }
   }
 }
@@ -1679,39 +1889,6 @@ function _buildBankQuiz(sub){
   return out.slice(0,40);
 }
 
-async function _mockGen(sub, corpus, count, batch){
-  var topics=(typeof SUB_GUIDE!=='undefined'&&SUB_GUIDE[sub.id])||'';
-  var bp=MOCK_BLUEPRINT[sub.id]||[];
-  // 이번 배치가 담당할 단원 배분 (전체 40문제를 2배치로 → 각 20문제)
-  var bpText=bp.map(function(x){return x[0]+' '+Math.round(x[1]/2)+'문제';}).join(', ');
-  var prompt='당신은 공인중개사 시험 출제위원입니다. "'+sub.name+'" 과목의 실전 모의고사 '+count+'문제를 만드세요.\n'
-    +'실제 시험 출제 경향에 맞춰 다음 단원별 비중으로 골고루 출제하세요: '+bpText+'.\n'
-    +(batch>0?'앞 배치와 겹치지 않게 다른 지문·주제로 출제하세요.\n':'')
-    +'난이도는 실제 시험 수준(중상)이며, 박스형·사례형 문제도 일부 포함하세요.\n'
-    +'2026년 개정 법령 기준으로 작성하세요.\n'
-    +'반드시 아래 JSON 형식으로만 출력 (다른 텍스트 절대 금지):\n'
-    +'{"questions":[{"q":"문제","choices":["선택지1","선택지2","선택지3","선택지4","선택지5"],"answer":1,"expl":"해설"}]}\n'
-    +'answer는 정답 번호(1~5). 해설은 1~2문장.\n\n[학습 참고 내용]\n'+corpus.slice(0,3500);
-
-  var resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:prompt}]})
-  });
-  if(!resp.ok)throw new Error('HTTP '+resp.status);
-  var d=await resp.json();
-  if(d.error)throw new Error(d.error.message);
-  var raw=(d.content||[]).map(function(c){return c.text||'';}).join('');
-  var m=raw.match(/\{[\s\S]+\}/);
-  if(!m)return [];
-  var parsed=JSON.parse(m[0]);
-  var labels=['①','②','③','④','⑤'];
-  return (parsed.questions||[]).map(function(q){
-    var choices=(q.choices||[]).slice(0,5).map(function(t,ci){return{label:labels[ci],text:String(t).trim()};});
-    var ai=Math.max(1,Math.min(5,q.answer||1))-1;
-    return{question:String(q.q||'').trim(),choices:choices,correct:labels[ai]||'①',expl:String(q.expl||'').trim()};
-  }).filter(function(q){return q.question&&q.choices.length>=4;});
-}
-
 function renderMock(){
   var sub=MOCK.sub;
   document.getElementById('mock-loading').style.display='none';
@@ -1722,8 +1899,8 @@ function renderMock(){
   var hdr=document.getElementById('mock-hdr');
   hdr.style.background='linear-gradient(135deg,'+sub.color+','+sub.color+'CC)';
   document.getElementById('mock-icon').textContent=sub.icon;
-  document.getElementById('mock-title').textContent=sub.name+' 모의고사';
-  document.getElementById('mock-prog').textContent='총 '+MOCK.qs.length+'문제';
+  document.getElementById('mock-title').textContent=sub.name+' 모의고사'+(MOCK.round?' '+MOCK.round+'회':'');
+  document.getElementById('mock-prog').textContent='총 '+MOCK.qs.length+'문제'+(MOCK.round?' · 박문각 전국모의고사':'');
 
   var sb=document.getElementById('mock-submit');
   sb.style.background='linear-gradient(135deg,'+sub.color+','+sub.color+'AA)';
